@@ -1,0 +1,50 @@
+/kit dragon
+/rtp;
+/rtpnear
+/rtp
+/fly
+/near
+/rtp
+/kit pro
+/kit
+/rtp
+/near
+/rtp
+/near
+/fly
+/rtp
+/near
+/l tymur228
+/kit pp
+/kit start
+/kit
+/rtp
+/kit start
+/near
+//wand
+/hub
+/l tymur228
+/give diamond_sword
+/food 5000
+/l tymur228
+/hub
+/hubn
+/hub
+/p join 5fps
+/hub
+/kit
+/warp pvp
+//wand
+/warp pvp
+//wand
+/kit imperator
+/rtp
+/reg tymujr228 tymujr228
+/l tymur228
+/l qwe123123
+/l qwe123
+/l qwe1231234
+/l tymur228
+/health 3434
+/food 32
+/give diamond_sword

@@ -1,0 +1,2 @@
+v1	named	intermediary
+FIELD	dev/luxury/mixin/render/impl/client/ClientPlayerEntityMixin	Lnet/minecraft/client/MinecraftClient;	client	field_3937

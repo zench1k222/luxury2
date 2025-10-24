@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "luxury",
+  "version": "0.3 Beta",
+  "name": "Luxury",
+  "description": "",
+  "authors": [
+    "Zench1k",
+    "Админ:qwelikx"
+  ],
+  "contact": {
+  },
+  "license": "All-Rights-Reserved",
+  "icon": "assets/luxury/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.luxury.Luxury"
+    ]
+  },
+  "mixins": [
+    "luxury.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  },
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.discord": "https://discord.gg/ypp22E3r4t"
+      }
+    }
+  }
+}

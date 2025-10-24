@@ -1,0 +1,28 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.luxury.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "render.impl.client.ClientConnectionMixin",
+    "render.impl.client.EntityAccessor",
+    "render.impl.client.LivingEntityMixin",
+    "render.impl.client.ScoreboardMixin"
+  ],
+  "client": [
+    "render.impl.INativeImage",
+    "render.impl.client.ClientPlayerEntityMixin",
+    "render.impl.client.EntityRenderDispatcherMixin",
+    "render.impl.client.KeyboardMixin",
+    "render.impl.client.MixinMinecraftClient",
+    "render.impl.render.GameRendererMixin",
+    "render.impl.render.MixinInGameHud",
+    "render.impl.render.PlayerInfoMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}
