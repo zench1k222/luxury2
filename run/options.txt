@@ -12,7 +12,7 @@ darknessEffectScale:1.0
 glintSpeed:0.5
 glintStrength:0.75
 prioritizeChunkUpdates:0
-fullscreen:false
+fullscreen:true
 gamma:1.0
 graphicsMode:0
 guiScale:2
@@ -96,7 +96,7 @@ key_key.left:key.keyboard.a
 key_key.back:key.keyboard.s
 key_key.right:key.keyboard.d
 key_key.jump:key.keyboard.space
-key_key.sneak:key.keyboard.right.shift
+key_key.sneak:key.keyboard.comma
 key_key.sprint:key.keyboard.v
 key_key.drop:key.keyboard.q
 key_key.inventory:key.keyboard.e
