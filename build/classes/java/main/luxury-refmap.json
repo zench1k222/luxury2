@@ -7,6 +7,9 @@
     "dev/luxury/mixin/render/impl/INativeImage": {
       "pointer": "field_4988:J"
     },
+    "dev/luxury/mixin/render/impl/WorldRendererAccessor": {
+      "frustum": "field_27740:Lnet/minecraft/class_4604;"
+    },
     "dev/luxury/mixin/render/impl/client/ClientConnectionMixin": {
       "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/packet/Packet;)V": "Lnet/minecraft/class_2535;method_10770(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/class_2596;)V",
       "send(Lnet/minecraft/network/packet/Packet;)V": "Lnet/minecraft/class_2535;method_10743(Lnet/minecraft/class_2596;)V"
@@ -58,6 +61,9 @@
       },
       "dev/luxury/mixin/render/impl/INativeImage": {
         "pointer": "field_4988:J"
+      },
+      "dev/luxury/mixin/render/impl/WorldRendererAccessor": {
+        "frustum": "field_27740:Lnet/minecraft/class_4604;"
       },
       "dev/luxury/mixin/render/impl/client/ClientConnectionMixin": {
         "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/packet/Packet;)V": "Lnet/minecraft/class_2535;method_10770(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/class_2596;)V",

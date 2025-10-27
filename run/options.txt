@@ -12,7 +12,7 @@ darknessEffectScale:1.0
 glintSpeed:0.5
 glintStrength:0.75
 prioritizeChunkUpdates:0
-fullscreen:true
+fullscreen:false
 gamma:1.0
 graphicsMode:0
 guiScale:2
@@ -53,7 +53,7 @@ highContrastBlockOutline:false
 narratorHotkey:true
 resourcePacks:["vanilla","fabric","file/!§f     ᴛʜᴜɴᴅᴇʀ. ᴡʜɪᴛᴇ ᴠ3.3.zip"]
 incompatibleResourcePacks:["file/!§f     ᴛʜᴜɴᴅᴇʀ. ᴡʜɪᴛᴇ ᴠ3.3.zip"]
-lastServer:play.saturn-x.space
+lastServer:Play.DontTime.Space
 lang:ru_ru
 chatVisibility:0
 chatOpacity:1.0

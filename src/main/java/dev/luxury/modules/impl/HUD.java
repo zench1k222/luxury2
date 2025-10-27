@@ -5,7 +5,6 @@ import dev.luxury.events.impl.render.EventRender2D;
 import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
-import dev.luxury.utils.font.FontDraw;
 import org.lwjgl.glfw.GLFW;
 
 @ModuleAnnotation(
@@ -34,6 +33,7 @@ public class HUD extends Module {
 
     mediaPlayer.render(e);
     }
+
     @Override
     public void onEnable() {
         super.onEnable();

@@ -31,7 +31,8 @@ public class ModuleManager {
                 new Spider(),
                 new NoClip(),
                 new Clickgui(),
-                new AntiBot()
+                new AntiBot(),
+                new EntityEsp()
 
         );
         DiscordRPC.getInstance().enable();

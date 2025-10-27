@@ -1,14 +1,3 @@
-/kit dragon
-/rtp;
-/rtpnear
-/rtp
-/fly
-/near
-/rtp
-/kit pro
-/kit
-/rtp
-/near
 /rtp
 /near
 /fly
@@ -48,3 +37,14 @@
 /health 3434
 /food 32
 /give diamond_sword
+/food 2414512
+/l tymur228
+/kit sirius
+/tpa
+/warp pvp
+/rtp
+/rtpnear
+/warp pvp
+/hub
+/give ender_pearl
+/l tymur228

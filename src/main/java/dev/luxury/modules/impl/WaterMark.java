@@ -77,7 +77,7 @@ public class WaterMark {
         RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), totalWidth2 + 49, infoY3 - padding, totalWidth3 + padding * 2, infoHeight + padding + 2, new Vector4f(4, 4, 4, 4), 0xA10a0a0a);
         RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), totalWidth2 + totalWidth3 + 59f, 23.5f - padding, totalWidth4 + padding * 2 + 3, infoHeight + padding + 2, new Vector4f(4, 4, 4, 4), 0xA10a0a0a);
 
-        GifUtils.renderGif(e.getDrawContext().getMatrices(), "images/gif/736f8af249d0499a829b4150935eb0fc5OaZOI7rhM7DEDmx-", (int) 2.5f, (int) 2.5f, (int)34.5, (int)34.5, new Vector4f(5, 5, 5, 5), 249);
+        GifUtils.renderGif(e.getDrawContext().getMatrices(), "images/gif/736f8af249d0499a829b4150935eb0fc5oazoi7rhm7dedmx-", (int) 2.5f, (int) 2.5f, (int)34.5, (int)34.5, new Vector4f(5, 5, 5, 5), 249);
         FontDraw.Montserrat_Medium.drawString(e.getDrawContext().getMatrices(), clientName + "", currentX, 8f, Color.yellow.getRGB());
         currentX += FontDraw.Montserrat_Medium.getStringWidth(clientName);
 

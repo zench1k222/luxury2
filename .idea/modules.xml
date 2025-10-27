@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/luxury2.main.iml" filepath="$PROJECT_DIR$/.idea/modules/luxury2.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/luxury2.test.iml" filepath="$PROJECT_DIR$/.idea/modules/luxury2.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/luxury22.main.iml" filepath="$PROJECT_DIR$/.idea/modules/luxury22.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/luxury22.test.iml" filepath="$PROJECT_DIR$/.idea/modules/luxury22.test.iml" />
     </modules>
   </component>
 </project>

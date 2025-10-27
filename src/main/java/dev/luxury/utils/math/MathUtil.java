@@ -1,5 +1,6 @@
 package dev.luxury.utils.math;
 
+import lombok.experimental.UtilityClass;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderTickCounter;
@@ -15,7 +16,7 @@ import java.awt.*;
 import java.lang.Math;
 import java.math.BigDecimal;
 import java.util.concurrent.ThreadLocalRandom;
-
+@UtilityClass
 public class MathUtil {
     public static MinecraftClient mc = MinecraftClient.getInstance();
     public static double PI2 = Math.PI * 2;
@@ -71,7 +72,10 @@ public class MathUtil {
             return ThreadLocalRandom.current().nextDouble(min, max);
         }
     }
-
+    public Vec3d interpolate(Entity entity) {
+        if (entity == null) return Vec3d.ZERO;
+        return new Vec3d(interpolate(entity.prevX, entity.getX()), interpolate(entity.prevY, entity.getY()), interpolate(entity.prevZ, entity.getZ()));
+    }
     public static float getPow2Value(float value) {
         return value * value;
     }

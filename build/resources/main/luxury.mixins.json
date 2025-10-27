@@ -12,6 +12,7 @@
   ],
   "client": [
     "render.impl.INativeImage",
+    "render.impl.WorldRendererAccessor",
     "render.impl.client.ClientPlayerEntityMixin",
     "render.impl.client.EntityRenderDispatcherMixin",
     "render.impl.client.KeyboardMixin",
