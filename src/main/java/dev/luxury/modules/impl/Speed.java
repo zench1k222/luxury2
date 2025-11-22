@@ -11,8 +11,7 @@ import org.lwjgl.glfw.GLFW;
 @ModuleAnnotation(
         name = "Speed",
         desc = "",
-        category = Category.Movement,
-        key = GLFW.GLFW_KEY_M
+        category = Category.Movement
 )
 public class Speed extends Module {
 

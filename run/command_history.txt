@@ -1,50 +1,50 @@
-/rtp
-/near
-/fly
-/rtp
-/near
+/kit pvp
 /l tymur228
-/kit pp
-/kit start
+/duel f9celess
+/duel soluteee
+/l tymur228
+/l qwe123
+/rtp
+/rtpdefault
+/kit pvp
+/rtp
+/duel tryvalera666
+/kit pvp
+/duel ME4M_BE666B
+/
+/l tymur228
+/l qwe123
+/l qwe123123
+/l Timurdaffha228
+/l Timurdaffha228335*228
+/l Timurdaffha228335*
+/reg qwe123123
+/reg qwe123123 qwe123123
+/reg qwe123123123 qwe123123123
+/hub
+/spawn
+/reg qwe123123123 qwe123123123
+/l qwe123123123
 /kit
-/rtp
-/kit start
-/near
-//wand
-/hub
-/l tymur228
-/give diamond_sword
-/food 5000
-/l tymur228
-/hub
-/hubn
-/hub
-/p join 5fps
-/hub
-/kit
-/warp pvp
-//wand
-/warp pvp
-//wand
-/kit imperator
-/rtp
-/reg tymujr228 tymujr228
+/kit pvp
 /l tymur228
 /l qwe123123
 /l qwe123
-/l qwe1231234
-/l tymur228
-/health 3434
-/food 32
-/give diamond_sword
-/food 2414512
-/l tymur228
-/kit sirius
-/tpa
-/warp pvp
+/l qwe123123
+/food
+/food 231
+/reg qwe123123 qwe123123
 /rtp
-/rtpnear
-/warp pvp
-/hub
-/give ender_pearl
+/kit dragon
 /l tymur228
+/l qwe123123
+/tpa GrishaLoveRain
+/heal
+/l tymur228
+/l qwe123123
+/tpa GrishaLoveRain
+/free
+/codes
+/kit bull
+/tpa GrishaLoveRain
+/tpa gri

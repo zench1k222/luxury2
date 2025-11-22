@@ -5,28 +5,29 @@ import dev.luxury.events.impl.render.EventRender2D;
 import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
+import dev.luxury.utils.render.ColorRGBA;
+import dev.luxury.utils.render.RenderUtil;
 import net.minecraft.util.Identifier;
+import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFW;
+
+import java.awt.*;
 
 
 @ModuleAnnotation(
         name = "Test",
-        key = GLFW.GLFW_KEY_G,
         desc = "",
         category = Category.Render
 )
 
 public class Test extends Module {
 
-    public static final Identifier IMAGE = Identifier.tryParse("luxury:images/marker.png");
+
+    
     @EventTarget
     public void render(EventRender2D e) {
-
-        float x = 50.0f;
-        float y = 50.0f;
-        float width = 200.0f;
-        float height = 100.0f;
-
+        double mouseX = mc.mouse.getX() * mc.getWindow().getScaledWidth() / mc.getWindow().getWidth();
+        double mouseY = mc.mouse.getY() * mc.getWindow().getScaledHeight() / mc.getWindow().getHeight();
 
     }
     @Override

@@ -14,7 +14,6 @@ import org.lwjgl.glfw.GLFW;
 @ModuleAnnotation(
         name = "DiscordRPC",
         desc = "",
-        key = GLFW.GLFW_KEY_L,
         category = Category.Misc
 )
 @Getter

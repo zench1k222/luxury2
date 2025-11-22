@@ -1,40 +1,43 @@
 package dev.luxury;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import dev.luxury.events.impl.client.EventKeyInput;
+import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.modules.api.ModuleManager;
 
+import dev.luxury.render.feature.CustomModelFeature;
+import dev.luxury.utils.font.FontHelper;
+import dev.luxury.utils.managers.CommandManager;
+import dev.luxury.utils.managers.FriendManager;
 import lombok.Getter;
 
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.client.MinecraftClient;
-import org.lwjgl.glfw.GLFW;
+import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
+import net.minecraft.client.render.entity.PlayerEntityRenderer;
+import net.minecraft.entity.EntityType;
 @Getter
 public class Luxury implements ModInitializer {
 
     @Getter
     private static Luxury instance;
-    @Getter
-    public static EventBus eventBus = new EventBus();
-    ModuleManager moduleManager = new ModuleManager();
 
+    ModuleManager moduleManager = new ModuleManager();
+    FontHelper fontHelper = new FontHelper();
+    @Getter
+    private static dev.luxury.utils.managers.SyncManager Sync;
 
     @Override
     public void onInitialize() {
         instance = this;
+        EventManager.register(this);
+        fontHelper.initialize();
         moduleManager.init();
-        eventBus.register(this);
-    }
+        Sync = dev.luxury.utils.managers.SyncManager.getInstance();
 
-
-    @Subscribe
-    public void onKey(EventKeyInput e) {
-        if (e.getAction() != GLFW.GLFW_PRESS) return;
-
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen != null || client.player == null || client.world == null) return;
-
-        moduleManager.onKey(e.getKey());
+        CommandManager.init(moduleManager);
+        FriendManager.getInstance();
+        LivingEntityFeatureRendererRegistrationCallback.EVENT.register((entityType, renderer, registrationHelper, context) -> {
+            if (renderer instanceof PlayerEntityRenderer playerRenderer && entityType == EntityType.PLAYER) {
+                registrationHelper.register(new CustomModelFeature(playerRenderer));
+            }
+        });
     }
 }

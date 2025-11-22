@@ -377,4 +377,60 @@ public class ColorUtil {
     public int getOutline() {
         return new Color(0x373746).getRGB();
     }
+
+    public static int getColorStyle(float index) {
+        return getColorStyle((int) index);
+    }
+
+    public static int getColorStyle(float index, float alpha) {
+        return getColorStyle((int) index, (int) alpha);
+    }
+
+    public static int getColorStyle(int index) {
+        // Используем градиент между двумя цветами клиента
+        int color1 = 0xFF6B9EFF; // Синий
+        int color2 = 0xFFFF6B9E; // Розовый
+        return gradient(5, index, color1, color2);
+    }
+
+    public static int getColorStyle(int index, int alpha) {
+        int gradientColor = getColorStyle(index);
+        int red = (gradientColor >> 16) & 0xFF;
+        int green = (gradientColor >> 8) & 0xFF;
+        int blue = gradientColor & 0xFF;
+        return new Color(red, green, blue, alpha).getRGB();
+    }
+
+    public static int gradient(int speed, int index, int... colors) {
+        int angle = (int) ((System.currentTimeMillis() / speed + index) % 360);
+        angle = (angle > 180 ? 360 - angle : angle) + 180;
+        int colorIndex = (int) (angle / 360f * colors.length);
+        if (colorIndex == colors.length) {
+            colorIndex--;
+        }
+        int color1 = colors[colorIndex];
+        int color2 = colors[colorIndex == colors.length - 1 ? 0 : colorIndex + 1];
+        return interpolateColor(color1, color2, angle / 360f * colors.length - colorIndex);
+    }
+
+    public static int interpolateColor(int color1, int color2, float amount) {
+        amount = MathHelper.clamp(amount, 0, 1);
+
+        int red1 = getRed(color1);
+        int green1 = getGreen(color1);
+        int blue1 = getBlue(color1);
+        int alpha1 = getAlpha(color1);
+
+        int red2 = getRed(color2);
+        int green2 = getGreen(color2);
+        int blue2 = getBlue(color2);
+        int alpha2 = getAlpha(color2);
+
+        int interpolatedRed = (int) MathHelper.lerp(amount, red1, red2);
+        int interpolatedGreen = (int) MathHelper.lerp(amount, green1, green2);
+        int interpolatedBlue = (int) MathHelper.lerp(amount, blue1, blue2);
+        int interpolatedAlpha = (int) MathHelper.lerp(amount, alpha1, alpha2);
+
+        return (interpolatedAlpha << 24) | (interpolatedRed << 16) | (interpolatedGreen << 8) | interpolatedBlue;
+    }
 }

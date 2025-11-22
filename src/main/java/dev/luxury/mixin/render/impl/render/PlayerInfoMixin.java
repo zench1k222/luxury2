@@ -1,7 +1,6 @@
 package dev.luxury.mixin.render.impl.render;
 
 import com.mojang.authlib.GameProfile;
-import dev.luxury.utils.render.ResourceProvider;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.client.util.SkinTextures;
@@ -11,9 +10,9 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.util.Constants;
 
 import java.util.function.Supplier;
+
 @Mixin(PlayerListEntry.class)
 public class PlayerInfoMixin {
     @Unique

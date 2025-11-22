@@ -1,5 +1,6 @@
 package dev.luxury.utils.render;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.luxury.events.impl.client.EventRender3D;
 import dev.luxury.events.impl.eventapi.EventManager;
@@ -8,6 +9,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
@@ -19,7 +21,10 @@ import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class RenderUtil3D {
     private static Tessellator tessellatorFaces = null;
@@ -35,7 +40,9 @@ public class RenderUtil3D {
         renderDebugLines(stack);
         renderLines(stack);
     }
+
     private static MinecraftClient mc = MinecraftClient.getInstance();
+
     public static void hookEvent3d() {
         Camera camera = mc.gameRenderer.getCamera();
         MatrixStack matrixStack = new MatrixStack();
@@ -254,8 +261,8 @@ public class RenderUtil3D {
         BufferRenderer.drawWithGlobalProgram(buffer.end());
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
         matrices.pop();
-    }
 
+    }
     private static void renderDebugLines(MatrixStack stack) {
         if (debugLineQueue.isEmpty()) {
             return;

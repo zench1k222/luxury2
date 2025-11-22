@@ -8,9 +8,12 @@ import net.minecraft.client.gl.*;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
+import org.lwjgl.opengl.GL11;
 
 import java.util.function.Supplier;
 
@@ -197,6 +200,71 @@ public class RenderUtil {
         drawImage(matrices, texture, x, y, width, height, u1, v1, u2, v2, rounding, smoothness, color);
     }
 
+    public static void drawLiquidRect(MatrixStack matrices, float x, float y, float width, float height, Vector4f rounding, ColorRGBA color, float cornerSmoothness, float fresnelPower, float fresnelAlpha, float baseAlpha, boolean fresnelInvert, float fresnelMix, float distortStrength) {
+
+        matrices.push();
+        Matrix4f matrix4f = matrices.peek().getPositionMatrix();
+
+        Framebuffer screenFBO = mc.getFramebuffer();
+        int screenTexture = screenFBO.getColorAttachment();
+        ShaderProgram shaderProgram = RenderSystem.setShader(ResourceProvider.LIQUID_GLASS_SHADER_KEY);
+        shaderProgram.getUniform("ModelViewMat").set(matrix4f);
+        shaderProgram.getUniform("ProjMat").set(RenderSystem.getProjectionMatrix());
+        shaderProgram.getUniform("Size").set(width, height);
+        shaderProgram.getUniform("Radius").set(rounding.x, rounding.y,rounding.z, rounding.w);
+        shaderProgram.getUniform("Smoothness").set(1.0f);
+        shaderProgram.getUniform("CornerSmoothness").set(cornerSmoothness);
+        shaderProgram.getUniform("GlobalAlpha").set(color.getAlpha() / 255f);
+        shaderProgram.getUniform("FresnelPower").set(fresnelPower);
+        shaderProgram.getUniform("FresnelColor").set(1f, 1f, 1f);
+        shaderProgram.getUniform("FresnelAlpha").set(fresnelAlpha);
+        shaderProgram.getUniform("BaseAlpha").set(baseAlpha);
+        shaderProgram.getUniform("FresnelInvert").set(fresnelInvert ? 1 : 0);
+        shaderProgram.getUniform("FresnelMix").set(fresnelMix);
+        shaderProgram.getUniform("DistortStrength").set(distortStrength);
+
+        RenderSystem.setShaderTexture(0, screenTexture);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+        enableRender();
+
+        float scaleX = (float) screenFBO.textureWidth / mc.getWindow().getScaledWidth();
+        float scaleY = (float) screenFBO.textureHeight / mc.getWindow().getScaledHeight();
+
+        float fx = x * scaleX;
+        float fy = y * scaleY;
+        float fwidth = width * scaleX;
+        float fheight = height * scaleY;
+
+        fy = screenFBO.textureHeight - fy - fheight;
+
+        float u0 = fx / screenFBO.textureWidth;
+        float v0 = fy / screenFBO.textureHeight;
+        float u1 = (fx + fwidth) / screenFBO.textureWidth;
+        float v1 = (fy + fheight) / screenFBO.textureHeight;
+
+        BufferBuilder builder = RenderSystem.renderThreadTesselator()
+                .begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+
+        int r = color.getRed();
+        int g = color.getGreen();
+        int b = color.getBlue();
+        int a = color.getAlpha();
+
+        builder.vertex(matrix4f, x, y, 0f).texture(u0, v1).color(r, g, b, a);
+        builder.vertex(matrix4f, x, y + height, 0f).texture(u0, v0).color(r, g, b, a);
+        builder.vertex(matrix4f, x + width, y + height, 0f).texture(u1, v0).color(r, g, b, a);
+        builder.vertex(matrix4f, x + width, y, 0f).texture(u1, v1).color(r, g, b, a);
+
+        BufferRenderer.drawWithGlobalProgram(builder.end());
+
+       disableRender();
+        RenderSystem.enableDepthTest();
+        matrices.pop();
+    }
+
+
     public static void drawBlur(MatrixStack matrices, float x, float y, float width, float height, Vector4f rounding, float blurRadius, int color) {
         final SimpleFramebuffer fbo = TEMP_FBO_SUPPLIER.get();
         final Framebuffer mainFbo = getMainFbo();
@@ -262,13 +330,13 @@ public class RenderUtil {
         shader.getUniform("Smoothness").set(smoothness);
     }
 
-    private static void enableRender() {
+    public static void enableRender() {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
     }
 
-    private static void disableRender() {
+    public static void disableRender() {
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
     }
@@ -284,6 +352,33 @@ public class RenderUtil {
     public static class Render3D {
         public void endBuilding(BufferBuilder builder) {
             BufferRenderer.drawWithGlobalProgram(builder.end());
+        }
+        public static final Matrix4f lastProjMat = new Matrix4f();
+        public static final Matrix4f lastModMat = new Matrix4f();
+        public static final Matrix4f lastWorldSpaceMatrix = new Matrix4f();
+
+        public static void setTranslation(MatrixStack matrixStack) {
+            RenderUtil.render3D.lastProjMat.set(RenderSystem.getProjectionMatrix());
+            RenderUtil.render3D.lastModMat.set(RenderSystem.getModelViewMatrix());
+            RenderUtil.render3D.lastWorldSpaceMatrix.set(matrixStack.peek().getPositionMatrix());
+        }
+
+        public static Vec3d worldSpaceToScreenSpace(Vec3d pos) {
+            Camera camera = mc.getEntityRenderDispatcher().camera;
+            int displayHeight = mc.getWindow().getHeight();
+            int[] viewport = new int[4];
+            GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
+            Vector3f target = new Vector3f();
+
+            double deltaX = pos.x - camera.getPos().x;
+            double deltaY = pos.y - camera.getPos().y;
+            double deltaZ = pos.z - camera.getPos().z;
+            Vector4f transformedCoordinates = new Vector4f((float) deltaX, (float) deltaY, (float) deltaZ, 1.f).mul(lastWorldSpaceMatrix);
+            Matrix4f matrixProj = new Matrix4f(lastProjMat);
+            Matrix4f matrixModel = new Matrix4f(lastModMat);
+            matrixProj.mul(matrixModel).project(transformedCoordinates.x(), transformedCoordinates.y(), transformedCoordinates.z(), viewport, target);
+
+            return new Vec3d(target.x / mc.getWindow().getScaleFactor(), (displayHeight - target.y) / mc.getWindow().getScaleFactor(), target.z);
         }
     }
 }

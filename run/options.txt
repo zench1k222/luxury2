@@ -51,9 +51,9 @@ damageTiltStrength:0.0
 highContrast:false
 highContrastBlockOutline:false
 narratorHotkey:true
-resourcePacks:["vanilla","fabric","file/!§f     ᴛʜᴜɴᴅᴇʀ. ᴡʜɪᴛᴇ ᴠ3.3.zip"]
-incompatibleResourcePacks:["file/!§f     ᴛʜᴜɴᴅᴇʀ. ᴡʜɪᴛᴇ ᴠ3.3.zip"]
-lastServer:Play.DontTime.Space
+resourcePacks:["vanilla","fabric","file/!      §5§l BLUE GOTHIQUE"]
+incompatibleResourcePacks:["file/!      §5§l BLUE GOTHIQUE"]
+lastServer:mc.cakeworld.pw
 lang:ru_ru
 chatVisibility:0
 chatOpacity:1.0
@@ -124,7 +124,7 @@ key_key.hotbar.7:key.keyboard.7
 key_key.hotbar.8:key.keyboard.8
 key_key.hotbar.9:key.keyboard.9
 key_key.modmenu.open_menu:key.keyboard.unknown
-soundCategory_master:1.0
+soundCategory_master:0.0
 soundCategory_music:0.0
 soundCategory_record:1.0
 soundCategory_weather:0.0

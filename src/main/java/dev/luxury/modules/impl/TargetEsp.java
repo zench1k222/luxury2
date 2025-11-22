@@ -6,23 +6,23 @@ import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
 import dev.luxury.modules.api.ModuleManager;
+import dev.luxury.modules.api.settings.ModeSetting;
 import dev.luxury.modules.impl.targetesp.TargetESPHandler;
-import net.minecraft.client.util.math.MatrixStack;
-import org.lwjgl.glfw.GLFW;
 
 @ModuleAnnotation(
         name = "TargetEsp",
         desc = "",
-        category = Category.Render,
-        key = GLFW.GLFW_KEY_K
+        category = Category.Render
 )
 public class TargetEsp extends Module {
-    private String espMode = "Marker";
-
+    private final ModeSetting type = new ModeSetting("Тип", "Crystals", new String[]{"Crystals", "Marker","Ghosts"});
+    public TargetEsp() {
+        addSettings(type);
+    }
     @EventTarget
     public void onRender(EventRender3D event) {
         if (ModuleManager.getModule(KillAura.class).hasTarget()) {
-            TargetESPHandler.renderESP(espMode, event.getMatrices());
+            TargetESPHandler.renderESP(type.get(), event);
         }
     }
 

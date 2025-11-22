@@ -17,19 +17,19 @@ repositories {
     maven { url "https://maven.meteordev.org/releases" }
     maven { url "https://maven.meteordev.org" }
 }
+
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     implementation("dev.redstones.mediaplayerinfo:media-player-info:0.1.0")
+
     modImplementation 'org.projectlombok:lombok:1.18.34'
     annotationProcessor'org.projectlombok:lombok:1.18.34'
 }
-
 processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", project.minecraft_version

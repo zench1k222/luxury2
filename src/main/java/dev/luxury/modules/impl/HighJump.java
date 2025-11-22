@@ -17,8 +17,7 @@ import org.lwjgl.glfw.GLFW;
 @ModuleAnnotation(
         name = "HighJump",
         desc = "",
-        category = Category.Movement,
-        key = GLFW.GLFW_KEY_J
+        category = Category.Movement
 )
 public class HighJump extends Module {
     MinecraftClient mc = MinecraftClient.getInstance();

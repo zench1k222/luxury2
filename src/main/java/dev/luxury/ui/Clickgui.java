@@ -1,5 +1,6 @@
 package dev.luxury.ui;
 
+import dev.luxury.Luxury;
 import dev.luxury.events.impl.eventapi.EventTarget;
 import dev.luxury.events.impl.render.EventRender2D;
 import dev.luxury.modules.api.Category;
@@ -12,18 +13,20 @@ import org.lwjgl.glfw.GLFW;
 @ModuleAnnotation(
         name = "ClickGui",
         desc = "Custom Click GUI",
-        key = GLFW.GLFW_KEY_RIGHT_SHIFT,
         category = Category.Render
 )
 public class Clickgui extends Module {
     private final MinecraftClient mc = MinecraftClient.getInstance();
-    private final Csgui csgui = new Csgui(new ModuleManager());
+
+    public Clickgui() {
+        this.setKey(GLFW.GLFW_KEY_RIGHT_SHIFT);
+    }
 
     @Override
     public void onEnable() {
         super.onEnable();
         if (mc.currentScreen == null) {
-            mc.setScreen(csgui);
+            mc.setScreen(new Csgui(Luxury.getInstance().getModuleManager()));
         }
         disable();
     }
@@ -31,6 +34,5 @@ public class Clickgui extends Module {
     @Override
     public void onDisable() {
         super.onDisable();
-
     }
 }

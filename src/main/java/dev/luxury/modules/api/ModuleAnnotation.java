@@ -12,5 +12,4 @@ public @interface ModuleAnnotation {
     String name();
     String desc() default "";
     Category category();
-    int key() default -1;
 }

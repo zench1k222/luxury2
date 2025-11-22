@@ -1,7 +1,9 @@
 package dev.luxury.modules.impl.targetesp;
 
 import dev.luxury.modules.api.ModuleManager;
+import dev.luxury.events.impl.client.EventRender3D;
 import dev.luxury.modules.impl.KillAura;
+import dev.luxury.modules.impl.targetesp.mode.Crystals;
 import dev.luxury.modules.impl.targetesp.mode.Ghosts;
 import dev.luxury.modules.impl.targetesp.mode.Circle;
 import dev.luxury.modules.impl.targetesp.mode.Marker;
@@ -73,6 +75,22 @@ public class TargetESPHandler {
                 case "Marker" -> Marker.render(target, matrixStack);
                 case "Ghosts" -> Ghosts.render(target);
                 case "Circle" -> Circle.render(target, matrixStack);
+                case "Crystals" -> {
+
+                }
+            }
+        }
+    }
+
+    public static void renderESP(String mode, EventRender3D event) {
+        LivingEntity target = updateTargetInfo();
+
+        if (shouldRenderESP(target)) {
+            switch (mode) {
+                case "Crystals" -> Crystals.instance.onRenderWorldEvent(event, target, true, 8F, true);
+                case "Marker" -> Marker.render(target, event.getMatrices());
+                case "Ghosts" -> Ghosts.render(target);
+                case "Circle" -> Circle.render(target, event.getMatrices());
             }
         }
     }

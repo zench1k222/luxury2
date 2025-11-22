@@ -2,11 +2,20 @@ package dev.luxury.modules.api;
 
 import dev.luxury.Luxury;
 
+import dev.luxury.events.impl.client.EventKeyInput;
 import dev.luxury.events.impl.eventapi.EventManager;
+import dev.luxury.events.impl.eventapi.EventTarget;
+import dev.luxury.modules.NoDelay;
 import dev.luxury.modules.impl.*;
+import dev.luxury.modules.impl.taksa.DogPet;
 import dev.luxury.ui.Clickgui;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
+import net.minecraft.client.MinecraftClient;
+import org.lwjgl.glfw.GLFW;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -32,13 +41,20 @@ public class ModuleManager {
                 new NoClip(),
                 new Clickgui(),
                 new AntiBot(),
-                new EntityEsp()
+                new ESP(),
+                new SwingAnimations(),
+                new CustomModels(),
+                new SettingsTest(),
+                new DogPet(),
+                new Projectiles(),
+                new NoDelay()
 
         );
         DiscordRPC.getInstance().enable();
-        Luxury.getInstance().getEventBus().register(this);
     }
-
+    public static List<Module> getModules() {
+        return modules;
+    }
     private void registerAll(Module... mods) {
         for (Module module : mods) {
             initModuleFromAnnotation(module);
@@ -55,7 +71,6 @@ public class ModuleManager {
 
             module.setName(annotation.name());
             module.setCategory(annotation.category());
-            module.setKey(annotation.key());
         }
     }
 
@@ -87,11 +102,14 @@ public class ModuleManager {
         return m != null && m.isEnabled();
     }
 
-    public void onKey(int key) {
-        for (Module module : modules) {
-            if (module.getKey() == key) {
-                module.toggle();
-            }
-        }
+    @EventTarget
+    public void onKey(EventKeyInput e) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player == null || mc.world == null || mc.currentScreen != null) return;
+
+        if (e.getAction() == 1)
+            for (Module module : modules)
+                if (module.getKey() == e.getKey() && !module.isMouse())
+                    module.toggle();
     }
 }

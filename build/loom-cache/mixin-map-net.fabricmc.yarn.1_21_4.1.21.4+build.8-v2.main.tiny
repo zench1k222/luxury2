@@ -1,2 +1,4 @@
 v1	named	intermediary
 FIELD	dev/luxury/mixin/render/impl/client/ClientPlayerEntityMixin	Lnet/minecraft/client/MinecraftClient;	client	field_3937
+METHOD	dev/luxury/mixin/render/impl/client/LivingEntityMixin	(Lnet/minecraft/registry/entry/RegistryEntry;)Z	hasStatusEffect	method_6059
+METHOD	dev/luxury/mixin/render/impl/client/LivingEntityMixin	(Lnet/minecraft/registry/entry/RegistryEntry;)Lnet/minecraft/entity/effect/StatusEffectInstance;	getStatusEffect	method_6112

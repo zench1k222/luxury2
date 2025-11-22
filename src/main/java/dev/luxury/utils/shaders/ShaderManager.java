@@ -9,9 +9,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 public class ShaderManager {
-    /**
-     * 1 цвет
-     */
+
     public static void vertexShader(MatrixStack matrixStack, float x, float y, float width, float height, int color) {
         float[] rgba = ColorUtil.rgba(color);
         Matrix4f matrix = matrixStack.peek().getPositionMatrix();
@@ -36,9 +34,7 @@ public class ShaderManager {
 
             RenderUtil.render3D.endBuilding(builder);
     }
-    /**
-     * 4 цвета
-     */
+
     public static void vertexShader(MatrixStack matrixStack, float x, float y, float width, float height, int color1, int color2, int color3, int color4) {
         Matrix4f matrix = matrixStack.peek().getPositionMatrix();
         BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);

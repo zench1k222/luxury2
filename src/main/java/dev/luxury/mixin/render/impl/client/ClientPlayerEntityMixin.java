@@ -1,6 +1,5 @@
 package dev.luxury.mixin.render.impl.client;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.modules.impl.KillAura;
 import net.minecraft.client.MinecraftClient;
@@ -22,35 +21,6 @@ public class ClientPlayerEntityMixin {
     @Unique private float storedYaw;
     @Unique private float storedPitch;
 
-    @ModifyExpressionValue(
-            method = "tickMovement",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/option/KeyBinding;isPressed()Z"
-            )
-    )
-    public boolean unpressSprintKey(boolean original) {
-        KillAura killAura = (KillAura)ModuleManager.getModule(KillAura.class);
-        if (killAura != null && killAura.isEnabled() && killAura.shouldStopSprinting()) {
-            return false;
-        }
-        return original;
-    }
-
-    @ModifyExpressionValue(
-            method = "tickMovement",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/network/ClientPlayerEntity;canSprint()Z"
-            )
-    )
-    private boolean disallowSprinting(boolean original) {
-        KillAura killAura = (KillAura) ModuleManager.getModule(KillAura.class);
-        if (killAura != null && killAura.isEnabled() && killAura.shouldStopSprinting()) {
-            return false;
-        }
-        return original;
-    }
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void tickHead(CallbackInfo ci) {

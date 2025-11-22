@@ -18,7 +18,7 @@ import org.lwjgl.glfw.GLFW;
 import java.awt.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-@ModuleAnnotation(name = "Blink", desc = "Задерживает пакеты отправленные на сервер", category = Category.Movement,key = GLFW.GLFW_KEY_B)
+@ModuleAnnotation(name = "Blink", desc = "Задерживает пакеты отправленные на сервер", category = Category.Movement)
 public class Blink extends Module {
 
     float maxTicks = 15;

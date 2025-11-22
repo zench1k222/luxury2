@@ -5,33 +5,53 @@ import dev.luxury.events.impl.render.EventRender2D;
 import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
-import org.lwjgl.glfw.GLFW;
+import dev.luxury.modules.api.settings.BooleanSetting;
+import dev.luxury.modules.api.settings.ModeListSetting;
 
 @ModuleAnnotation(
         name = "HUD",
         desc = "Интерфейс чита",
-        category = Category.Render,
-        key = GLFW.GLFW_KEY_U
+        category = Category.Render
 
 )
 public class HUD extends Module {
     WaterMark waterMark = new WaterMark();
-    Info info = new Info();
+
     TargetHud targetHud = new TargetHud();
     MediaPlayer mediaPlayer = new MediaPlayer();
+    KeyBinds keyBinds = new KeyBinds();
+    Staffs staffs = new Staffs();
+    private final ModeListSetting type = new ModeListSetting("Отображение"
+            ,new BooleanSetting("WaterMark",true),
+            new BooleanSetting("TargetHud",true),
+            new BooleanSetting("Staffs",true)
+            ,new BooleanSetting("KeyBinds",true));
 
-
+public HUD(){
+    addSettings(type);
+}
 
 @EventTarget
-    public  void initHud(EventRender2D e){
+    public void onRender2D(EventRender2D e){
+        BooleanSetting waterMarkSetting = type.getValueByName("WaterMark");
+        if (waterMarkSetting != null && waterMarkSetting.isValue()) {
+            waterMark.render(e);
+        }
 
-    waterMark.render(e);
 
-    info.render(e);
+        BooleanSetting targetHudSetting = type.getValueByName("TargetHud");
+        if (targetHudSetting != null && targetHudSetting.isValue()) {
+            targetHud.render(e);
+        }
 
-    targetHud.render(e);
-
-    mediaPlayer.render(e);
+        BooleanSetting keyBindsSetting = type.getValueByName("KeyBinds");
+        if (keyBindsSetting != null && keyBindsSetting.isValue()) {
+            keyBinds.render(e);
+        }
+        BooleanSetting staffsSetting = type.getValueByName("Staffs");
+        if (staffsSetting != null && staffsSetting.isValue()){
+            staffs.render(e);
+        }
     }
 
     @Override
