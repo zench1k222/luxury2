@@ -1,5 +1,6 @@
 package dev.luxury.mixin.render.impl.client;
 
+import dev.luxury.Luxury;
 import dev.luxury.events.impl.client.SwingDurationEvent;
 import dev.luxury.events.impl.eventapi.EventManager;
 import net.minecraft.client.MinecraftClient;
@@ -15,6 +16,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
@@ -28,7 +30,18 @@ public abstract class LivingEntityMixin {
 
     @Unique
     private final MinecraftClient client = MinecraftClient.getInstance();
+    @Redirect(method = "jump", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;getYaw()F"))
+    public float replaceMovePacketPitch(LivingEntity instance) {
+        if ((Object) this != client.player) {
+            return instance.getYaw();
+        }else{
+            return Luxury.getInstance().getRotationManager().getCurrentRotate().getYaw();
+        }
 
+
+
+
+    }
     @Inject(method = "getHandSwingDuration", at = @At("HEAD"), cancellable = true)
     private void swingProgressHook(CallbackInfoReturnable<Integer> cir) {
         if ((Object) this != client.player) {
@@ -46,5 +59,6 @@ public abstract class LivingEntityMixin {
                 animation *= (hasStatusEffect(StatusEffects.MINING_FATIGUE) ? 6 + (1 + getStatusEffect(StatusEffects.MINING_FATIGUE).getAmplifier()) * 2 : 6);
             cir.setReturnValue((int) animation);
         }
+
     }
 }

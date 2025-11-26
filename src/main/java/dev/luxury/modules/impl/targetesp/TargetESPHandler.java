@@ -40,7 +40,7 @@ public class TargetESPHandler {
 
         if (lastTarget != null && lastTarget.isAlive()) {
             double distance = getDistanceTo(lastTarget);
-            double attackRange = attackAura.range;
+            double attackRange = attackAura.distance.getValue();
 
             if (distance <= attackRange) {
                 isTargetOutOfRange = false;

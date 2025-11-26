@@ -1,21 +1,15 @@
 package dev.luxury.modules.api;
 
-import dev.luxury.Luxury;
-
 import dev.luxury.events.impl.client.EventKeyInput;
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.events.impl.eventapi.EventTarget;
-import dev.luxury.modules.NoDelay;
+import dev.luxury.modules.impl.NoDelay;
 import dev.luxury.modules.impl.*;
 import dev.luxury.modules.impl.taksa.DogPet;
 import dev.luxury.ui.Clickgui;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
-import org.lwjgl.glfw.GLFW;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -47,7 +41,8 @@ public class ModuleManager {
                 new SettingsTest(),
                 new DogPet(),
                 new Projectiles(),
-                new NoDelay()
+                new NoDelay(),
+                new AutoSprint()
 
         );
         DiscordRPC.getInstance().enable();

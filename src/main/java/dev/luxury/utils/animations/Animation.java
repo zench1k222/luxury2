@@ -57,7 +57,7 @@ public class Animation {
     }
 
     public void reset() {
-        timer.reset();
+        timer.reset2();
     }
 
     public void update() {

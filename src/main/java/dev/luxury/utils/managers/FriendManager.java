@@ -8,7 +8,7 @@ public class FriendManager {
     private static FriendManager instance;
     private final List<String> friends = new ArrayList<>();
 
-    private FriendManager() {}
+    public FriendManager() {}
 
     public static FriendManager getInstance() {
         if (instance == null) {

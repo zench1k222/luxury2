@@ -1,73 +1,23 @@
 package dev.luxury.utils;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.FieldDefaults;
+import lombok.experimental.UtilityClass;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.input.Input;
-import net.minecraft.client.option.KeyBinding;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.PlayerInput;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
+
 
 import java.util.Objects;
-import java.util.stream.Stream;
 
-public class MovingUtil {
-   private static MinecraftClient mc = MinecraftClient.getInstance();
-    @Getter
-    @Setter
-    @RequiredArgsConstructor
-    @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-
-    public static class DirectionalInput {
-        boolean forwards;
-        boolean backwards;
-        boolean left;
-        boolean right;
-
-        public DirectionalInput(Input input) {
-            this(input.playerInput.forward(), input.playerInput.backward(),
-                    input.playerInput.left(), input.playerInput.right());
-        }
-
-        public static final DirectionalInput NONE = new DirectionalInput(false, false, false, false);
-        public static final DirectionalInput FORWARDS = new DirectionalInput(true, false, false, false);
-        public static final DirectionalInput BACKWARDS = new DirectionalInput(false, true, false, false);
-        public static final DirectionalInput LEFT = new DirectionalInput(false, false, true, false);
-        public static final DirectionalInput RIGHT = new DirectionalInput(false, false, false, true);
-
-        public static float getMovementMultiplier(boolean positive, boolean negative) {
-            if (positive == negative) {
-                return 0.0F;
-            } else {
-                return positive ? 1.0F : -1.0F;
-            }
-        }
-    }
-
-    public static KeyBinding[] getMovementKeys(boolean includeSneak) {
-        return Stream.of(
-                        mc.options.forwardKey,
-                        mc.options.backKey,
-                        mc.options.leftKey,
-                        mc.options.rightKey,
-                        mc.options.jumpKey,
-                        mc.options.sprintKey,
-                        includeSneak ? mc.options.sneakKey : null
-                ).filter(Objects::nonNull)
-                .toArray(KeyBinding[]::new);
-    }
-
-    public static boolean hasPlayerMovement() {
+@UtilityClass
+public class MovingUtil  {
+MinecraftClient mc = MinecraftClient.getInstance();
+    public boolean hasPlayerMovement() {
         return mc.player.input.movementForward != 0f || mc.player.input.movementSideways != 0f;
     }
 
-    public static boolean isMoving() {
-        assert mc.player != null;
-        return mc.player.input.movementForward != 0 || mc.player.input.movementSideways != 0;
-    }
-
-    public static double[] calculateDirection(final double distance) {
+    public double[] calculateDirection(final double distance) {
         float forward = mc.player.input.movementForward;
         float sideways = mc.player.input.movementSideways;
         float yaw = mc.player.getYaw();
@@ -90,33 +40,66 @@ public class MovingUtil {
         return new double[]{xMovement, zMovement};
     }
 
-    public static void setVelocity(float velocity, float y) {
-        final double[] direction = MovingUtil.calculateDirection(velocity);
-        mc.player.setVelocity(direction[0], y, direction[1]);
+    public double getSpeedSqrt(Entity entity) {
+        double dx = entity.getX() - entity.prevX;
+        double dy = entity.getY() - entity.prevY;
+        double dz = entity.getZ() - entity.prevZ;
+        return Math.sqrt(dx * dx + dz * dz + dy * dy);
     }
 
-    public static double[] forward(final double d) {
-        assert mc.player != null;
-        float f = mc.player.input.movementForward;
-        float f2 = mc.player.input.movementSideways;
-        float f3 = mc.player.getYaw();
-        if (f != 0.0f) {
-            if (f2 > 0.0f) {
-                f3 += ((f > 0.0f) ? -45 : 45);
-            } else if (f2 < 0.0f) {
-                f3 += ((f > 0.0f) ? 45 : -45);
-            }
-            f2 = 0.0f;
-            if (f > 0.0f) {
-                f = 1.0f;
-            } else if (f < 0.0f) {
-                f = -1.0f;
-            }
+    public void setVelocity(double velocity) {
+        final double[] direction = MovingUtil.calculateDirection(velocity);
+        Objects.requireNonNull(mc.player).setVelocity(direction[0], mc.player.getVelocity().getY(), direction[1]);
+    }
+
+    public void setVelocity(double velocity, double y) {
+        final double[] direction = MovingUtil.calculateDirection(velocity);
+        Objects.requireNonNull(mc.player).setVelocity(direction[0], y, direction[1]);
+    }
+
+    public double getDegreesRelativeToView(
+            Vec3d positionRelativeToPlayer,
+            float yaw) {
+
+        float optimalYaw =
+                (float) Math.atan2(-positionRelativeToPlayer.x, positionRelativeToPlayer.z);
+        double currentYaw = Math.toRadians(MathHelper.wrapDegrees(yaw));
+
+        return Math.toDegrees(MathHelper.wrapDegrees((optimalYaw - currentYaw)));
+    }
+
+    public PlayerInput getDirectionalInputForDegrees(PlayerInput input, double dgs, float deadAngle) {
+        boolean forwards = input.forward();
+        boolean backwards = input.backward();
+        boolean left = input.left();
+        boolean right = input.right();
+
+        if (dgs >= (-90.0F + deadAngle) && dgs <= (90.0F - deadAngle)) {
+            forwards = true;
+        } else if (dgs < (-90.0F - deadAngle) || dgs > (90.0F + deadAngle)) {
+            backwards = true;
         }
-        final double d2 = Math.sin(Math.toRadians(f3 + 90.0f));
-        final double d3 = Math.cos(Math.toRadians(f3 + 90.0f));
-        final double d4 = f * d * d3 + f2 * d * d2;
-        final double d5 = f * d * d2 - f2 * d * d3;
-        return new double[]{d4, d5};
+
+        if (dgs >= (0.0F + deadAngle) && dgs <= (180.0F - deadAngle)) {
+            right = true;
+        } else if (dgs >= (-180.0F + deadAngle) && dgs <= (0.0F - deadAngle)) {
+            left = true;
+        }
+
+        return new PlayerInput(forwards, backwards, left, right, input.jump(), input.sneak(), input.sprint());
+    }
+
+    public double direction(float rotationYaw, final float moveForward, final float moveStrafing) {
+        if (moveForward < 0F) rotationYaw += 180F;
+        float forward = 1F;
+        if (moveForward < 0F) forward = -0.5F;
+        if (moveForward > 0F) forward = 0.5F;
+        if (moveStrafing > 0F) rotationYaw -= 90F * forward;
+        if (moveStrafing < 0F) rotationYaw += 90F * forward;
+        return Math.toRadians(rotationYaw);
+    }
+
+    public PlayerInput getDirectionalInputForDegrees(PlayerInput input, double dgs) {
+        return getDirectionalInputForDegrees(input, dgs, 20.0F);
     }
 }

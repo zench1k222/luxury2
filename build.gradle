@@ -29,6 +29,11 @@ dependencies {
 
     modImplementation 'org.projectlombok:lombok:1.18.34'
     annotationProcessor'org.projectlombok:lombok:1.18.34'
+    include modImplementation("ai.djl:api:0.32.0")
+    include modImplementation("ai.djl.pytorch:pytorch-engine:0.32.0")
+}
+loom {
+    accessWidenerPath = file("src/main/resources/luxury.acesswidener")
 }
 processResources {
     inputs.property "version", project.version

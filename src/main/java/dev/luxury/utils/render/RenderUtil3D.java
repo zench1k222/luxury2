@@ -42,6 +42,9 @@ public class RenderUtil3D {
     }
 
     private static MinecraftClient mc = MinecraftClient.getInstance();
+    public static float getTickDelta() {
+        return mc.getRenderTickCounter().getTickDelta(false);
+    }
 
     public static void hookEvent3d() {
         Camera camera = mc.gameRenderer.getCamera();

@@ -121,7 +121,7 @@ public class TaksaBrain {
             limbTick();
             
             if (Math.abs(pos.x - x.getValue()) > 0.1f || Math.abs(pos.z - z.getValue()) > 0.1f) {
-                staying.reset();
+                staying.reset2();
             }
             
             lay = staying.passed(1000);

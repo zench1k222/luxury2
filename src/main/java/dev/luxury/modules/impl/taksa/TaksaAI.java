@@ -49,7 +49,7 @@ public class TaksaAI {
     }
     
     public void update() {
-        TaksaScheduler.getUpdateTimer().reset();
+        TaksaScheduler.getUpdateTimer().reset2();
 
         String context = args();
         if (!context.isEmpty()) {

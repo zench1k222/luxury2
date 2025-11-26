@@ -1,4 +1,15 @@
 v1	named	intermediary
+FIELD	dev/luxury/mixin/render/impl/client/CameraMixin	Lnet/minecraft/util/math/Vec3d;	pos	field_18712
+FIELD	dev/luxury/mixin/render/impl/client/CameraMixin	Lnet/minecraft/util/math/BlockPos$Mutable;	blockPos	field_18713
+FIELD	dev/luxury/mixin/render/impl/client/CameraMixin	F	yaw	field_18718
+FIELD	dev/luxury/mixin/render/impl/client/CameraMixin	F	pitch	field_18717
+FIELD	dev/luxury/mixin/render/impl/client/ClientPlayerEntityMixin	F	lastYaw	field_3941
 FIELD	dev/luxury/mixin/render/impl/client/ClientPlayerEntityMixin	Lnet/minecraft/client/MinecraftClient;	client	field_3937
+FIELD	dev/luxury/mixin/render/impl/client/KeyboardInputMixin	Lnet/minecraft/client/option/GameOptions;	settings	field_3902
+METHOD	dev/luxury/mixin/render/impl/client/CameraMixin	(FF)V	setRotation	method_19325
+METHOD	dev/luxury/mixin/render/impl/client/CameraMixin	(FFF)V	moveBy	method_19324
+METHOD	dev/luxury/mixin/render/impl/client/CameraMixin	(F)F	clipToSpace	method_19318
+METHOD	dev/luxury/mixin/render/impl/client/ClientPlayerEntityMixin	()V	sendSprintingPacket	method_46742
+METHOD	dev/luxury/mixin/render/impl/client/ClientPlayerEntityMixin	(FF)V	autoJump	method_3148
 METHOD	dev/luxury/mixin/render/impl/client/LivingEntityMixin	(Lnet/minecraft/registry/entry/RegistryEntry;)Z	hasStatusEffect	method_6059
 METHOD	dev/luxury/mixin/render/impl/client/LivingEntityMixin	(Lnet/minecraft/registry/entry/RegistryEntry;)Lnet/minecraft/entity/effect/StatusEffectInstance;	getStatusEffect	method_6112
