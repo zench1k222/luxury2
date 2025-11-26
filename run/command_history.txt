@@ -1,50 +1,50 @@
-/kit pvp
-/l tymur228
-/duel f9celess
-/duel soluteee
-/l tymur228
-/l qwe123
-/rtp
-/rtpdefault
-/kit pvp
-/rtp
-/duel tryvalera666
-/kit pvp
-/duel ME4M_BE666B
-/
-/l tymur228
-/l qwe123
-/l qwe123123
-/l Timurdaffha228
-/l Timurdaffha228335*228
-/l Timurdaffha228335*
-/reg qwe123123
-/reg qwe123123 qwe123123
-/reg qwe123123123 qwe123123123
-/hub
-/spawn
-/reg qwe123123123 qwe123123123
-/l qwe123123123
+/tpa SL1PYYYYYY
+/kit free
 /kit
-/kit pvp
-/l tymur228
-/l qwe123123
-/l qwe123
-/l qwe123123
-/food
-/food 231
-/reg qwe123123 qwe123123
-/rtp
+/free
+/warp case
 /kit dragon
-/l tymur228
-/l qwe123123
-/tpa GrishaLoveRain
-/heal
-/l tymur228
-/l qwe123123
-/tpa GrishaLoveRain
+/shop
+/tpa SL1PYYYYYY
+/shop
+/fly
+/tpa SL1PYYYYYY
+/sethome home
 /free
 /codes
-/kit bull
-/tpa GrishaLoveRain
-/tpa gri
+/hellshop
+/warp t1
+/spawn
+/rtp
+/fly
+/tpa nexset
+/free
+/warp case
+/reg qwe12312 qwe12312
+/kit fre
+/kit free
+/tpa SL1PYYYYYY
+/free
+/shop
+/warp case
+/tpa SL1PYYYYYY
+/sethome
+/fly
+/kit dragon
+/home
+/near
+/fly
+/near
+/reg qwe1231 qwe1231
+/free
+/shop
+/kit free
+/fly
+/rtp
+/near
+/kit dragon
+/rtp
+/fly
+/near
+/rtpnear
+/near

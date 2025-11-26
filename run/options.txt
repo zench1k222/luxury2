@@ -1,12 +1,12 @@
 version:4189
-ao:false
+ao:true
 biomeBlendRadius:2
 enableVsync:false
 entityDistanceScaling:1.0
-entityShadows:false
+entityShadows:true
 forceUnicodeFont:false
 japaneseGlyphVariants:false
-fov:0.875
+fov:1.0
 fovEffectScale:0.0
 darknessEffectScale:1.0
 glintSpeed:0.5
@@ -18,9 +18,9 @@ graphicsMode:0
 guiScale:2
 maxFps:260
 inactivityFpsLimit:"afk"
-mipmapLevels:2
+mipmapLevels:4
 narrator:0
-particles:2
+particles:0
 reducedDebugInfo:false
 renderClouds:"false"
 renderDistance:5
@@ -41,7 +41,7 @@ showSubtitles:false
 directionalAudio:false
 touchscreen:false
 bobView:false
-toggleCrouch:true
+toggleCrouch:false
 toggleSprint:true
 darkMojangStudiosBackground:false
 hideLightningFlashes:false
@@ -51,9 +51,9 @@ damageTiltStrength:0.0
 highContrast:false
 highContrastBlockOutline:false
 narratorHotkey:true
-resourcePacks:["vanilla","fabric","file/!      §5§l BLUE GOTHIQUE"]
-incompatibleResourcePacks:["file/!      §5§l BLUE GOTHIQUE"]
-lastServer:mc.cakeworld.pw
+resourcePacks:["vanilla","fabric","file/StrogezTGK"]
+incompatibleResourcePacks:["file/StrogezTGK"]
+lastServer:mc.dragonsgrief.pw
 lang:ru_ru
 chatVisibility:0
 chatOpacity:1.0
@@ -68,7 +68,7 @@ overrideHeight:0
 chatHeightFocused:1.0
 chatDelay:0.0
 chatHeightUnfocused:0.4375
-chatScale:0.7535211267605634
+chatScale:0.5
 chatWidth:1.0
 notificationDisplayTime:1.0
 useNativeTransport:true
@@ -96,7 +96,7 @@ key_key.left:key.keyboard.a
 key_key.back:key.keyboard.s
 key_key.right:key.keyboard.d
 key_key.jump:key.keyboard.space
-key_key.sneak:key.keyboard.comma
+key_key.sneak:key.keyboard.left.shift
 key_key.sprint:key.keyboard.v
 key_key.drop:key.keyboard.q
 key_key.inventory:key.keyboard.e
@@ -111,7 +111,7 @@ key_key.smoothCamera:key.keyboard.unknown
 key_key.fullscreen:key.keyboard.f11
 key_key.spectatorOutlines:key.keyboard.unknown
 key_key.swapOffhand:key.keyboard.f
-key_key.saveToolbarActivator:key.keyboard.unknown
+key_key.saveToolbarActivator:key.keyboard.c
 key_key.loadToolbarActivator:key.keyboard.x
 key_key.advancements:key.keyboard.l
 key_key.hotbar.1:key.keyboard.1
@@ -123,12 +123,11 @@ key_key.hotbar.6:key.keyboard.6
 key_key.hotbar.7:key.keyboard.7
 key_key.hotbar.8:key.keyboard.8
 key_key.hotbar.9:key.keyboard.9
-key_key.modmenu.open_menu:key.keyboard.unknown
-soundCategory_master:0.0
+soundCategory_master:0.30629139072847683
 soundCategory_music:0.0
 soundCategory_record:1.0
 soundCategory_weather:0.0
-soundCategory_block:1.0
+soundCategory_block:0.0
 soundCategory_hostile:0.0
 soundCategory_neutral:0.0
 soundCategory_player:1.0

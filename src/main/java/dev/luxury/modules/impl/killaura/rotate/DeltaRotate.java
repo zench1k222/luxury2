@@ -1,0 +1,33 @@
+package dev.luxury.modules.impl.killaura.rotate;
+
+
+import net.minecraft.util.math.Vec2f;
+
+public class DeltaRotate {
+    private final float deltaYaw;
+    private final float deltaPitch;
+
+    public DeltaRotate(float deltaYaw, float deltaPitch) {
+        this.deltaYaw = deltaYaw;
+        this.deltaPitch = deltaPitch;
+    }
+
+    public float length() {
+        return (float) Math.sqrt(deltaYaw * deltaYaw + deltaPitch * deltaPitch);
+    }
+
+
+    public float getDeltaYaw() { return deltaYaw; }
+    public float getDeltaPitch() { return deltaPitch; }
+
+    public Vec2f toVec2f() {
+        return new Vec2f(deltaYaw, deltaPitch);
+    }
+    public boolean isInRange(float delta){
+        return isInRange(delta, delta);
+    }
+    public boolean isInRange(float maxDeltaYaw, float maxDeltaPitch) {
+        return Math.abs(deltaYaw) < maxDeltaYaw && Math.abs(deltaPitch) < maxDeltaPitch;
+    }
+
+}
