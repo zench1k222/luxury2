@@ -45,7 +45,9 @@ public class ColorRGBA {
     public float getBrightness() {
         return this.getHSBValues()[1];
     }
-
+    public int getRGB() {
+        return (this.alpha << 24) | (this.red << 16) | (this.green << 8) | this.blue;
+    }
     private float[] getHSBValues() {
         if (this.hsbValues == null) {
             this.hsbValues = this.calculateHSB();

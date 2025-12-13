@@ -2,6 +2,7 @@ package dev.luxury.modules.api;
 
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.modules.api.settings.Setting;
+import dev.luxury.modules.impl.ClientSounds;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -40,6 +41,9 @@ public class Module {
             enabled = true;
             EventManager.register(this);
             onEnable();
+            if (ClientSounds.getInstance() != null) {
+                ClientSounds.getInstance().playEnableSound();
+            }
         }
     }
 
@@ -48,9 +52,11 @@ public class Module {
             enabled = false;
             EventManager.unregister(this);
             onDisable();
+            if (ClientSounds.getInstance() != null) {
+                ClientSounds.getInstance().playDisableSound();
+            }
         }
     }
-
 
     public void toggle() {
         if (enabled) disable();

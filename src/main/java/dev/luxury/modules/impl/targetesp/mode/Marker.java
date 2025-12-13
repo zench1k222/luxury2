@@ -27,11 +27,11 @@ public class Marker {
     private static float rotationAngle = 0.0f;
     private static float rotationSpeed = 0.0f;
     private static boolean isReversing = false;
-    private static final float maxRotationSpeed = 5.0f;
+    private static final float maxRotationSpeed = 4.0f;
     private static long lasthittime = 0L;
     private static final long hitduration = 750L;
     private static long lastUpdateTime = System.currentTimeMillis();
-    private static final float TIME_FACTOR = 0.2f;
+    private static final float TIME_FACTOR = 0.1f;
     public static void onHit(LivingEntity target) {
         if (target != null) {
             lasthittime = System.currentTimeMillis();

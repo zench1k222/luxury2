@@ -1,8 +1,10 @@
 package dev.luxury.modules.api;
 
 import dev.luxury.events.impl.client.EventKeyInput;
+import dev.luxury.events.impl.client.EventMouseInput;
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.events.impl.eventapi.EventTarget;
+import dev.luxury.modules.ElytraHelper;
 import dev.luxury.modules.impl.NoDelay;
 import dev.luxury.modules.impl.*;
 import dev.luxury.modules.impl.taksa.DogPet;
@@ -23,10 +25,10 @@ public class ModuleManager {
     public void init() {
         EventManager.register(this);
         registerAll(
-                new Test(),
                 new HUD(),
                 new DiscordRPC(),
                 new Blink(),
+                new dev.luxury.modules.impl.elytraaura.ElytraAura(),
                 new KillAura(),
                 new TargetEsp(),
                 new Speed(),
@@ -38,18 +40,30 @@ public class ModuleManager {
                 new ESP(),
                 new SwingAnimations(),
                 new CustomModels(),
-                new SettingsTest(),
                 new DogPet(),
                 new Projectiles(),
                 new NoDelay(),
-                new AutoSprint()
+                new AutoSprint(),
+                new ClickPearl(),
+                new AutoTotem(),
+                new ClientSounds(),
+                new ArmorAlert(),
+                new ElytraHelper(),
+                new StaffKillAnyDesk(),
+                new Arrows(),
+                new FireFly(),
+                new JumpCircle(),
+                new HitBubles()
 
         );
         DiscordRPC.getInstance().enable();
+        ClientSounds.getInstance().enable();
     }
+
     public static List<Module> getModules() {
         return modules;
     }
+
     private void registerAll(Module... mods) {
         for (Module module : mods) {
             initModuleFromAnnotation(module);
@@ -74,6 +88,7 @@ public class ModuleManager {
                 .sorted(Comparator.comparing(Module::getName))
                 .toList();
     }
+
     public static <T extends Module> T getModule(Class<T> clazz) {
         for (Module module : modules) {
             if (clazz.isInstance(module)) {
@@ -106,5 +121,16 @@ public class ModuleManager {
             for (Module module : modules)
                 if (module.getKey() == e.getKey() && !module.isMouse())
                     module.toggle();
+    }
+
+    @EventTarget
+    private void onMouse(EventMouseInput e) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player == null || mc.world == null || mc.currentScreen != null) return;
+        if (e.getAction() == 1)
+            for (Module module : modules)
+                if (module.isMouse() && module.getKey() == e.getButton()) {
+                    module.toggle();
+                }
     }
 }

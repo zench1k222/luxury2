@@ -15,7 +15,7 @@ import dev.luxury.modules.impl.targetesp.TargetESPHandler;
         category = Category.Render
 )
 public class TargetEsp extends Module {
-    private final ModeSetting type = new ModeSetting("Тип", "Crystals", new String[]{"Crystals", "Marker","Ghosts"});
+    private final ModeSetting type = new ModeSetting("Тип", "Маркер", new String[]{ "Маркер","Призраки","Круг"});
     public TargetEsp() {
         addSettings(type);
     }

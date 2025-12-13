@@ -17,6 +17,7 @@ import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
@@ -29,7 +30,8 @@ import java.util.stream.Collectors;
 public class RenderUtil3D {
     private static Tessellator tessellatorFaces = null;
     private static Tessellator tessellatorOutlines = null;
-
+    public static final List<Texture> TEXTURE_DEPTH = new ArrayList<>();
+    public static final List<Texture> TEXTURE = new ArrayList<>();
     public static final int ALL_FACES = 0xFFFFFF;
     public static final int ALL_LINES = 0xFFFFFF;
 
@@ -40,7 +42,80 @@ public class RenderUtil3D {
         renderDebugLines(stack);
         renderLines(stack);
     }
+    public static void renderTextures() {
+        // Рендеринг текстур без depth test
+        if (!TEXTURE.isEmpty()) {
+            Set<Identifier> identifiers = TEXTURE.stream()
+                    .map(texture -> texture.id)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
 
+            RenderSystem.enableBlend();
+            RenderSystem.disableDepthTest();
+            RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
+
+            identifiers.forEach(id -> {
+                RenderSystem.setShaderTexture(0, id);
+                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
+                BufferBuilder buffer = Tessellator.getInstance().begin(
+                        VertexFormat.DrawMode.QUADS,
+                        VertexFormats.POSITION_TEXTURE_COLOR
+                );
+
+                TEXTURE.stream()
+                        .filter(texture -> texture.id.equals(id))
+                        .forEach(tex -> quadTexture(tex.entry, buffer, tex.x, tex.y, tex.width, tex.height, tex.color));
+
+                BufferRenderer.drawWithGlobalProgram(buffer.end());
+            });
+
+            RenderSystem.enableDepthTest();
+            RenderSystem.disableBlend();
+            TEXTURE.clear();
+        }
+
+        // Рендеринг текстур с depth test
+        if (!TEXTURE_DEPTH.isEmpty()) {
+            Set<Identifier> identifiers = TEXTURE_DEPTH.stream()
+                    .map(texture -> texture.id)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            RenderSystem.enableBlend();
+            RenderSystem.enableDepthTest();
+            RenderSystem.depthMask(false);
+            RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
+
+            identifiers.forEach(id -> {
+                RenderSystem.setShaderTexture(0, id);
+                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
+                BufferBuilder buffer = Tessellator.getInstance().begin(
+                        VertexFormat.DrawMode.QUADS,
+                        VertexFormats.POSITION_TEXTURE_COLOR
+                );
+
+                TEXTURE_DEPTH.stream()
+                        .filter(texture -> texture.id.equals(id))
+                        .forEach(tex -> quadTexture(tex.entry, buffer, tex.x, tex.y, tex.width, tex.height, tex.color));
+
+                BufferRenderer.drawWithGlobalProgram(buffer.end());
+            });
+
+            RenderSystem.depthMask(true);
+            RenderSystem.disableBlend();
+            TEXTURE_DEPTH.clear();
+        }
+    }
+
+    private static void quadTexture(MatrixStack.Entry entry, BufferBuilder buffer, float x, float y, float width, float height, Vector4i color) {
+        Matrix4f matrix = entry.getPositionMatrix();
+
+        buffer.vertex(matrix, x, y + height, 0).texture(0, 1).color(color.x);
+
+        buffer.vertex(matrix, x + width, y + height, 0).texture(1, 1).color(color.y);
+
+        buffer.vertex(matrix, x + width, y, 0).texture(1, 0).color(color.z);
+
+        buffer.vertex(matrix, x, y, 0).texture(0, 0).color(color.w);
+    }
     private static MinecraftClient mc = MinecraftClient.getInstance();
     public static float getTickDelta() {
         return mc.getRenderTickCounter().getTickDelta(false);
@@ -61,6 +136,7 @@ public class RenderUtil3D {
 
         EventRender3D eventRender3D = new EventRender3D(matrixStack, mc.getRenderTickCounter().getTickDelta(false));
         EventManager.call(eventRender3D);
+        renderTextures();
 
 
         RenderSystem.getModelViewStack().popMatrix();
@@ -376,4 +452,10 @@ public class RenderUtil3D {
 
     public record LineAction(Vec3d start, Vec3d end, Color color) {
     }
+    public static void drawTexture(MatrixStack.Entry entry, Identifier id, float x, float y, float width, float height, Vector4i color, boolean depth) {
+        Texture texture = new Texture(entry, id, x, y, width, height, color);
+        if (depth) TEXTURE_DEPTH.add(texture); else TEXTURE.add(texture);
+    }
+
+    public record Texture(MatrixStack.Entry entry, Identifier id, float x, float y, float width, float height, Vector4i color) {}
 }

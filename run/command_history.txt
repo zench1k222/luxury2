@@ -1,50 +1,50 @@
-/tpa SL1PYYYYYY
-/kit free
-/kit
-/free
-/warp case
-/kit dragon
-/shop
-/tpa SL1PYYYYYY
-/shop
-/fly
-/tpa SL1PYYYYYY
-/sethome home
-/free
 /codes
-/hellshop
-/warp t1
-/spawn
-/rtp
-/fly
-/tpa nexset
-/free
+/code
+/codes
 /warp case
+/kit bull
+/rtp
+/neart
+/near
+/shop
+/warp case
+/duel axmedikkaka
+/duel YT_ARTEM1KS
+/duel Offnik138
+/duel xros
+/duel Offnik138
+/duel ggvp0144
+/duel Snusoed228
+/heal 12323
+/health 12323
+/food 123
+/give elytra
+/give firework_rocket 1412345
+/kill
+/give elytra
+/give firework_rocket 124
+/give elytra
+/give firework_rocket
+/give firework_rocket 234
+/health 123
 /reg qwe12312 qwe12312
-/kit fre
 /kit free
-/tpa SL1PYYYYYY
-/free
-/shop
-/warp case
-/tpa SL1PYYYYYY
-/sethome
-/fly
-/kit dragon
-/home
-/near
-/fly
-/near
-/reg qwe1231 qwe1231
-/free
-/shop
+/reg qwe12312 qwe12312
+/reg qwe123 qwe123
+/reg qwe123123 qwe123123
+/reg qwe123123123 qwe123123123
+/l qwe123123123
+/reg qwe123123123
+/reg qwe123123123 qwe123123123
 /kit free
-/fly
+/l qwe123123
+/l tymur228
+/l qwe12312
+/l tymur228
+/reg qwe12312 qwe12312
+/kit free
 /rtp
-/near
-/kit dragon
-/rtp
-/fly
-/near
-/rtpnear
-/near
+/l qwe123123123
+/kit free
+/l qwe123123123
+/reg qwe123123

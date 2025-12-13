@@ -1,0 +1,32 @@
+{
+  "enable": {
+    "sounds": [
+      "luxury:enable"
+    ],
+    "subtitle": "luxury.sound.enable"
+  },
+  "disable": {
+    "sounds": [
+      "luxury:disable"
+    ],
+    "subtitle": "luxury.sound.disable"
+  },
+  "kill": {
+    "sounds": [
+      "luxury:kill"
+    ],
+    "subtitle": "luxury.sound.kill"
+  },
+  "armor-alert": {
+    "sounds": [
+      "luxury:armor-alert"
+    ],
+    "subtitle": "luxury.sound.armor_alert"
+  },
+  "start": {
+    "sounds": [
+      "luxury:start"
+    ],
+    "subtitle": "luxury.sound.start"
+  }
+}

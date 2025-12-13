@@ -413,6 +413,23 @@ public class Csgui extends Screen {
     
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // В начале метода mouseClicked добавьте:
+        for (Map.Entry<Module, Boolean> entry : openSettings.entrySet()) {
+            if (entry.getValue() && !entry.getKey().getSettings().isEmpty()) {
+                for (Setting setting : entry.getKey().getSettings()) {
+                    SettingRenderer renderer = SettingRendererManager.getRenderer(setting);
+                    if (renderer instanceof KeySettingRenderer) {
+                        KeySettingRenderer keyRenderer = (KeySettingRenderer) renderer;
+                        if (keyRenderer.getWaitingKey() != null) {
+                            // Передаем клик в KeySettingRenderer
+                            if (keyRenderer.mouseClicked(setting, mouseX, mouseY, button, 0, 0, 0, 0)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         List<Module> categoryModules = getCategoryModules();
         float moduleStartX = panelX + 125;
         float startModuleY = panelY + moduleAreaTop;

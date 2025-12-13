@@ -82,7 +82,40 @@ public class ColorUtil {
     public int getColor(int red, int green, int blue, float alpha) {
         return getColor(red, green, blue, Math.round(alpha * 255));
     }
+    public static int swapAlpha(int color, int newAlpha) {
+        return (color & 0x00FFFFFF) | ((newAlpha & 0xFF) << 24);
+    }
+    public static int fadeColor(int color1, int color2, float progress, float alpha) {
+        progress = Math.max(0, Math.min(1, progress));
 
+        int r1 = red(color1);
+        int g1 = green(color1);
+        int b1 = blue(color1);
+        int a1 = alpha(color1);
+
+        int r2 = red(color2);
+        int g2 = green(color2);
+        int b2 = blue(color2);
+        int a2 = alpha(color2);
+
+        int r = (int) (r1 + (r2 - r1) * progress);
+        int g = (int) (g1 + (g2 - g1) * progress);
+        int b = (int) (b1 + (b2 - b1) * progress);
+        int a = (int) ((a1 + (a2 - a1) * progress) * alpha);
+
+        return getColor(r, g, b, a);
+    }
+
+    /**
+     * Радужный цвет для GUI элементов
+     * @param index Индекс элемента (для смещения цвета)
+     * @param offset Временное смещение (обычно System.currentTimeMillis())
+     * @return Радужный цвет
+     */
+    public static int rainbowGui(int index, long offset) {
+        float hue = ((System.currentTimeMillis() + offset + index * 100) % 3600) / 3600.0f;
+        return Color.HSBtoRGB(hue, 0.7f, 1.0f);
+    }
     public int getColor(float red, float green, float blue) {
         return getColor(red, green, blue, 1.0F);
     }

@@ -26,18 +26,15 @@ import java.util.stream.Collectors;
 
 @ModuleAnnotation(
         name = "KillAura",
-
         desc = "",
         category = Category.Combat
 )
 public class KillAura extends Module {
-    private final ModeSetting rotationMode = new ModeSetting("Ротация", "HollyWorld", new String[]{"HvH", "HollyWorld"});
-
+    private final ModeSetting rotationMode = new ModeSetting("Ротация", "HvH", new String[]{"HvH", "SlothAI"});
     private final ModeSetting sprintMode = new ModeSetting("Бег", "Ordinary", new String[]{"HvH", "Ordinary", "Legit", "Без сброса"});
-
     private final ModeSetting correction = new ModeSetting("Коррекция Движения", "Свободная", new String[]{"Сфокусированная", "Свободная", "Без корекции"});
 
-    public final SliderSetting distance = new SliderSetting("Растояние", "Дистанция атаки", 3.0, 0.5, 6.0, 0.1);
+    public final SliderSetting distance = new SliderSetting("Расстояние", "Дистанция атаки", 3.0, 0.5, 6.0, 0.1);
     private final SliderSetting distanceRotation = new SliderSetting("пре-расстояние", 0.1, 0.0, 6.0, 0.1);
 
     private final ModeListSetting settings = new ModeListSetting("Настройки",
@@ -63,32 +60,34 @@ public class KillAura extends Module {
     private final ValidTarget targetSelector = new ValidTarget();
     private final ValidPoint validPoint = new ValidPoint();
     private LivingEntity target = null;
+    private LivingEntity lastTarget = null;
+    private float lastTargetHealth = 0f;
     private boolean legitBackStop = false;
     @Getter
-    private boolean preAttack =false;
+    private boolean preAttack = false;
     @Getter
-    private boolean isCanAttack =false;
+    private boolean isCanAttack = false;
+
     @EventTarget
     public void eventRotate(EventRotate e) {
         if (legitBackStop) {
             legitBackStop = false;
-            mc.options.forwardKey.setPressed(
-                    InputUtil.isKeyPressed(mc.getWindow().getHandle(), mc.options.forwardKey.getDefaultKey().getCode())
-            );
+            mc.options.forwardKey.setPressed(InputUtil.isKeyPressed(mc.getWindow().getHandle(), mc.options.forwardKey.getDefaultKey().getCode()));
         }
 
         target = updateTarget();
+
+        checkTargetKilled();
+
         preAttack = false;
         isCanAttack = false;
         if (target == null) return;
 
         BooleanSetting attackIgnoreWals = settings.getValueByName("Бить через стены");
-        Pair<Vec3d, Box> point = validPoint.computeVector(
-                target,
-                distance.getFloatValue(),
-                Luxury.getInstance().getRotationManager().getCurrentRotate(),
-                new Vec3d(0, 0, 0),
-                attackIgnoreWals != null && attackIgnoreWals.get()
+
+        float rotationRange = distance.getFloatValue() + distanceRotation.getFloatValue();
+
+        Pair<Vec3d, Box> point = validPoint.computeVector(target, rotationRange, Luxury.getInstance().getRotationManager().getCurrentRotate(), new Vec3d(0, 0, 0), attackIgnoreWals != null && attackIgnoreWals.get()
         );
 
         Vec3d eyes = Simulation.simulateLocalPlayer(1).pos.add(0, mc.player.getDimensions(mc.player.getPose()).eyeHeight(), 0);
@@ -100,7 +99,7 @@ public class KillAura extends Module {
 
         if (RayTrace.rayTrace(Luxury.getInstance().getRotationManager().getCurrentRotate().toVector(), distance.getFloatValue(), box)
                 && isCanAttack
-                && (!Luxury.getInstance().getServerHandler().isServerSprint() ||mc.player.isGliding() || Criticals.hasMovementRestrictions() || sprintMode.is("HvH") || sprintMode.is("Без сброса"))) {
+                && (!Luxury.getInstance().getServerHandler().isServerSprint() || mc.player.isGliding() || Criticals.hasMovementRestrictions() || sprintMode.is("HvH") || sprintMode.is("Без сброса"))) {
 
             if (sprintMode.is("HvH")) {
                 mc.player.setSprinting(false);
@@ -111,27 +110,57 @@ public class KillAura extends Module {
 
             mc.options.sprintKey.setPressed(true);
         }
+
         preAttack = updatePreAttack();
         isCanAttack = isAttack();
+
         if (rotationMode.is("HvH")) {
-            Luxury.getInstance().getRotationManager().setRotation(
-                    new TargetRotate(angle, () -> aim.rotate(aim.getInstantSetup(), angle), aim.getInstantSetup()),
-                    3, this
-            );
+            Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getInstantSetup(), angle), aim.getInstantSetup()), 3, this);
         }
 
-        if (rotationMode.is("HollyWorld") && (preAttack || isCanAttack )) {
-            Luxury.getInstance().getRotationManager().setRotation(
-                    new TargetRotate(angle, () -> aim.rotate(aim.getInstantSetup(), angle), aim.getAiSetup()),
-                    3, this
-            );
+
+
+        if (rotationMode.is("SlothAI")) {
+            Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getSlothAISetup(), angle), aim.getSlothAISetup()), 3, this);
         }
 
         if (preAttack || isCanAttack) {
             updateSprint();
         }
+
+        if (target != null) {
+            lastTarget = target;
+            lastTargetHealth = target.getHealth();
+        }
     }
 
+
+
+    private void checkTargetKilled() {
+
+        if (lastTarget == null) {
+            return;
+        }
+
+        if (!lastTarget.isRemoved()) {
+            float currentHealth = lastTarget.getHealth();
+
+            if (currentHealth <= 0 || lastTarget.isDead() || !lastTarget.isAlive()) {
+                ClientSounds.getInstance().playKillSound();
+                lastTarget = null;
+                lastTargetHealth = 0f;
+                return;
+            }
+
+            lastTargetHealth = currentHealth;
+        } else {
+            if (lastTargetHealth > 0) {
+                ClientSounds.getInstance().playKillSound();
+            }
+            lastTarget = null;
+            lastTargetHealth = 0f;
+        }
+    }
     private boolean updatePreAttack() {
         Simulation simulatedPlayer = Simulation.simulateLocalPlayer(1);
         BooleanSetting eatUseAttack = settings.getValueByName("Бить и есть");
@@ -164,7 +193,6 @@ public class KillAura extends Module {
         if (sprintMode.is("Legit")) {
             sprint = false;
             if (mc.player.isSprinting()) {
-
                 forward = false;
                 legitBackStop = true;
             }
@@ -184,14 +212,10 @@ public class KillAura extends Module {
     }
 
     private LivingEntity updateTarget() {
-        List<String> selectedNames = targetTypeSetting.getSettings().stream()
-                .filter(BooleanSetting::get)
-                .map(BooleanSetting::getName)
-                .collect(Collectors.toList());
+        List<String> selectedNames = targetTypeSetting.getSettings().stream().filter(BooleanSetting::get).map(BooleanSetting::getName).collect(Collectors.toList());
         ValidTarget.EntityFilter filter = new ValidTarget.EntityFilter(selectedNames);
         BooleanSetting attackIgnoreWals = settings.getValueByName("Бить через стены");
-        targetSelector.searchTargets(mc.world.getEntities(), distance.getFloatValue() + distanceRotation.getFloatValue(),
-                attackIgnoreWals != null && attackIgnoreWals.get());
+        targetSelector.searchTargets(mc.world.getEntities(), distance.getFloatValue() + distanceRotation.getFloatValue(), attackIgnoreWals != null && attackIgnoreWals.get());
         targetSelector.validateTarget(entity -> {
             if (FriendManager.getInstance().isFriend(entity.getName().getString())) {
                 return false;
@@ -200,10 +224,16 @@ public class KillAura extends Module {
         });
         return targetSelector.getCurrentTarget();
     }
-
+    public ModeSetting getRotationMode() {
+        return rotationMode;
+    }
     @EventTarget
     private void setCorrection(EventMoveInput eventMoveInput) {
         if (correction.is("Без корекции")) return;
+
+        if (rotationMode.is("SlothAI")) return;
+
+        if (target == null) return;
 
         if (correction.is("Сфокусированная")) {
             Rotate angle = RotateUtils.fromVec3d(target.getBoundingBox().getCenter().subtract(mc.player.getBoundingBox().getCenter()));
@@ -214,11 +244,13 @@ public class KillAura extends Module {
     }
 
     public LivingEntity getTarget() {
-        return this.isEnabled()?target:null;
+        return this.isEnabled() ? target : null;
     }
+
     public boolean hasTarget() {
         return this.isEnabled() && target != null;
     }
+
     @Override
     public void onEnable() {
         super.onEnable();
@@ -227,7 +259,7 @@ public class KillAura extends Module {
     @Override
     public void onDisable() {
         super.onDisable();
+        lastTarget = null;
+        lastTargetHealth = 0f;
     }
-
-
 }

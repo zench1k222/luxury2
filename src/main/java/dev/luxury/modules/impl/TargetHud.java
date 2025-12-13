@@ -1,8 +1,10 @@
 package dev.luxury.modules.impl;
 
+
 import dev.luxury.events.impl.render.EventRender2D;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleManager;
+import dev.luxury.modules.impl.elytraaura.ElytraAura;
 import dev.luxury.utils.animations.Easing;
 import dev.luxury.utils.animations.infinity.InfinityAnimation;
 import dev.luxury.utils.font.FontDraw;
@@ -45,10 +47,15 @@ public class TargetHud extends Module {
     }
     private float displayedHealth = 0f;
     private LivingEntity updateTarget() {
-        LivingEntity newTarget = ModuleManager.getModule(KillAura.class).getTarget();
+        KillAura aura = ModuleManager.getModule(KillAura.class);
+        ElytraAura elytraAura = ModuleManager.getModule(ElytraAura.class);
 
-        if (!ModuleManager.getModule(KillAura.class).isEnabled()) {
-            newTarget = null;
+        LivingEntity newTarget = null;
+
+        if (aura != null && aura.isEnabled() && aura.getTarget() != null) {
+            newTarget = aura.getTarget();
+        } else if (elytraAura != null && elytraAura.isEnabled() && elytraAura.getTarget() != null) {
+            newTarget = elytraAura.getTarget();
         }
 
         if (mc.currentScreen instanceof ChatScreen) {
@@ -128,7 +135,7 @@ public class TargetHud extends Module {
             RenderUtil.drawRoundedImage(e.getDrawContext().getMatrices(), ((AbstractClientPlayerEntity) target).getSkinTextures().texture(), startX + 6f, startY + 6f, 28, 28, 0.125f, 0.125f, 0.25f, 0.25f, new Vector4f(4.5f, 4.5f, 4.5f, 4.5f), tintColor
             );
         } else {
-           Identifier image = Identifier.of("luxury:images/target.png");
+            Identifier image = Identifier.of("luxury:images/target.png");
             int tintColor = applyDamageTint(0xFFFFFFFF, hitProgress);
             RenderUtil.drawRoundedImage(e.getDrawContext().getMatrices(), image, startX +6f, startY + 5.5f, 25, 25, 0f, 0f, 1f, 1f, new Vector4f(2f, 2f, 2f, 2f), tintColor);
         }
@@ -164,7 +171,7 @@ public class TargetHud extends Module {
         if (target instanceof PlayerEntity) {
             renderEquipmentSlots(e, barX, startY + 20f, (PlayerEntity) target);
         }
-}
+    }
 
     private void renderEquipmentSlots(EventRender2D e, float startX, float startY, PlayerEntity player) {
         float slotSize = 10.5f;

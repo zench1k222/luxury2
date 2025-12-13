@@ -59,7 +59,7 @@ public class DiscordRPC extends Module {
                 })
                 .build();
 
-        String APPLICATION_ID = "1361959369977368586";
+        String APPLICATION_ID = "1449108512599839001";
         dev.luxury.utils.discord.utils.DiscordRPC.INSTANCE.Discord_Initialize(APPLICATION_ID, handlers, true, "");
         discordDaemonThread.start();
 

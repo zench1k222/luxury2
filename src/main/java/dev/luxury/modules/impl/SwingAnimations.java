@@ -28,7 +28,7 @@ import org.lwjgl.glfw.GLFW;
 )
 public class SwingAnimations extends Module {
 
-    ModeSetting swingType = new ModeSetting("Тип","Smooth",new String[]{"Smooth","Feast","Power","Swipe","Down"});
+    ModeSetting swingType = new ModeSetting("Тип","Плавная",new String[]{"Плавная","Топчек","Сила","Свайпич","Вниз"});
 
 
 SliderSetting mainHandX = new SliderSetting("MainHandX",0f,-30,30,0.1f);
@@ -65,7 +65,7 @@ public SwingAnimations(){
             float sinSmooth = (float) (Math.sin(swingProgress * Math.PI) * 0.5F);
 
             switch (swingType.get()) {
-                case "Swipe" -> {
+                case "Свайпич" -> {
                     matrix.translate(0.56F * i, -0.32F, -0.72F);
                     matrix.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(60 * i));
                     matrix.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(-60 * i));
@@ -73,7 +73,7 @@ public SwingAnimations(){
                     matrix.multiply(RotationAxis.POSITIVE_X.rotationDegrees((sin2 * sin1) * -120));
                     matrix.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-60));
                 }
-                case "Down" -> {
+                case "Вниз" -> {
                     matrix.translate(i * 0.56F, -0.32F, -0.72F);
                     matrix.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(76 * i));
                     matrix.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(sin2 * -5));
@@ -81,7 +81,7 @@ public SwingAnimations(){
                     matrix.multiply(RotationAxis.POSITIVE_X.rotationDegrees(sin2 * -155));
                     matrix.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-100));
                 }
-                case "Smooth" -> {
+                case "Плавная" -> {
                     matrix.translate(i * 0.56F, -0.42F, -0.72F);
                     matrix.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) i * (45.0F + sin1 * -20.0F)));
                     matrix.multiply(RotationAxis.POSITIVE_Z.rotationDegrees((float) i * sin2 * -20.0F));
@@ -89,7 +89,7 @@ public SwingAnimations(){
                     matrix.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) i * -45.0F));
                     matrix.translate(0, -0.1, 0);
                 }
-                case "Power" -> {
+                case "Сила" -> {
                     matrix.translate(i * 0.56F, -0.32F, -0.72F);
                     matrix.translate((-sinSmooth * sinSmooth * sin1) * i, 0, 0);
                     matrix.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(61 * i));
@@ -99,7 +99,7 @@ public SwingAnimations(){
                     matrix.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-60));
                     matrix.multiply(RotationAxis.POSITIVE_X.rotationDegrees(sinSmooth * -60));
                 }
-                case "Feast" -> {
+                case "Топчек" -> {
                     matrix.translate(i * 0.56F, -0.32F, -0.72F);
                     matrix.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(30 * i));
                     matrix.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(sin2 * 75 * i));

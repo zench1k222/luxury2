@@ -81,11 +81,11 @@ public class Ghosts {
 
             for (int i = 0; i <= 14; i++) {
                 float iFloat = (float) i;
-                double radians = Math.toRadians(((iFloat / 1.5f + iAge) * 8 + jOffset) % 2880);
+                double radians = Math.toRadians(((iFloat / 1.5f + iAge) * 9 + jOffset) % 2800);
                 double sinQuad = Math.sin(Math.toRadians(ageMultiplier + i * jMultiplier) * 3f) / 1.8f;
 
                 float offset = iFloat / 14f;
-                float scale = 0.3f;
+                float scale = 0.18f;
 
                 int color = applyOpacity(themeColor.getRGB(), offset);
 

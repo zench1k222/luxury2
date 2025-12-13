@@ -1,5 +1,8 @@
 {
   "mappings": {
+    "dev/luxury/mixin/accessor/ILivingEntity": {
+      "lastAttackedTicks": "field_6273:I"
+    },
     "dev/luxury/mixin/render/impl/CooldownAccessor": {
       "getAttackCooldownProgress": "method_7261(F)F",
       "getAttackCooldownProgressPerTick": "method_7279()F"
@@ -96,12 +99,18 @@
     "dev/luxury/mixin/render/impl/client/MixinMinecraftClient": {
       "tick": "Lnet/minecraft/class_310;method_1574()V"
     },
+    "dev/luxury/mixin/render/impl/client/MouseMixin": {
+      "onMouseButton": "Lnet/minecraft/class_312;method_1601(JIII)V"
+    },
     "dev/luxury/mixin/render/impl/client/PlayerEntityMixin": {
       "tickMovement": "Lnet/minecraft/class_1657;method_6007()V",
       "travel": "Lnet/minecraft/class_1657;method_6091(Lnet/minecraft/class_243;)V"
     },
     "dev/luxury/mixin/render/impl/client/ScoreboardMixin": {
       "removeScoreHolderFromTeam": "Lnet/minecraft/class_269;method_1157(Ljava/lang/String;Lnet/minecraft/class_268;)V"
+    },
+    "dev/luxury/mixin/render/impl/client/TitleScreenMixin": {
+      "init()V": "Lnet/minecraft/class_442;method_25426()V"
     },
     "dev/luxury/mixin/render/impl/render/GameRendererMixin": {
       "Lnet/minecraft/client/render/GameRenderer;renderHand:Z": "Lnet/minecraft/class_757;field_3992:Z",
@@ -118,6 +127,9 @@
   },
   "data": {
     "named:intermediary": {
+      "dev/luxury/mixin/accessor/ILivingEntity": {
+        "lastAttackedTicks": "field_6273:I"
+      },
       "dev/luxury/mixin/render/impl/CooldownAccessor": {
         "getAttackCooldownProgress": "method_7261(F)F",
         "getAttackCooldownProgressPerTick": "method_7279()F"
@@ -214,12 +226,18 @@
       "dev/luxury/mixin/render/impl/client/MixinMinecraftClient": {
         "tick": "Lnet/minecraft/class_310;method_1574()V"
       },
+      "dev/luxury/mixin/render/impl/client/MouseMixin": {
+        "onMouseButton": "Lnet/minecraft/class_312;method_1601(JIII)V"
+      },
       "dev/luxury/mixin/render/impl/client/PlayerEntityMixin": {
         "tickMovement": "Lnet/minecraft/class_1657;method_6007()V",
         "travel": "Lnet/minecraft/class_1657;method_6091(Lnet/minecraft/class_243;)V"
       },
       "dev/luxury/mixin/render/impl/client/ScoreboardMixin": {
         "removeScoreHolderFromTeam": "Lnet/minecraft/class_269;method_1157(Ljava/lang/String;Lnet/minecraft/class_268;)V"
+      },
+      "dev/luxury/mixin/render/impl/client/TitleScreenMixin": {
+        "init()V": "Lnet/minecraft/class_442;method_25426()V"
       },
       "dev/luxury/mixin/render/impl/render/GameRendererMixin": {
         "Lnet/minecraft/client/render/GameRenderer;renderHand:Z": "Lnet/minecraft/class_757;field_3992:Z",

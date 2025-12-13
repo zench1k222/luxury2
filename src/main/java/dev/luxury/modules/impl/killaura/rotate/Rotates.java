@@ -1,10 +1,11 @@
 package dev.luxury.modules.impl.killaura.rotate;
 
-
+import dev.luxury.Luxury;
 import dev.luxury.events.impl.client.*;
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.events.impl.eventapi.EventTarget;
 import dev.luxury.events.impl.eventapi.types.Priority;
+import dev.luxury.modules.impl.KillAura;
 import lombok.Getter;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -17,7 +18,7 @@ import dev.luxury.modules.api.Module;
 
 @Getter
 public class Rotates {
-MinecraftClient mc = MinecraftClient.getInstance();
+    MinecraftClient mc = MinecraftClient.getInstance();
     private Rotate currentRotate = new Rotate(0, 0);
     private Rotate previousRotate = new Rotate(0, 0);
     private final HandlerRequest<TargetRotate> requestHandler = new HandlerRequest<>();
@@ -28,14 +29,11 @@ MinecraftClient mc = MinecraftClient.getInstance();
 
     public Rotates() {
         EventManager.register(this);
-
     }
 
     @EventTarget
     public void addLocalPlayer(EventSpawnEntity eventSpawnLocalPlayer) {
         if (eventSpawnLocalPlayer.getEntity() instanceof ClientPlayerEntity player) {
-
-
             currentRotate = new Rotate(player.getYaw(), player.getPitch());
             previousRotate = new Rotate(player.getYaw(), player.getPitch());
             previousTargetRotate = new TargetRotate(currentRotate, () -> currentRotate, aim.getInstantSetup());
@@ -45,17 +43,10 @@ MinecraftClient mc = MinecraftClient.getInstance();
 
     @EventTarget(Priority.LOW)
     public void update(EventTick event) {
-
-//        mc.player.prevHeadYaw = previousRotation.getYaw();
-//        mc.player.prevPitch = previousRotation.getPitch();
-//        mc.player.prevBodyYaw = previousRotation.getYaw();
-
         EventManager.call(new EventRotate());
 
         TargetRotate targetRotation = requestHandler.getActiveRequestValue();
         if (targetRotation != null) {
-
-
             Rotate newRot = targetRotation.rotation().get();
             previousRotate = currentRotate;
             currentRotate = newRot;
@@ -64,9 +55,7 @@ MinecraftClient mc = MinecraftClient.getInstance();
         } else {
             if (setRotation) {
                 previousRotate = currentRotate;
-
-                currentRotate = aim.rotate(aim.getInstantSetup(), new Rotate(mc.player.getYaw(),mc.player.getPitch()));
-
+                currentRotate = aim.rotate(aim.getInstantSetup(), new Rotate(mc.player.getYaw(), mc.player.getPitch()));
             } else {
                 Rotate back = new Rotate(mc.player.getYaw(), mc.player.getPitch());
 
@@ -74,24 +63,15 @@ MinecraftClient mc = MinecraftClient.getInstance();
                     previousRotate = currentRotate;
                     currentRotate = aim.rotate(aim.getInstantSetup(), back);
                     setRotation = true;
-
                 } else {
-
                     Rotate newRot = aim.rotate(previousTargetRotate.rotationConfigBack(), back);
-
                     previousRotate = currentRotate;
                     currentRotate = newRot;
-
-
                 }
-
             }
         }
 
-
-
-
-       if(!setRotation) {
+        if (!setRotation) {
             float delta = currentRotate.getYaw() - mc.player.lastYaw;
             {
                 Rotate validing = new Rotate(currentRotate.getYaw(), currentRotate.getPitch());
@@ -104,17 +84,9 @@ MinecraftClient mc = MinecraftClient.getInstance();
             }
         }
 
-        //  MessageUtil.displayMessage(MessageUtil.LogLevel.WARN, "valid " + (MathHelper.wrapDegrees(mc.player.getYaw()) + "  " + MathHelper.wrapDegrees(currentRotation.getYaw())));
-
         currentRotate = new Rotate(currentRotate.getYaw(), MathHelper.clamp(currentRotate.getPitch(), -90, 90));
 
-
         requestHandler.tick();
-
-//        mc.player.setYaw(currentRotation.getYaw());
-//        mc.player.setPitch(currentRotation.getPitch()
-
-
     }
 
     public void setRotation(TargetRotate targetRotation, int priority, Module module) {
@@ -123,15 +95,34 @@ MinecraftClient mc = MinecraftClient.getInstance();
 
     @EventTarget
     public void direction(EventDirection direction) {
+        // Проверяем, используется ли SlothAI
+        boolean isSlothAI = false;
+        try {
+            KillAura killAura = (KillAura) Luxury.getInstance().getModuleManager()
+                    .getModules().stream()
+                    .filter(m -> m instanceof KillAura && m.isEnabled())
+                    .findFirst()
+                    .orElse(null);
 
-        direction.setYaw(currentRotate.getYaw());
-        direction.setPitch(currentRotate.getPitch());
+            if (killAura != null) {
+                isSlothAI = killAura.getRotationMode().is("SlothAI");
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+
+        // Для SlothAI устанавливаем только pitch (наклон головы), yaw (поворот) остается от игрока
+        if (isSlothAI) {
+            direction.setYaw(mc.player.getYaw()); // Тело движется свободно
+            direction.setPitch(currentRotate.getPitch()); // Только наклон головы от ротации
+        } else {
+            direction.setYaw(currentRotate.getYaw());
+            direction.setPitch(currentRotate.getPitch());
+        }
     }
 
     @EventTarget
     public void packet(PacketEvent eventPacket) {
-
-
         switch (eventPacket.getPacket()) {
             case PlayerRotationS2CPacket player -> {
                 currentRotate = new Rotate(player.xRot(), player.yRot());
@@ -141,7 +132,6 @@ MinecraftClient mc = MinecraftClient.getInstance();
 
             case PlayerPositionLookS2CPacket player -> {
                 currentRotate = new Rotate(player.change().yaw(), player.change().pitch());
-
                 previousTargetRotate = new TargetRotate(currentRotate, () -> currentRotate, aim.getInstantSetup());
                 setRotation = true;
             }
@@ -153,5 +143,4 @@ MinecraftClient mc = MinecraftClient.getInstance();
             }
         }
     }
-
 }

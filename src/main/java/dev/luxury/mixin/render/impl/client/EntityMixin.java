@@ -10,10 +10,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(Entity.class)
-public class EntityMixin  {
-    MinecraftClient mc = MinecraftClient.getInstance();
 
+@Mixin(Entity.class)
+public abstract class EntityMixin {
+public final MinecraftClient mc = MinecraftClient.getInstance();
     @ModifyExpressionValue(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;isControlledByPlayer()Z"))
     public boolean fixFalldistanceValue(boolean original) {
         if ((Object) this == mc.player) {

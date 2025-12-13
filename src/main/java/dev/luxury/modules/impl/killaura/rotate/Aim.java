@@ -2,12 +2,12 @@ package dev.luxury.modules.impl.killaura.rotate;
 
 
 import dev.luxury.Luxury;
-import dev.luxury.modules.impl.killaura.rotate.mods.AiMode;
 import dev.luxury.modules.impl.killaura.rotate.mods.OrdinaryMode;
 import dev.luxury.modules.impl.killaura.rotate.mods.Interpolation;
-import dev.luxury.modules.impl.killaura.rotate.mods.config.AiConfig;
+import dev.luxury.modules.impl.killaura.rotate.mods.SlothAIMode;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.OrdinaryConfig;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.InterpolationConfig;
+import dev.luxury.modules.impl.killaura.rotate.mods.config.SlothAIConfig;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.api.RotationConfig;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.api.RotationModeType;
 import lombok.Getter;
@@ -19,15 +19,19 @@ public class Aim {
 MinecraftClient mc = MinecraftClient.getInstance();
     private final Interpolation interpolationMod = new Interpolation();
     private final OrdinaryMode instantMod = new OrdinaryMode();
-    private final AiMode smoothMod = new AiMode();
     @Getter
     private final RotationConfig instantSetup = new OrdinaryConfig();
-    @Getter
-    private final RotationConfig aiSetup = AiConfig.builder().build();
 
-
+    private final SlothAIMode slothAIMod = new SlothAIMode();
+    private final SlothAIConfig slothAISetup = new SlothAIConfig();
+    public SlothAIConfig getSlothAISetup() {
+        return slothAISetup;
+    }
+    public SlothAIMode getSlothAIMod() {
+        return slothAIMod;
+    }
     public Rotate rotate(RotationConfig config, Rotate targetRotate) {
-        if (config.getType() != RotationModeType.INSTANT) {
+        if (config.getType() != RotationModeType.INSTANT && config.getType() != RotationModeType.SLOTH_AI) {
             DeltaRotate deltaToTarget = Luxury.getInstance().getRotationManager().getCurrentRotate().rotationDeltaTo(targetRotate);
             float maxInitialDiff = 270f; // 180 + 90
             float progress = MathHelper.clamp(1f - (Math.abs(deltaToTarget.getDeltaYaw()) + Math.abs(deltaToTarget.getDeltaPitch())) / maxInitialDiff, 0, 1);
@@ -41,18 +45,21 @@ MinecraftClient mc = MinecraftClient.getInstance();
 
         switch (config.getType()) {
             case INSTANT -> newRotate = instantMod.process(targetRotate);
-            case INTERPOLATION -> newRotate = interpolationMod.process((InterpolationConfig) config,Luxury.getInstance().getRotationManager().getCurrentRotate(), targetRotate);
-            case AI -> newRotate = interpolationMod.process(((AiConfig) config ).getInterpolationConfig() ,smoothMod.process((AiConfig) config , targetRotate), targetRotate);
+            case INTERPOLATION -> newRotate = interpolationMod.process((InterpolationConfig) config, Luxury.getInstance().getRotationManager().getCurrentRotate(), targetRotate);
+
+            case SLOTH_AI -> newRotate = slothAIMod.process(targetRotate);  // Добавьте этот case
             default -> newRotate = Luxury.getInstance().getRotationManager().getCurrentRotate();
         }
 
-        if(config.getType()!= RotationModeType.AI) {
-           // smoothMod.resetLerp(targetRotation);
+        if (config.getType() != RotationModeType.AI) {
+            // smoothMod.resetLerp(targetRotation);
         }
-        if(Luxury.getInstance().getRotationManager().getCurrentRotate().equals(newRotate)) {
+
+        if (Luxury.getInstance().getRotationManager().getCurrentRotate().equals(newRotate)) {
             return newRotate;
         }
-          return newRotate.normalize(new Rotate(mc.player.lastYaw,mc.player.lastPitch));
+
+        return newRotate.normalize(new Rotate(mc.player.lastYaw, mc.player.lastPitch));
     }
 
     @Getter

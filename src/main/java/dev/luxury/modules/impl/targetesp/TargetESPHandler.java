@@ -3,7 +3,7 @@ package dev.luxury.modules.impl.targetesp;
 import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.events.impl.client.EventRender3D;
 import dev.luxury.modules.impl.KillAura;
-import dev.luxury.modules.impl.targetesp.mode.Crystals;
+import dev.luxury.modules.impl.elytraaura.ElytraAura;
 import dev.luxury.modules.impl.targetesp.mode.Ghosts;
 import dev.luxury.modules.impl.targetesp.mode.Circle;
 import dev.luxury.modules.impl.targetesp.mode.Marker;
@@ -23,14 +23,16 @@ public class TargetESPHandler {
     private static boolean isTargetOutOfRange = false;
 
     public static LivingEntity updateTargetInfo() {
-       KillAura attackAura = ModuleManager.getModule(KillAura.class);
+        KillAura aura = ModuleManager.getModule(KillAura.class);
+        ElytraAura elytraAura = ModuleManager.getModule(ElytraAura.class);
 
-        if (attackAura == null || !attackAura.isEnabled()) {
-            lastTarget = null;
-            return null;
+        LivingEntity currentTarget = null;
+
+        if (aura != null && aura.isEnabled() && aura.getTarget() != null) {
+            currentTarget = aura.getTarget();
+        } else if (elytraAura != null && elytraAura.isEnabled() && elytraAura.getTarget() != null) {
+            currentTarget = elytraAura.getTarget();
         }
-
-        LivingEntity currentTarget = attackAura.getTarget();
 
         if (currentTarget != null && currentTarget != lastTarget) {
             lastTarget = currentTarget;
@@ -38,30 +40,9 @@ public class TargetESPHandler {
             targetLostTimer.reset();
         }
 
-        if (lastTarget != null && lastTarget.isAlive()) {
-            double distance = getDistanceTo(lastTarget);
-            double attackRange = attackAura.distance.getValue();
-
-            if (distance <= attackRange) {
-                isTargetOutOfRange = false;
-                targetLostTimer.reset();
-            }
-            else if (distance <= EXTENDED_RANGE) {
-                isTargetOutOfRange = false;
-                targetLostTimer.reset();
-            }
-            else if (!isTargetOutOfRange) {
-                isTargetOutOfRange = true;
-                targetLostTimer.reset();
-            }
-
-            if (isTargetOutOfRange && targetLostTimer.hasElapsed(FADE_OUT_TICKS * 50)) {
-                lastTarget = null;
-            }
-        }
-
         return lastTarget;
     }
+
 
     public static boolean shouldRenderESP(LivingEntity target) {
         return target != null && target != mc.player && target.isAlive() && target.getHealth() > 0 && mc.world != null;
@@ -72,12 +53,10 @@ public class TargetESPHandler {
 
         if (shouldRenderESP(target)) {
             switch (mode) {
-                case "Marker" -> Marker.render(target, matrixStack);
-                case "Ghosts" -> Ghosts.render(target);
-                case "Circle" -> Circle.render(target, matrixStack);
-                case "Crystals" -> {
+                case "Маркер" -> Marker.render(target, matrixStack);
+                case "Призраки" -> Ghosts.render(target);
+                case "Круг" -> Circle.render(target, matrixStack);
 
-                }
             }
         }
     }
@@ -87,10 +66,9 @@ public class TargetESPHandler {
 
         if (shouldRenderESP(target)) {
             switch (mode) {
-                case "Crystals" -> Crystals.instance.onRenderWorldEvent(event, target, true, 8F, true);
-                case "Marker" -> Marker.render(target, event.getMatrices());
-                case "Ghosts" -> Ghosts.render(target);
-                case "Circle" -> Circle.render(target, event.getMatrices());
+                case "Маркер" -> Marker.render(target, event.getMatrices());
+                case "Призраки" -> Ghosts.render(target);
+                case "Круг" -> Circle.render(target, event.getMatrices());
             }
         }
     }

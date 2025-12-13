@@ -8,6 +8,7 @@ import net.minecraft.client.gl.*;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -69,6 +70,81 @@ public class RenderUtil {
 
         RenderSystem.setShaderTexture(0, 0);
         disableRender();
+    }
+    public static void drawCircle(MatrixStack matrices, float x, float y, float start, float end,
+                                  float radius, float width, boolean filled, int color) {
+        if (start > end) {
+            float temp = end;
+            end = start;
+            start = temp;
+        }
+
+        enableRender();
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+        RenderSystem.lineWidth(width);
+
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+
+        float alpha = (float)(color >> 24 & 255) / 255.0F;
+        float red = (float)(color >> 16 & 255) / 255.0F;
+        float green = (float)(color >> 8 & 255) / 255.0F;
+        float blue = (float)(color & 255) / 255.0F;
+
+        BufferBuilder bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINE_STRIP, VertexFormats.POSITION_COLOR);
+
+        for (float i = end; i >= start; i -= 1.0f) {
+            float cos = MathHelper.cos((float)(i * Math.PI / 180.0)) * radius;
+            float sin = MathHelper.sin((float)(i * Math.PI / 180.0)) * radius;
+            bufferBuilder.vertex(matrix, x + cos, y + sin, 0.0F).color(red, green, blue, alpha);
+        }
+
+        BufferRenderer.drawWithGlobalProgram(bufferBuilder.end());
+
+        if (filled) {
+            bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR);
+            bufferBuilder.vertex(matrix, x, y, 0.0F).color(red, green, blue, alpha);
+
+            for (float i = end; i >= start; i -= 1.0f) {
+                float cos = MathHelper.cos((float)(i * Math.PI / 180.0)) * radius;
+                float sin = MathHelper.sin((float)(i * Math.PI / 180.0)) * radius;
+                bufferBuilder.vertex(matrix, x + cos, y + sin, 0.0F).color(red, green, blue, alpha);
+            }
+
+            float cos = MathHelper.cos((float)(start * Math.PI / 180.0)) * radius;
+            float sin = MathHelper.sin((float)(start * Math.PI / 180.0)) * radius;
+            bufferBuilder.vertex(matrix, x + cos, y + sin, 0.0F)
+                    .color(red, green, blue, alpha);
+
+            BufferRenderer.drawWithGlobalProgram(bufferBuilder.end());
+        }
+
+        disableRender();
+    }
+    public static void drawImageAlpha(MatrixStack matrices, Identifier identifier, float x, float y, float width, float height, ColorRGBA color1, ColorRGBA color2, ColorRGBA color3, ColorRGBA color4) {
+        matrices.push();
+
+        Matrix4f matrix4f = matrices.peek().getPositionMatrix();
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
+        RenderSystem.setShaderTexture(0, identifier);
+
+        enableRender();
+
+        BufferBuilder builder = RenderSystem.renderThreadTesselator().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+
+        builder.vertex(matrix4f, x, y, 0.0F).texture(0.0F, 0.0F).color(color1.getRGB());
+        builder.vertex(matrix4f, x, y + height, 0.0F).texture(0.0F, 1.0F).color(color2.getRGB());
+        builder.vertex(matrix4f, x + width, y + height, 0.0F).texture(1.0F, 1.0F).color(color3.getRGB());
+        builder.vertex(matrix4f, x + width, y, 0.0F).texture(1.0F, 0.0F).color(color4.getRGB());
+
+        BufferRenderer.drawWithGlobalProgram(builder.end());
+
+        disableRender();
+
+        RenderSystem.setShaderTexture(0, 0);
+        matrices.pop();
     }
     public static void drawRoundedRectGradient(MatrixStack matrices, float x, float y, float width, float height,
                                                Vector4f rounding, int colorLeft, int colorRight) {

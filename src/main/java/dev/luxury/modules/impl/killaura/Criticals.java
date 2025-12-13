@@ -1,5 +1,7 @@
 package dev.luxury.modules.impl.killaura;
 
+import dev.luxury.Luxury;
+import dev.luxury.modules.impl.KillAura;
 import dev.luxury.utils.math.TimerUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +13,8 @@ import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.util.Hand;
 
+import java.util.Random;
+
 
 @Setter
 @Getter
@@ -18,17 +22,47 @@ import net.minecraft.util.Hand;
 public class Criticals {
     MinecraftClient mc = MinecraftClient.getInstance();
     private final TimerUtils attackTimer = new TimerUtils();
+    private final Random random = new Random();
     private int count = 0;
+    private long nextAttackDelay = 0;
+    private long lastAttackTime = 0;
 
 
 
 
     public void attackEntity(Entity entity) {
+        long currentTime = System.currentTimeMillis();
+
+        if (isSlothAIMode()) {
+            if (currentTime - lastAttackTime < nextAttackDelay) {
+                return;
+            }
+            nextAttackDelay = 50 + random.nextInt(100);
+        }
+
         mc.interactionManager.attackEntity(mc.player, entity);
         mc.player.swingHand(Hand.MAIN_HAND);
         attackTimer.reset();
+        lastAttackTime = currentTime;
         count++;
+    }
 
+    private boolean isSlothAIMode() {
+        try {
+            KillAura killAura = (KillAura) Luxury.getInstance().getModuleManager()
+                    .getModules().stream()
+                    .filter(m -> m instanceof KillAura && m.isEnabled())
+                    .findFirst()
+                    .orElse(null);
+
+            if (killAura != null) {
+                String currentMode = killAura.getRotationMode().get();
+                return currentMode != null && currentMode.equalsIgnoreCase("SlothAI");
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return false;
     }
 
 
