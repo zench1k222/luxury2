@@ -34,7 +34,8 @@
     "render.impl.client.TitleScreenMixin",
     "render.impl.render.GameRendererMixin",
     "render.impl.render.MixinInGameHud",
-    "render.impl.render.PlayerInfoMixin"
+    "render.impl.render.PlayerInfoMixin",
+    "render.impl.EntityRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

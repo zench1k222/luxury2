@@ -4,6 +4,7 @@ public enum RotationModeType {
     INSTANT,
     INTERPOLATION,
     AI,
-    SLOTH_AI
+    SLOTH_AI,
+    REALLY_WORLD
 }
 

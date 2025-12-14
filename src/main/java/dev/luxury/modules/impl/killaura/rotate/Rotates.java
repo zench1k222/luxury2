@@ -16,11 +16,14 @@ import net.minecraft.util.math.MathHelper;
 
 import dev.luxury.modules.api.Module;
 
+import java.util.Random;
+
 @Getter
 public class Rotates {
     MinecraftClient mc = MinecraftClient.getInstance();
     private Rotate currentRotate = new Rotate(0, 0);
     private Rotate previousRotate = new Rotate(0, 0);
+    private Rotate bodyRotation = new Rotate(0, 0);
     private final HandlerRequest<TargetRotate> requestHandler = new HandlerRequest<>();
     private final Aim aim = new Aim();
     private TargetRotate previousTargetRotate = new TargetRotate(currentRotate, () -> currentRotate, aim.getInstantSetup());
@@ -92,14 +95,12 @@ public class Rotates {
     public void setRotation(TargetRotate targetRotation, int priority, Module module) {
         requestHandler.request(new HandlerRequest.Request<>(2, priority, module, targetRotation));
     }
-
     @EventTarget
     public void direction(EventDirection direction) {
-        // Проверяем, используется ли SlothAI
         boolean isSlothAI = false;
+
         try {
-            KillAura killAura = (KillAura) Luxury.getInstance().getModuleManager()
-                    .getModules().stream()
+            KillAura killAura = (KillAura) Luxury.getInstance().getModuleManager().getModules().stream()
                     .filter(m -> m instanceof KillAura && m.isEnabled())
                     .findFirst()
                     .orElse(null);
@@ -108,19 +109,15 @@ public class Rotates {
                 isSlothAI = killAura.getRotationMode().is("SlothAI");
             }
         } catch (Exception e) {
-            // ignore
         }
-
-        // Для SlothAI устанавливаем только pitch (наклон головы), yaw (поворот) остается от игрока
         if (isSlothAI) {
-            direction.setYaw(mc.player.getYaw()); // Тело движется свободно
-            direction.setPitch(currentRotate.getPitch()); // Только наклон головы от ротации
+            direction.setYaw(mc.player.getYaw());
+            direction.setPitch(currentRotate.getPitch());
         } else {
-            direction.setYaw(currentRotate.getYaw());
+            direction.setYaw(Luxury.getInstance().getRotationManager().getBodyRotation().getYaw());
             direction.setPitch(currentRotate.getPitch());
         }
     }
-
     @EventTarget
     public void packet(PacketEvent eventPacket) {
         switch (eventPacket.getPacket()) {
@@ -142,5 +139,12 @@ public class Rotates {
             default -> {
             }
         }
+    }
+    public void setBodyRotation(Rotate rotation) {
+        this.bodyRotation = rotation;
+    }
+
+    public Rotate getBodyRotation() {
+        return bodyRotation != null ? bodyRotation : currentRotate;
     }
 }
