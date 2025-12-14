@@ -54,3 +54,6 @@ accessible method net/minecraft/client/network/ClientPlayerEntity sendSprintingP
 accessible field net/minecraft/client/gui/hud/InGameHud heldItemTooltipFade I
 accessible method net/minecraft/client/gui/hud/InGameHud renderMountHealth (Lnet/minecraft/client/gui/DrawContext;)V
 accessible method net/minecraft/client/network/ClientPlayerInteractionManager sendSequencedPacket (Lnet/minecraft/client/world/ClientWorld;Lnet/minecraft/client/network/SequencedPacketCreator;)V
+accessible field net/minecraft/network/packet/c2s/play/PlayerInteractEntityC2SPacket type Lnet/minecraft/network/packet/c2s/play/PlayerInteractEntityC2SPacket$InteractTypeHandler;
+accessible class net/minecraft/network/packet/c2s/play/PlayerInteractEntityC2SPacket$InteractTypeHandler
+accessible class net/minecraft/network/packet/c2s/play/PlayerInteractEntityC2SPacket$InteractType

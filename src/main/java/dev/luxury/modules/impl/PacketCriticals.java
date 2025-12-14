@@ -8,6 +8,7 @@ import dev.luxury.modules.api.ModuleAnnotation;
 import dev.luxury.modules.api.settings.ModeSetting;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.util.math.BlockPos;
@@ -19,7 +20,7 @@ import net.minecraft.util.math.BlockPos;
 )
 public class PacketCriticals extends Module {
 
-    private final ModeSetting mode = new ModeSetting("Режим", "Default", new String[]{"Default", "RW"});
+    private final ModeSetting mode = new ModeSetting("Mode", "Default", new String[]{"Default", "RW"});
     public static boolean cancelCrit = false;
 
     public PacketCriticals() {
@@ -30,29 +31,14 @@ public class PacketCriticals extends Module {
     public void onPacket(PacketEvent e) {
         if (mc.player == null || mc.world == null) return;
 
-        if (e.isSend()) {
-            if (e.getPacket() instanceof PlayerInteractEntityC2SPacket) {
-                PlayerInteractEntityC2SPacket packet = (PlayerInteractEntityC2SPacket) e.getPacket();
-
-                if (isAttackPacket(packet)) {
-                    if (mode.get().equals("Default")) {
-                        handleDefaultCrit();
-                    } else if (mode.get().equals("RW")) {
-                        handleRWCrit();
-                    }
+        if (e.isSend() && e.getPacket() instanceof PlayerInteractEntityC2SPacket packet) {
+            if (((PlayerInteractEntityC2SPacket.InteractTypeHandler)packet.type).getType() == PlayerInteractEntityC2SPacket.InteractType.ATTACK) {
+                if (mode.get().equals("Default")) {
+                    handleDefaultCrit();
+                } else if (mode.get().equals("RW")) {
+                    handleRWCrit();
                 }
             }
-        }
-    }
-
-    private boolean isAttackPacket(PlayerInteractEntityC2SPacket packet) {
-        try {
-            var typeField = packet.getClass().getDeclaredField("type");
-            typeField.setAccessible(true);
-            var type = typeField.get(packet);
-            return type != null && type.toString().contains("ATTACK");
-        } catch (Exception e) {
-            return false;
         }
     }
 
@@ -60,47 +46,38 @@ public class PacketCriticals extends Module {
         if (cancelCrit) return;
 
         if (!mc.player.isOnGround() && !mc.player.isGliding()) {
-            sendDefaultCrit();
+            sendCritPacket(-1.0E-6, false);
         }
     }
 
     private void handleRWCrit() {
-        if (canCritRW()) {
-            sendRWCritPackets();
-        }
+        if (canCritRW()) sendRWCritPackets();
     }
 
-    private void sendDefaultCrit() {
-        critPacket(-1.0E-6, false);
-    }
-
-    private void critPacket(double yDelta, boolean full) {
+    private void sendCritPacket(double yDelta, boolean full) {
         double x = mc.player.getX();
         double y = mc.player.getY() + yDelta;
         double z = mc.player.getZ();
         float yaw = mc.player.getYaw();
         float pitch = mc.player.getPitch();
 
+        PlayerMoveC2SPacket packet;
         if (full) {
-            mc.player.networkHandler.sendPacket(
-                    new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, false, false)
-            );
+            packet = new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, false, mc.player.horizontalCollision);
         } else {
-            mc.player.networkHandler.sendPacket(
-                    new PlayerMoveC2SPacket.Full(x, y, z, yaw, pitch, false, false)
-            );
+            packet = new PlayerMoveC2SPacket.Full(x, y, z, yaw, pitch, false, mc.player.horizontalCollision);
         }
+
+        mc.player.networkHandler.sendPacket(packet);
     }
 
     private boolean canCritRW() {
-        boolean hasSlowFalling = mc.player.hasStatusEffect(StatusEffects.SLOW_FALLING);
-        boolean inCobweb = isInCobweb();
-        return hasSlowFalling || inCobweb;
+        return mc.player.hasStatusEffect(StatusEffects.SLOW_FALLING) || isInCobweb();
     }
 
     private boolean isInCobweb() {
         BlockPos pos = mc.player.getBlockPos();
-        return mc.world.getBlockState(pos).getBlock() == Blocks.COBWEB;
+        return mc.world.getBlockState(pos).isOf(Blocks.COBWEB);
     }
 
     private void sendRWCritPackets() {
@@ -117,7 +94,8 @@ public class PacketCriticals extends Module {
     }
 
     private void sendPositionPacket(double x, double y, double z) {
-        mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, false, false));
+        PlayerMoveC2SPacket packet = new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, false, mc.player.horizontalCollision);
+        mc.player.networkHandler.sendPacket(packet);
     }
 
     @Override
