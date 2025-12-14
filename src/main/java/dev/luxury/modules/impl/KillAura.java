@@ -30,12 +30,12 @@ import java.util.stream.Collectors;
         category = Category.Combat
 )
 public class KillAura extends Module {
-    private final ModeSetting rotationMode = new ModeSetting("Ротация", "HvH", new String[]{"HvH", "SlothAI"});
+    private final ModeSetting rotationMode = new ModeSetting("Ротация", "HvH", new String[]{"HvH", "SlothAI", "ReallyWorld"});
     private final ModeSetting sprintMode = new ModeSetting("Бег", "Ordinary", new String[]{"HvH", "Ordinary", "Legit", "Без сброса"});
     private final ModeSetting correction = new ModeSetting("Коррекция Движения", "Свободная", new String[]{"Сфокусированная", "Свободная", "Без корекции"});
 
-    public final SliderSetting distance = new SliderSetting("Расстояние", "Дистанция атаки", 3.0, 0.5, 6.0, 0.1);
-    private final SliderSetting distanceRotation = new SliderSetting("пре-расстояние", 0.1, 0.0, 6.0, 0.1);
+    public final SliderSetting distance = new SliderSetting("Расстония", "Дистанция атаки", 3.0, 0.5, 6.0, 0.1);
+    private final SliderSetting distanceRotation = new SliderSetting("пре-расстония", 0.1, 0.0, 6.0, 0.1);
 
     private final ModeListSetting settings = new ModeListSetting("Настройки",
             new BooleanSetting("Ломать щит", true),
@@ -118,10 +118,12 @@ public class KillAura extends Module {
             Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getInstantSetup(), angle), aim.getInstantSetup()), 3, this);
         }
 
-
-
         if (rotationMode.is("SlothAI")) {
             Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getSlothAISetup(), angle), aim.getSlothAISetup()), 3, this);
+        }
+
+        if (rotationMode.is("ReallyWorld")) {
+            Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getReallyWorldSetup(), angle), aim.getReallyWorldSetup()), 3, this);
         }
 
         if (preAttack || isCanAttack) {
@@ -235,14 +237,15 @@ public class KillAura extends Module {
 
         if (target == null) return;
 
+        float bodyYaw = Luxury.getInstance().getRotationManager().getBodyRotation().getYaw();
+
         if (correction.is("Сфокусированная")) {
             Rotate angle = RotateUtils.fromVec3d(target.getBoundingBox().getCenter().subtract(mc.player.getBoundingBox().getCenter()));
-            Move.fixMovement(eventMoveInput, Luxury.getInstance().getRotationManager().getCurrentRotate().getYaw(), angle.getYaw());
+            Move.fixMovement(eventMoveInput, bodyYaw, angle.getYaw());
         } else {
-            Move.fixMovement(eventMoveInput, Luxury.getInstance().getRotationManager().getCurrentRotate().getYaw(), mc.player.getYaw());
+            Move.fixMovement(eventMoveInput, bodyYaw, mc.player.getYaw());
         }
     }
-
     public LivingEntity getTarget() {
         return this.isEnabled() ? target : null;
     }

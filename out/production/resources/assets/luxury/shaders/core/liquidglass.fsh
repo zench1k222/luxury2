@@ -1,4 +1,4 @@
-#version 130
+#version 150
 
 #moj_import <luxury:common.glsl>
 
@@ -10,65 +10,62 @@ uniform sampler2D Sampler0;
 uniform vec2 Size;
 uniform vec4 Radius;
 uniform float Smoothness;
-uniform float Time;
-uniform float BlurRadius;
-uniform float DistortionStrength;
-uniform float GlowSize;
+uniform float CornerSmoothness;
+uniform float GlobalAlpha;
+
+uniform float FresnelPower;
+uniform vec3 FresnelColor;
+uniform float FresnelAlpha;
+uniform float BaseAlpha;
+uniform bool FresnelInvert;
+uniform float FresnelMix;
+uniform float DistortStrength;
 
 out vec4 OutColor;
 
-const float PI = 3.14159265359;
-
-vec3 liquidBlur(sampler2D tex, vec2 uv, float radiusPx, int samples, vec2 size) {
-    vec3 col = texture(tex, uv).rgb;
-    vec2 center = size * 0.5;
-    vec2 dir = uv * size - center;
-
-    for (int i = 1; i <= samples; ++i) {
-        float f = float(i)/float(samples);
-        vec2 offset = normalize(dir) * f * radiusPx;
-        col += texture(tex, uv + offset/size).rgb;
-    }
-
-    return col / (float(samples)+1.0);
-}
-
-vec2 radialDistort(vec2 fragCoord, vec2 size, vec2 uv, float strength, float time) {
-    vec2 center = size * 0.5;
-    vec2 dir = fragCoord - center;
-    float dist = length(dir);
-    if (dist < 0.001) return uv;
-
-    float wave = (sin(dist * 0.06 - time * 2.0) * 0.5 + 0.5);
-    float att = 1.0 - smoothstep(0.0, min(size.x,size.y)*0.5, dist);
-    float offsetPx = wave * strength * att;
-    vec2 dirNorm = normalize(dir);
-
-    return uv + dirNorm * (offsetPx / size.x);
+float roundedBoxSDF(vec2 p, vec2 b, vec4 r, float smoothness) {
+    r.xy = (p.x > 0.0) ? r.xy : r.zw;
+    r.x = (p.y > 0.0) ? r.x : r.y;
+    vec2 q = abs(p) - b + r.x;
+    vec2 q_clamped = max(q, 0.0);
+    float len = pow(pow(q_clamped.x, smoothness) + pow(q_clamped.y, smoothness), 1.0/smoothness);
+    return min(max(q.x, q.y), 0.0) + len - r.x;
 }
 
 void main() {
-    vec2 uvLocal = FragCoord / Size;
-    float shapeAlpha = ralpha(Size, FragCoord, Radius, Smoothness);
-    vec2 baseUV = TexCoord;
+    vec2 center = Size * 0.5;
+    vec2 box_half_size = center - 1.0;
+    vec2 pos = (FragCoord * Size) - center;
 
-    // Glow снаружи формы
-    float glow = pow(clamp((1.0 - shapeAlpha) * (GlowSize / 10.0), 0.0, 1.0), 1.8);
+    float distance = roundedBoxSDF(-pos, box_half_size, Radius, CornerSmoothness);
+    float alpha = 1.0 - smoothstep(1.0 - Smoothness, 1.0, distance);
 
-    // Искажение внутри квадрата
-    vec2 distortedUV = radialDistort(FragCoord, Size, baseUV, DistortionStrength, Time);
+    float distToEdge = abs(roundedBoxSDF(pos, box_half_size, Radius, CornerSmoothness));
 
-    // Blur внутри квадрата
-    vec3 blurred = liquidBlur(Sampler0, distortedUV, BlurRadius, 10, Size);
+    float max_dist_norm = min(box_half_size.x, box_half_size.y);
+    float edge_gradient = 1.0 - clamp(distToEdge / max_dist_norm, 0.0, 1.0);
 
-    vec3 base = texture(Sampler0, baseUV).rgb;
-    vec3 glassCol = mix(base, blurred, 1.0);
-    glassCol = mix(glassCol, vec3(1.0), 0.06);
+    float fresnel;
+    float base = FresnelInvert ? edge_gradient : (1.0 - edge_gradient);
 
-    // смешиваем: внутри формы — glassCol, снаружи — base + glow
-    vec3 outRgb = mix(base + vec3(glow*0.8), glassCol, shapeAlpha);
-    float outA = clamp(shapeAlpha * FragColor.a, 0.0, 1.0);
+    if (FresnelPower > 20.0) {
+        fresnel = exp(FresnelPower * log(clamp(base, 0.001, 1.0)));
+    } else {
+        fresnel = pow(base, FresnelPower);
+    }
+    fresnel = clamp(fresnel, 0.0, 1.0);
 
-    if (outA < 0.001 && glow < 0.01) discard;
-    OutColor = vec4(outRgb, outA);
+    vec2 dir = normalize(pos);
+    vec2 distortedTexCoord = TexCoord + dir * fresnel * DistortStrength;
+
+    vec4 texColor = texture(Sampler0, distortedTexCoord) * FragColor;
+
+    vec3 finalColor = mix(texColor.rgb, FresnelColor, fresnel * FresnelMix);
+    float finalAlpha = mix(BaseAlpha, FresnelAlpha, fresnel) * alpha;
+
+    if (finalAlpha < 0.001) {
+        discard;
+    }
+
+    OutColor = vec4(finalColor, finalAlpha * GlobalAlpha);
 }
