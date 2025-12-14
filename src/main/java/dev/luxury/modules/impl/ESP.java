@@ -61,6 +61,7 @@ public class ESP extends Module {
     private final BooleanSetting showArmor = new BooleanSetting("Броня и предметы", false);
 
 
+
     private ArrayList<Entity> toRender = new ArrayList<>();
     private static ESP instance;
 
