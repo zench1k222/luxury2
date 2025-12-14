@@ -287,46 +287,67 @@ public class ESP extends Module {
         return setting != null && setting.get();
     }
 
-    private void renderNameTag(EventRender2D e, float minX, float minY, float maxX, float maxY, Entity entity) {
-        Text text = entity.getCustomName() == null ? entity.getDisplayName() : entity.getCustomName();
+    private void renderNameTag(EventRender2D e,
+                               float minX, float minY,
+                               float maxX, float maxY,
+                               Entity entity) {
 
-        if (entity instanceof ItemEntity itemEntity) {
-            text = itemEntity.getStack().getName();
-        }
-
-        String textString = text.getString();
-
-        if (entity instanceof LivingEntity living) {
-            float hp = living.getHealth();
-            textString = textString + " §c" + (int)hp + "HP";
-        }
+        if (!(entity instanceof LivingEntity living)) return;
 
         FontDraw font = FontHelper.sfprobold[15];
         if (font == null) return;
 
-        MatrixStack matrixStack = e.getMatrixStack();
+        String name = entity.getCustomName() != null
+                ? entity.getCustomName().getString()
+                : entity.getDisplayName().getString();
 
-        float textWidth = font.getWidth(textString);
-        float textWidth2 = textWidth + 6;
-        float espWidth = (maxX - minX);
+        float health = living.getHealth();
+        float maxHealth = living.getMaxHealth();
 
-        Color bgColor;
-        if (entity instanceof PlayerEntity player && FriendManager.getInstance().isFriend(player.getName().getString())) {
-            bgColor = new Color(0, 255, 0, 76);
+        String text = name + " §c" + (int) health + "HP";
+
+        float textWidth = font.getWidth(text);
+        float textHeight = font.getHeight();
+
+        float paddingX = 4f;
+        float paddingY = 2f;
+
+        float bgWidth = textWidth + paddingX * 2;
+        float bgHeight = textHeight + paddingY * 2;
+
+        float centerX = (minX + maxX) / 2f;
+        float posX = centerX - bgWidth / 2f;
+        float posY = minY - bgHeight - 6f;
+
+        int bgColor;
+        if (entity instanceof PlayerEntity player &&
+                FriendManager.getInstance().isFriend(player.getName().getString())) {
+            bgColor = new Color(0, 255, 0, 90).getRGB();
         } else {
-            bgColor = new Color(30, 30, 30, 150);
+            bgColor = new Color(0, 0, 0, 150).getRGB();
         }
 
-        float boxX = minX + espWidth / 2F - textWidth2 / 2F;
-        float boxY = minY - 20;
+        MatrixStack ms = e.getMatrixStack();
 
-        RenderUtil.drawRoundedRect(matrixStack, boxX, boxY, textWidth2, 10, new Vector4f(2f, 2f, 2f, 2f), bgColor.getRGB());
+        RenderUtil.drawRoundedRect(
+                ms,
+                posX,
+                posY,
+                bgWidth,
+                bgHeight,
+                new Vector4f(3f, 3f, 3f, 3f),
+                bgColor
+        );
 
-        float textX = minX + espWidth / 2F - 1 - textWidth / 2F;
-        float textY = boxY + 1.5f;
-
-        font.drawFontLeft(matrixStack, textString, textX + 1, textY - 1, -1);
+        font.drawFontLeft(
+                ms,
+                text,
+                posX + paddingX,
+                posY + paddingY - 0.50F,
+                0xFFFFFFFF
+        );
     }
+
 
     @Override
     public void onEnable() {
