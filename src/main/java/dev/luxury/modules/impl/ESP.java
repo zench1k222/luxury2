@@ -27,6 +27,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -57,18 +58,39 @@ public class ESP extends Module {
     private final SliderSetting thickness = new SliderSetting("Толщина", 1.9f, 0.5f, 2.0f, 0.1f);
     private final BooleanSetting showNameTags = new BooleanSetting("Неймтеги", true);
     private final BooleanSetting hideVanillaTags = new BooleanSetting("Скрыть ванильные", true);
+    private final BooleanSetting showArmor = new BooleanSetting("Броня и предметы", false);
+
 
     private ArrayList<Entity> toRender = new ArrayList<>();
     private static ESP instance;
 
     public ESP() {
-        addSettings(targets, corners, cornerLength, thickness, showNameTags, hideVanillaTags);
+        addSettings(targets, corners, cornerLength, thickness, showNameTags, hideVanillaTags, showArmor);
         instance = this;
     }
 
     public static ESP getInstance() {
         return instance;
     }
+
+    private float getDistanceScale(Entity entity) {
+        if (mc.player == null) return 1.0f;
+
+        double distance = mc.player.squaredDistanceTo(entity);
+        distance = Math.sqrt(distance);
+
+        float minDist = 2.0f;
+        float maxDist = 30.0f;
+
+        float maxScale = 1.25f;
+        float minScale = 0.6f;
+
+        float t = (float) ((distance - minDist) / (maxDist - minDist));
+        t = Math.max(0f, Math.min(1f, t));
+
+        return maxScale + (minScale - maxScale) * t;
+    }
+
 
     public boolean shouldHideVanillaNameTag(EntityRenderState state) {
         if (!isEnabled() || !hideVanillaTags.get()) {
@@ -170,6 +192,74 @@ public class ESP extends Module {
         }
     }
 
+    private void renderArmorAndHands(EventRender2D e,
+                                     float minX, float minY,
+                                     float maxX, float maxY,
+                                     PlayerEntity player,
+                                     float scale) {
+
+        MatrixStack ms = e.getMatrixStack();
+
+        ArrayList<ItemStack> items = new ArrayList<>();
+
+        player.getArmorItems().forEach(stack -> {
+            if (!stack.isEmpty()) items.add(stack);
+        });
+
+        if (!player.getMainHandStack().isEmpty())
+            items.add(player.getMainHandStack());
+
+        if (!player.getOffHandStack().isEmpty())
+            items.add(player.getOffHandStack());
+
+        if (items.isEmpty()) return;
+
+        float baseIconSize = 12f;
+        float baseSpacing = 13f;
+
+        float iconSize = baseIconSize * scale;
+        float spacing = baseSpacing * scale;
+
+        float totalWidth = items.size() * spacing - 1;
+        float centerX = (minX + maxX) / 2f;
+        float startX = centerX - totalWidth / 2f;
+
+        float iconY = minY - (33f * scale);
+
+        float bgPaddingX = 4f * scale;
+        float bgPaddingY = 3f * scale;
+
+        float bgX = startX - bgPaddingX;
+        float bgY = iconY - bgPaddingY;
+        float bgW = totalWidth + bgPaddingX * 2f;
+        float bgH = iconSize + bgPaddingY * 2f;
+
+        RenderUtil.drawRoundedRect(
+                ms,
+                bgX,
+                bgY - 5,
+                bgW,
+                bgH,
+                new Vector4f(3f * scale, 3f * scale, 3f * scale, 3f * scale),
+                new Color(0, 0, 0, 140).getRGB()
+        );
+
+        RenderSystem.enableDepthTest();
+
+        for (int i = 0; i < items.size(); i++) {
+            RenderUtil.drawItemStack(
+                    e.getDrawContext(),
+                    items.get(i),
+                    startX + i * spacing,
+                    iconY - 5,
+                    iconSize
+            );
+        }
+
+        RenderSystem.disableDepthTest();
+    }
+
+
     @EventTarget
     public void onRender2D(EventRender2D e) {
         if (!isEnabled()) return;
@@ -224,6 +314,11 @@ public class ESP extends Module {
             if (showNameTags.get()) {
                 renderNameTag(e, minX, minY, maxX, maxY, entity);
             }
+
+            if (showArmor.get() && entity instanceof PlayerEntity player) {
+                renderArmorAndHands(e, minX, minY, maxX, maxY, player, getDistanceScale(entity));
+            }
+
             renderBox(e.getMatrixStack(), minX, minY, maxX, maxY, entity);
         }
 
@@ -297,27 +392,27 @@ public class ESP extends Module {
         FontDraw font = FontHelper.sfprobold[15];
         if (font == null) return;
 
+        float scale = getDistanceScale(entity);
+
         String name = entity.getCustomName() != null
                 ? entity.getCustomName().getString()
                 : entity.getDisplayName().getString();
 
         float health = living.getHealth();
-        float maxHealth = living.getMaxHealth();
-
         String text = name + " §c" + (int) health + "HP";
 
-        float textWidth = font.getWidth(text);
-        float textHeight = font.getHeight();
+        float textWidth = font.getWidth(text) * scale;
+        float textHeight = font.getHeight() * scale;
 
-        float paddingX = 4f;
-        float paddingY = 2f;
+        float paddingX = 4f * scale;
+        float paddingY = 2f * scale;
 
-        float bgWidth = textWidth + paddingX * 2;
-        float bgHeight = textHeight + paddingY * 2;
+        float bgWidth = textWidth + paddingX * 2f;
+        float bgHeight = textHeight + paddingY * 2f;
 
         float centerX = (minX + maxX) / 2f;
         float posX = centerX - bgWidth / 2f;
-        float posY = minY - bgHeight - 6f;
+        float posY = minY - bgHeight - (6f * scale);
 
         int bgColor;
         if (entity instanceof PlayerEntity player &&
@@ -328,13 +423,16 @@ public class ESP extends Module {
         }
 
         MatrixStack ms = e.getMatrixStack();
+        ms.push();
+        ms.translate(posX, posY, 0);
+        ms.scale(scale, scale, 1.0f);
 
         RenderUtil.drawRoundedRect(
                 ms,
-                posX,
-                posY,
-                bgWidth,
-                bgHeight,
+                0,
+                0,
+                bgWidth / scale,
+                bgHeight / scale,
                 new Vector4f(3f, 3f, 3f, 3f),
                 bgColor
         );
@@ -342,12 +440,13 @@ public class ESP extends Module {
         font.drawFontLeft(
                 ms,
                 text,
-                posX + paddingX,
-                posY + paddingY - 0.50F,
+                paddingX / scale,
+                paddingY / scale - 0.5f,
                 0xFFFFFFFF
         );
-    }
 
+        ms.pop();
+    }
 
     @Override
     public void onEnable() {

@@ -5,8 +5,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import dev.luxury.utils.shaders.ShaderManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.*;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -399,6 +401,15 @@ public class RenderUtil {
         endBuilding(bufferBuilder);
         disableRender();
     }
+
+    public static void drawItemStack(DrawContext context, ItemStack stack, float x, float y, float size) {
+        context.getMatrices().push();
+        context.getMatrices().translate(x, y, 200);
+        context.getMatrices().scale(size / 16f, size / 16f, 1f);
+        context.drawItem(stack, 0, 0);
+        context.getMatrices().pop();
+    }
+
 
     private static void setRoundedRectShaderUniforms(ShaderProgram shader, float width, float height, Vector4f radius, float smoothness) {
         shader.getUniform("Size").set(width, height);
