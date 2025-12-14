@@ -4,6 +4,7 @@ import dev.luxury.utils.commands.Command;
 import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.utils.commands.ConfigCommand;
 import dev.luxury.utils.commands.FriendCommand;
+import dev.luxury.utils.commands.HelpCommand;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
@@ -21,6 +22,7 @@ public class CommandManager {
         this.moduleManager = moduleManager;
         registerCommand(new FriendCommand());
         registerCommand(new ConfigCommand());
+        registerCommand(new HelpCommand());
 
         ConfigManager.init(moduleManager);
     }

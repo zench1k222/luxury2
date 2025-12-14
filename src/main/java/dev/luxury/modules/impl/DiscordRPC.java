@@ -19,6 +19,7 @@ import org.lwjgl.glfw.GLFW;
 @Getter
 public class DiscordRPC extends Module {
     private DiscordDaemonThread discordDaemonThread;
+    private DiscordInfo info = new DiscordInfo("Unknown","","");
     private boolean running = false;
 
     @Getter
@@ -48,7 +49,7 @@ public class DiscordRPC extends Module {
 
                     DiscordRichPresence richPresence = new DiscordRichPresence.Builder()
                             .setStartTimestamp((System.currentTimeMillis() / 1000))
-                            .setDetails("User: Developer")
+                            .setDetails("User: " + getUserRole())
                             .setState("Uid: 1337")
                             .setLargeImage(image)
                             .setButtons(
@@ -105,5 +106,13 @@ public class DiscordRPC extends Module {
                 stopRPC();
             }
         }
+    }
+    public record DiscordInfo(String userName, String avatarUrl, String userId) {
+
+    }
+
+    public String getUserRole() {
+        String userName = getInfo().userName();
+        return "krasivih".equals(userName) || "_znchkx_".equals(userName) || "webimmortal".equals(userName) ? "Developer" : "User";
     }
 }

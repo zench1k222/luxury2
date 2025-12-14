@@ -15,17 +15,19 @@ import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.managers.FriendManager;
 import dev.luxury.utils.render.ColorUtil;
 import dev.luxury.utils.render.RenderUtil;
-import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.client.render.*;
+import net.minecraft.client.render.entity.state.EntityRenderState;
+import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
+import net.minecraft.client.render.entity.state.ItemEntityRenderState;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
@@ -53,11 +55,99 @@ public class ESP extends Module {
     private final BooleanSetting corners = new BooleanSetting("Углы", false);
     private final SliderSetting cornerLength = new SliderSetting("Высота", 0.3f, 0.1f, 0.4f, 0.1f);
     private final SliderSetting thickness = new SliderSetting("Толщина", 1.9f, 0.5f, 2.0f, 0.1f);
-    private final BooleanSetting showNameTags = new BooleanSetting("Неймтеги",true);
+    private final BooleanSetting showNameTags = new BooleanSetting("Неймтеги", true);
+    private final BooleanSetting hideVanillaTags = new BooleanSetting("Скрыть ванильные", true);
+
     private ArrayList<Entity> toRender = new ArrayList<>();
+    private static ESP instance;
 
     public ESP() {
-        addSettings(targets, corners, cornerLength, thickness,showNameTags);
+        addSettings(targets, corners, cornerLength, thickness, showNameTags, hideVanillaTags);
+        instance = this;
+    }
+
+    public static ESP getInstance() {
+        return instance;
+    }
+
+    public boolean shouldHideVanillaNameTag(EntityRenderState state) {
+        if (!isEnabled() || !hideVanillaTags.get()) {
+            return false;
+        }
+
+        if (state instanceof PlayerEntityRenderState playerState) {
+            return shouldHidePlayerNameTag(playerState);
+        } else if (state instanceof ItemEntityRenderState itemState) {
+            return shouldHideItemNameTag(itemState);
+        }
+
+        return false;
+    }
+
+    private boolean shouldHidePlayerNameTag(PlayerEntityRenderState playerState) {
+        if (!showNameTags.get()) return false;
+
+        Entity entity = getEntityFromState(playerState);
+        if (entity == null) return false;
+
+        if (entity == mc.player) {
+            return getTargetSetting("Меня");
+        }
+
+        if (entity instanceof PlayerEntity player) {
+            if (getTargetSetting("Друзей") && FriendManager.getInstance().isFriend(player.getName().getString())) {
+                return true;
+            }
+            return getTargetSetting("Игроков");
+        }
+
+        return false;
+    }
+
+    private boolean shouldHideItemNameTag(ItemEntityRenderState itemState) {
+        if (!showNameTags.get()) return false;
+        return getTargetSetting("Предметы");
+    }
+
+    private Entity getEntityFromState(EntityRenderState state) {
+        try {
+            for (java.lang.reflect.Field field : state.getClass().getDeclaredFields()) {
+                if (Entity.class.isAssignableFrom(field.getType())) {
+                    field.setAccessible(true);
+                    Object value = field.get(state);
+                    if (value instanceof Entity) {
+                        return (Entity) value;
+                    }
+                }
+            }
+
+            String[] possibleFieldNames = {"entity", "owner", "target", "parent"};
+            for (String fieldName : possibleFieldNames) {
+                try {
+                    java.lang.reflect.Field field = state.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true);
+                    Object value = field.get(state);
+                    if (value instanceof Entity) {
+                        return (Entity) value;
+                    }
+                } catch (NoSuchFieldException ignored) {
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (mc.world != null) {
+            for (Entity entity : mc.world.getEntities()) {
+                if (Math.abs(entity.getX() - state.x) < 0.5 &&
+                        Math.abs(entity.getY() - state.y) < 0.5 &&
+                        Math.abs(entity.getZ() - state.z) < 0.5) {
+                    return entity;
+                }
+            }
+        }
+
+        return null;
     }
 
     @EventTarget
@@ -95,11 +185,9 @@ public class ESP extends Module {
         while (iterator.hasNext()) {
             Entity entity = iterator.next();
 
-            // Интерполяция позиции как в Leet
             Vec3d interp = entity.getLerpedPos(mc.getRenderTickCounter().getTickDelta(true));
             Box box = entity.getBoundingBox().offset(interp.subtract(entity.getPos()));
 
-            // Получаем 8 углов бокса
             Vec3d[] corners = new Vec3d[]{
                     new Vec3d(box.minX, box.minY, box.minZ),
                     new Vec3d(box.minX, box.minY, box.maxZ),
@@ -116,7 +204,6 @@ public class ESP extends Module {
 
             boolean anyVisible = false;
 
-            // Проецируем все углы на экран
             for (Vec3d corner : corners) {
                 Vec3d projected = RenderUtil.render3D.worldSpaceToScreenSpace(corner);
                 if (projected.z <= 0 || projected.z >= 1) continue;
@@ -131,15 +218,13 @@ public class ESP extends Module {
 
             if (!anyVisible) continue;
 
-            // Проверка видимости на экране
             if (maxX < 0 || maxY < 0 || minX > mc.getWindow().getScaledWidth() || minY > mc.getWindow().getScaledHeight())
                 continue;
+
             if (showNameTags.get()) {
                 renderNameTag(e, minX, minY, maxX, maxY, entity);
             }
             renderBox(e.getMatrixStack(), minX, minY, maxX, maxY, entity);
-            // Рендерим неймтег если включен
-
         }
 
         RenderUtil.render3D.endBuilding(buffer);
@@ -172,51 +257,29 @@ public class ESP extends Module {
         int color1 = ColorUtil.getColorStyle(0);
         int color2 = ColorUtil.getColorStyle(90);
 
-        Vector4f zero = new Vector4f(0, 0, 0, 0); // скругления нет
+        Vector4f zero = new Vector4f(0, 0, 0, 0);
 
         if (!corners.get()) {
-            // ==== FULL BOX ====
-
-            // Top
             RenderUtil.drawRoundedRect(matrix, minX, minY, w, width, zero, color1);
-            // Bottom
             RenderUtil.drawRoundedRect(matrix, minX, maxY - width, w, width, zero, color2);
-
-            // Left
             RenderUtil.drawRoundedRect(matrix, minX, minY, width, h, zero, color1);
-            // Right
             RenderUtil.drawRoundedRect(matrix, maxX - width, minY, width, h, zero, color2);
-
             return;
         }
 
-        // ==== CORNERS MODE ====
         float cornerLen = cornerLength.getFloatValue();
 
-        // TOP-LEFT
         RenderUtil.drawRoundedRect(matrix, minX, minY, w * cornerLen, width, zero, color1);
         RenderUtil.drawRoundedRect(matrix, minX, minY, width, h * cornerLen, zero, color2);
 
-        // TOP-RIGHT
         RenderUtil.drawRoundedRect(matrix, maxX - w * cornerLen, minY, w * cornerLen, width, zero, color1);
         RenderUtil.drawRoundedRect(matrix, maxX - width, minY, width, h * cornerLen, zero, color2);
 
-        // BOTTOM-LEFT
         RenderUtil.drawRoundedRect(matrix, minX, maxY - width, w * cornerLen, width, zero, color2);
         RenderUtil.drawRoundedRect(matrix, minX, maxY - h * cornerLen, width, h * cornerLen, zero, color1);
 
-        // BOTTOM-RIGHT
         RenderUtil.drawRoundedRect(matrix, maxX - w * cornerLen, maxY - width, w * cornerLen, width, zero, color2);
         RenderUtil.drawRoundedRect(matrix, maxX - width, maxY - h * cornerLen, width, h * cornerLen, zero, color1);
-    }
-
-
-    private void drawGradientRect(BufferBuilder buffer, Matrix4f matrix, float x1, float y1, float x2, float y2,
-                                  int c1, int c2, int c3, int c4) {
-        buffer.vertex(matrix, x1, y2, 0f).color(c1);
-        buffer.vertex(matrix, x2, y2, 0f).color(c2);
-        buffer.vertex(matrix, x2, y1, 0f).color(c3);
-        buffer.vertex(matrix, x1, y1, 0f).color(c4);
     }
 
     private boolean getTargetSetting(String name) {
@@ -232,31 +295,33 @@ public class ESP extends Module {
         }
 
         String textString = text.getString();
+
+        if (entity instanceof LivingEntity living) {
+            float hp = living.getHealth();
+            textString = textString + " §c" + (int)hp + "HP";
+        }
+
         FontDraw font = FontHelper.sfprobold[15];
         if (font == null) return;
 
         MatrixStack matrixStack = e.getMatrixStack();
 
-        // Вычисляем ширину текста
         float textWidth = font.getWidth(textString);
         float textWidth2 = textWidth + 6;
         float espWidth = (maxX - minX);
 
-        // Цвет фона
         Color bgColor;
         if (entity instanceof PlayerEntity player && FriendManager.getInstance().isFriend(player.getName().getString())) {
-            bgColor = new Color(0, 255, 0, 76); // Зелёный для друзей
+            bgColor = new Color(0, 255, 0, 76);
         } else {
-            bgColor = new Color(30, 30, 30, 150); // Обычный серый
+            bgColor = new Color(30, 30, 30, 150);
         }
 
         float boxX = minX + espWidth / 2F - textWidth2 / 2F;
-        float boxY = minY - 20; // Ещё выше
+        float boxY = minY - 20;
 
-        // Рисуем фон с rounded rect
         RenderUtil.drawRoundedRect(matrixStack, boxX, boxY, textWidth2, 10, new Vector4f(2f, 2f, 2f, 2f), bgColor.getRGB());
 
-        // Рисуем текст напрямую как в Leet
         float textX = minX + espWidth / 2F - 1 - textWidth / 2F;
         float textY = boxY + 1.5f;
 

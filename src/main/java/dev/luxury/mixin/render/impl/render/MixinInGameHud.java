@@ -37,5 +37,5 @@ public class MixinInGameHud {
     @Inject(at = @At("HEAD"), method = "renderStatusEffectOverlay", cancellable = true)
     public void renderStatusEffectOverlay(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
 
-        }
     }
+}
