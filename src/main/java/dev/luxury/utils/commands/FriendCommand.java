@@ -1,6 +1,7 @@
 package dev.luxury.utils.commands;
 
 
+import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.managers.FriendManager;
 import net.minecraft.text.Text;
 
@@ -14,7 +15,7 @@ public class FriendCommand extends Command {
     @Override
     public void execute(String[] args) {
         if (args.length == 0) {
-            sendMessage("§cИспользование: .friend <add/delete/list> [имя]");
+            ChatUtil.sendChat("§cИспользование: .friend <add/del/list>");
             return;
         }
 
@@ -23,55 +24,43 @@ public class FriendCommand extends Command {
         switch (args[0].toLowerCase()) {
             case "add" -> {
                 if (args.length < 2) {
-                    sendMessage("§cИспользование: .friend add <имя>");
+                    ChatUtil.sendChat("§cИспользование: .friend add <имя>");
                     return;
                 }
                 String nameToAdd = args[1];
                 if (friendManager.addFriend(nameToAdd)) {
-                    sendMessage("§aДруг §f" + nameToAdd + " §aдобавлен!", "Friend Manager");
+                    ChatUtil.sendChat("§aДруг §f" + nameToAdd + " §aдобавлен!");
                 } else {
-                    sendMessage("§c" + nameToAdd + " уже в друзьях!", "Friend Manager");
+                    ChatUtil.sendChat("§c" + nameToAdd + " уже в друзьях!");
                 }
             }
             case "delete", "remove", "del" -> {
                 if (args.length < 2) {
-                    sendMessage("§cИспользование: .friend del <имя>");
+                    ChatUtil.sendChat("§cИспользование: .friend del <имя>");
                     return;
                 }
                 String nameToRemove = args[1];
                 if (friendManager.removeFriend(nameToRemove)) {
-                    sendMessage("§cДруг §f" + nameToRemove + " §cудален!", "Friend Manager");
+                    ChatUtil.sendChat("§cДруг §f" + nameToRemove + " §cудален!");
                 } else {
-                    sendMessage("§c" + nameToRemove + " не найден в друзьях!", "Friend Manager");
+                    ChatUtil.sendChat("§c" + nameToRemove + " не найден в друзьях!");
                 }
             }
             case "list" -> {
                 if (friendManager.getFriends().isEmpty()) {
-                    sendMessage("§eСписок друзей пуст", "Friend Manager");
+                    ChatUtil.sendChat("§eСписок друзей пуст");
                     return;
                 }
-                sendMessage("§aДрузья §7(" + friendManager.getFriends().size() + ")§7:", "Friend Manager");
+                ChatUtil.sendChat("§aДрузья §7(" + friendManager.getFriends().size() + ")§7:");
                 for (String friend : friendManager.getFriends()) {
-                    sendMessage("§7- §f" + friend, "Friend Manager");
+                    ChatUtil.sendChat("§7- §f" + friend);
                 }
             }
             case "clear" -> {
                 friendManager.clear();
-                sendMessage("§cВсе друзья удалены!", "Friend Manager");
+                ChatUtil.sendChat("§cВсе друзья удалены!");
             }
-            default -> sendMessage("§cНеизвестная подкоманда! Используйте: add, delete, list, clear");
-        }
-    }
-
-    private void sendMessage(String message) {
-        if (mc.player != null) {
-            mc.player.sendMessage(Text.literal(message), false);
-        }
-    }
-
-    private void sendMessage(String message, String prefix) {
-        if (mc.player != null) {
-            mc.player.sendMessage(Text.literal("§a" + prefix + " §7» " + message), false);
+            default -> ChatUtil.sendChat("§cНеизвестная подкоманда! Используйте: add, delete, list, clear");
         }
     }
 }

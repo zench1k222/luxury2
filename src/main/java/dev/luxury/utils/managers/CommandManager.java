@@ -10,6 +10,7 @@ import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class CommandManager {
     private static CommandManager instance;
@@ -68,6 +69,82 @@ public class CommandManager {
             mc.player.sendMessage(Text.literal("§cКоманда не найдена: " + commandName), false);
         }
         return true;
+    }
+
+    public Stream<String> tabComplete(String message) {
+        if (!message.startsWith(prefix)) return Stream.empty();
+
+        String withoutPrefix = message.substring(prefix.length());
+        String[] parts = withoutPrefix.split(" ", -1);
+        String commandPart = parts[0];
+        String currentArg = parts.length > 1 ? parts[parts.length - 1] : "";
+
+        if (parts.length == 1) {
+            return commands.stream()
+                    .map(Command::getName)
+                    .filter(c -> c.startsWith(commandPart))
+                    .map(s -> prefix + s);
+        }
+
+        String cmdName = commandPart.toLowerCase();
+
+        switch (cmdName) {
+            case "cfg" -> {
+                if (parts.length == 2) {
+                    return Stream.of("save", "load", "list", "delete", "dir")
+                            .filter(a -> a.startsWith(currentArg));
+                }
+
+                if (parts.length == 3) {
+                    String subCommand = parts[1].toLowerCase();
+                    switch (subCommand) {
+                        case "load", "delete" -> {
+                            List<String> configs = ConfigManager.getInstance().getConfigs();
+                            return configs.stream().filter(c -> c.startsWith(currentArg));
+                        }
+                        case "save", "list", "dir" -> {
+                            return Stream.empty();
+                        }
+                    }
+                }
+
+                return Stream.empty();
+            }
+
+            case "friend" -> {
+                if (parts.length == 2) {
+                    return Stream.of("add", "del", "delete", "remove", "list", "clear")
+                            .filter(a -> a.startsWith(currentArg));
+                }
+
+                if (parts.length == 3) {
+                    String subCommand = parts[1].toLowerCase();
+                    switch (subCommand) {
+                        case "add" -> {
+                            List<String> playersOnline = mc.world != null
+                                    ? mc.world.getPlayers().stream()
+                                    .map(p -> p.getName().getString())
+                                    .toList()
+                                    : List.of();
+                            return playersOnline.stream().filter(p -> p.startsWith(currentArg));
+                        }
+                        case "del", "delete", "remove" -> {
+                            List<String> friends = FriendManager.getInstance().getFriends();
+                            return friends.stream().filter(f -> f.startsWith(currentArg));
+                        }
+                        case "list", "clear" -> {
+                            return Stream.empty();
+                        }
+                    }
+                }
+
+                return Stream.empty();
+            }
+
+            case "help" -> Stream.empty();
+        }
+
+        return Stream.empty();
     }
 
     public String getPrefix() {

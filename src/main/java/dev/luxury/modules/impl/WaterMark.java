@@ -35,7 +35,7 @@ public class WaterMark {
     int colorfonts2= new Color(153,153,153,255).getRGB();
     int iconscolor = new Color(251,225,0,255).getRGB();
         String fps = mc.getCurrentFps() +"fps";
-        String user = "Developer";
+        String user = DiscordRPC.getInstance().getUserRole();
         String ping = getPing();
         String[] icons = {"A", "B","C","D","F","G","H","K","L","M","N"};
         String x = getX();

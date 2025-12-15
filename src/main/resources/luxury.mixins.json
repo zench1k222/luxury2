@@ -36,7 +36,8 @@
     "render.impl.render.MixinInGameHud",
     "render.impl.render.PlayerInfoMixin",
     "render.impl.EntityRendererMixin",
-    "render.impl.client.MinecraftClientMixin"
+    "render.impl.client.MinecraftClientMixin",
+    "render.impl.client.ChatInputSuggestorMixin"
   ],
   "injectors": {
     "defaultRequire": 1

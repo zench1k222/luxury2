@@ -1,5 +1,6 @@
 package dev.luxury.utils.commands;
 
+import dev.luxury.utils.client.ChatUtil;
 import net.minecraft.text.Text;
 
 public class HelpCommand extends Command {
@@ -10,14 +11,9 @@ public class HelpCommand extends Command {
     @Override
     public void execute(String[] args) {
         if (args.length == 0) {
-            sendMessage("§cДоступные команды:");
-            sendMessage("§c.cfg - Управление конфигами");
-            sendMessage("§c.friend - Управление списком друзей");
-        }
-    }
-    private void sendMessage(String message) {
-        if (mc.player != null) {
-            mc.player.sendMessage(Text.literal(message), false);
+            ChatUtil.sendChat("§cДоступные команды:");
+            ChatUtil.sendChat("§c.cfg - Управление конфигами");
+            ChatUtil.sendChat("§c.friend - Управление списком друзей");
         }
     }
 }

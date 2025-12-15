@@ -1,5 +1,6 @@
 package dev.luxury.utils.commands;
 
+import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.managers.ConfigManager;
 import net.minecraft.text.Text;
 
@@ -14,7 +15,7 @@ public class ConfigCommand extends Command {
     @Override
     public void execute(String[] args) {
         if (args.length == 0) {
-            sendMessage("§cИспользование: .cfg <save/load/list/delete/dir> [имя]");
+            ChatUtil.sendChat("§cИспользование: .cfg <save/load/list/delete/dir> [имя]");
             return;
         }
 
@@ -23,68 +24,56 @@ public class ConfigCommand extends Command {
         switch (args[0].toLowerCase()) {
             case "save" -> {
                 if (args.length < 2) {
-                    sendMessage("§cИспользование: .cfg save <имя>");
+                    ChatUtil.sendChat("§cИспользование: .cfg save <имя>");
                     return;
                 }
                 String configName = args[1];
                 if (configManager.saveConfig(configName)) {
-                    sendMessage("§aКонфиг §f" + configName + " §aсохранен!", "Config Manager");
+                    ChatUtil.sendChat("§aКонфиг §f" + configName + " §aсохранен!");
                 } else {
-                    sendMessage("§cОшибка сохранения конфига!", "Config Manager");
+                    ChatUtil.sendChat("§cОшибка сохранения конфига!");
                 }
             }
             case "load" -> {
                 if (args.length < 2) {
-                    sendMessage("§cИспользование: .cfg load <имя>");
+                    ChatUtil.sendChat("§cИспользование: .cfg load <имя>");
                     return;
                 }
                 String configName = args[1];
                 if (configManager.loadConfig(configName)) {
-                    sendMessage("§aКонфиг §f" + configName + " §aзагружен!", "Config Manager");
+                    ChatUtil.sendChat("§aКонфиг §f" + configName + " §aзагружен!");
                 } else {
-                    sendMessage("§cКонфиг §f" + configName + " §cне найден!", "Config Manager");
+                    ChatUtil.sendChat("§cКонфиг §f" + configName + " §cне найден!");
                 }
             }
             case "list" -> {
                 List<String> configs = configManager.getConfigs();
                 if (configs.isEmpty()) {
-                    sendMessage("§eНет сохраненных конфигов", "Config Manager");
+                    ChatUtil.sendChat("§eНет сохраненных конфигов");
                     return;
                 }
-                sendMessage("§aКонфиги §7(" + configs.size() + ")§7:", "Config Manager");
+                ChatUtil.sendChat("§aКонфиги §7(" + configs.size() + ")§7:");
                 for (String config : configs) {
-                    sendMessage("§7- §f" + config, "Config Manager");
+                    ChatUtil.sendChat("§7- §f" + config);
                 }
             }
             case "delete", "del" -> {
                 if (args.length < 2) {
-                    sendMessage("§cИспользование: .cfg delete <имя>");
+                    ChatUtil.sendChat("§cИспользование: .cfg delete <имя>");
                     return;
                 }
                 String configName = args[1];
                 if (configManager.deleteConfig(configName)) {
-                    sendMessage("§cКонфиг §f" + configName + " §cудален!", "Config Manager");
+                    ChatUtil.sendChat("§cКонфиг §f" + configName + " §cудален!");
                 } else {
-                    sendMessage("§cКонфиг §f" + configName + " §cне найден!", "Config Manager");
+                    ChatUtil.sendChat("§cКонфиг §f" + configName + " §cне найден!");
                 }
             }
             case "dir", "folder", "open" -> {
                 configManager.openConfigsFolder();
-                sendMessage("§aПапка с конфигами открыта!", "Config Manager");
+                ChatUtil.sendChat("§aПапка с конфигами открыта!");
             }
-            default -> sendMessage("§cНеизвестная подкоманда! Используйте: save, load, list, delete, dir");
-        }
-    }
-
-    private void sendMessage(String message) {
-        if (mc.player != null) {
-            mc.player.sendMessage(Text.literal(message), false);
-        }
-    }
-
-    private void sendMessage(String message, String prefix) {
-        if (mc.player != null) {
-            mc.player.sendMessage(Text.literal("§a" + prefix + " §7» " + message), false);
+            default -> ChatUtil.sendChat("§cНеизвестная подкоманда! Используйте: save, load, list, delete, dir");
         }
     }
 }
