@@ -30,7 +30,7 @@ public class Arrows extends Module {
 
     private static final ColorRGBA FRIEND_COLOR = new ColorRGBA(0, 255, 0, 200);
     private static final ColorRGBA ENEMY_COLOR = new ColorRGBA(255, 255, 0, 200);
-    private static final ColorRGBA DIST_COLOR = new ColorRGBA(255, 255, 255, 0);
+    private static final ColorRGBA DIST_COLOR = new ColorRGBA(255, 255, 255, 200);
 
     private final SliderSetting size = new SliderSetting("Радиус", "Радиус стрелок", 60, 40, 200, 5);
     private final SliderSetting distance = new SliderSetting("Дистанция", "Максимальная дистанция отображения", 50, 10, 200, 5);
@@ -141,13 +141,14 @@ public class Arrows extends Module {
         FontDraw sfpro2 = FontHelper.sfprobold[15];
 
         int textColor = isFriend ? FRIEND_COLOR.getRGB() : ENEMY_COLOR.getRGB();
+        int textColor1 = DIST_COLOR.getRGB();
         int startY = (int)(y + 20);
         int lineHeight = 10;
         int lineIndex = 0;
 
         if (showNames.get()) {
             String name = player.getName().getString();
-            sfpro2.drawCentered(e.getDrawContext().getMatrices(), name, x, startY + (lineIndex * lineHeight), textColor);
+            sfpro2.drawCentered(e.getDrawContext().getMatrices(), name, x, startY + (lineIndex * lineHeight), textColor1);
             lineIndex++;
         }
 
@@ -160,7 +161,7 @@ public class Arrows extends Module {
 
         if (showDistance.get()) {
             String distanceText = "↔ " + String.format("%.1f", distance) + " m";
-            sfpro2.drawCentered(e.getDrawContext().getMatrices(), distanceText, x, startY + (lineIndex * lineHeight), textColor);
+            sfpro2.drawCentered(e.getDrawContext().getMatrices(), distanceText, x, startY + (lineIndex * lineHeight), textColor1);
         }
     }
 
