@@ -9,6 +9,7 @@ import dev.luxury.utils.animations.Easing;
 import dev.luxury.utils.animations.infinity.InfinityAnimation;
 import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
+import dev.luxury.utils.player.PlayerIntersectionUtil;
 import dev.luxury.utils.render.ColorUtil;
 import dev.luxury.utils.render.RenderUtil;
 import dev.luxury.utils.render.ScissorUtil;
@@ -87,7 +88,7 @@ public class TargetHud extends Module {
         int colorstandart = new Color(29,29,29,242).getRGB();
 
         String name = target.getName().getString();
-        float health = target.getHealth() + target.getAbsorptionAmount();
+        float health = PlayerIntersectionUtil.getHealth(target);
         float maxHealth = target.getMaxHealth();
         DecimalFormat df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
         String hp = "hp " + df.format(health);

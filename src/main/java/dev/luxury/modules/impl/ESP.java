@@ -13,6 +13,7 @@ import dev.luxury.modules.api.settings.SliderSetting;
 import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.managers.FriendManager;
+import dev.luxury.utils.player.PlayerIntersectionUtil;
 import dev.luxury.utils.render.ColorUtil;
 import dev.luxury.utils.render.RenderUtil;
 import net.minecraft.client.gl.ShaderProgramKeys;
@@ -36,7 +37,9 @@ import org.joml.Vector4f;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 @ModuleAnnotation(
         name = "EntityEsp",
@@ -60,7 +63,35 @@ public class ESP extends Module {
     private final BooleanSetting hideVanillaTags = new BooleanSetting("Скрыть ванильные", true);
     private final BooleanSetting showArmor = new BooleanSetting("Броня и предметы", false);
 
-
+    private final Map<String, String> donateSymbols = new HashMap<String, String>() {{
+        put("ꔀ", "§7&lPLAYER");
+        put("ꔄ", "§9&lHERO");
+        put("ꔈ", "§e&lTITAN");
+        put("ꔒ", "§a&lAVENGER");
+        put("ꔖ", "§b&lOVERLORD");
+        put("ꔠ", "§6&lMAGISTER");
+        put("ꔤ", "§c&lIMPERATOR");
+        put("ꔨ", "§d&lDRAGON");
+        put("ꔲ", "§5&lBULL");
+        put("ꕒ", "§f&lRABBIT");
+        put("ꔶ", "§6&lTIGER");
+        put("ꕄ", "§4&lDRACULA");
+        put("ꕖ", "§8&lBUNNY");
+        put("ꕀ", "§2&lHYDRA");
+        put("ꕈ", "§a&lCOBRA");
+        put("ꕁ", "§6&lGOD");
+        put("ꔁ", "§5&lMEDIA");
+        put("ꔅ", "§cY§fT");
+        put("ꕠ", "§e&lD.HELPER");
+        put("ꔉ", "§e&lHELPER");
+        put("ꔓ", "§1&lML.MODER");
+        put("ꔗ", "§1&lMODER");
+        put("ꔡ", "§5&lMODER+");
+        put("ꔥ", "§1&lST.MODER");
+        put("ꔩ", "§1&lGL.MODER");
+        put("ꔳ", "§b&lML.ADMIN");
+        put("ꔷ", "§c&lADMIN");
+    }};
 
     private ArrayList<Entity> toRender = new ArrayList<>();
     private static ESP instance;
@@ -92,6 +123,14 @@ public class ESP extends Module {
         return maxScale + (minScale - maxScale) * t;
     }
 
+    private String getDonateRank(String prefix) {
+        for (Map.Entry<String, String> entry : donateSymbols.entrySet()) {
+            if (prefix.contains(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
 
     public boolean shouldHideVanillaNameTag(EntityRenderState state) {
         if (!isEnabled() || !hideVanillaTags.get()) {
@@ -399,10 +438,27 @@ public class ESP extends Module {
                 ? entity.getCustomName().getString()
                 : entity.getDisplayName().getString();
 
-        float health = living.getHealth();
-        String text = name + " §c" + (int) health + "HP";
+        for (Map.Entry<String, String> entry : donateSymbols.entrySet()) {
+            if (name.contains(entry.getKey())) {
+                name = name.replace(entry.getKey(), entry.getValue());
 
-        float textWidth = font.getWidth(text) * scale;
+                name = name.replace("§f", "");
+                break;
+            }
+        }
+
+        float health = PlayerIntersectionUtil.getHealth(living);
+
+        String text;
+        if (entity instanceof PlayerEntity) {
+            text = name + " §c" + (int) health + "HP";
+        } else {
+            text = name + " §c" + (int) health + "HP";
+        }
+
+        String cleanText = text.replaceAll("§[0-9a-fk-or]", "");
+
+        float textWidth = font.getWidth(cleanText) * scale;
         float textHeight = font.getHeight() * scale;
 
         float paddingX = 4f * scale;
@@ -438,15 +494,64 @@ public class ESP extends Module {
                 bgColor
         );
 
-        font.drawFontLeft(
-                ms,
-                text,
-                paddingX / scale,
-                paddingY / scale - 0.5f,
-                0xFFFFFFFF
-        );
+        float xOffset = paddingX / scale;
+        String[] segments = text.split("(?=§)");
+
+        for (String segment : segments) {
+            if (segment.isEmpty()) continue;
+
+            int color = 0xFFFFFFFF;
+            String displayText;
+
+            if (segment.startsWith("§")) {
+                char colorChar = segment.charAt(1);
+                color = getColorFromFormatCode(colorChar);
+
+                if (segment.length() > 2) {
+                    displayText = segment.substring(2);
+                } else {
+                    displayText = "";
+                }
+            } else {
+                displayText = segment;
+            }
+
+            if (!displayText.isEmpty()) {
+                font.drawFontLeft(
+                        ms,
+                        displayText,
+                        xOffset,
+                        paddingY / scale - 0.5f,
+                        color
+                );
+                xOffset += font.getWidth(displayText);
+            }
+        }
 
         ms.pop();
+    }
+
+    private int getColorFromFormatCode(char code) {
+        return switch (code) {
+            case '0' -> 0xFF000000; // black
+            case '1' -> 0xFF0000AA; // dark_blue
+            case '2' -> 0xFF00AA00; // dark_green
+            case '3' -> 0xFF00AAAA; // dark_aqua
+            case '4' -> 0xFFAA0000; // dark_red
+            case '5' -> 0xFFAA00AA; // dark_purple
+            case '6' -> 0xFFFFAA00; // gold
+            case '7' -> 0xFFAAAAAA; // gray
+            case '8' -> 0xFF555555; // dark_gray
+            case '9' -> 0xFF5555FF; // blue
+            case 'a' -> 0xFF55FF55; // green
+            case 'b' -> 0xFF55FFFF; // aqua
+            case 'c' -> 0xFFFF5555; // red
+            case 'd' -> 0xFFFF55FF; // light_purple
+            case 'e' -> 0xFFFFFF55; // yellow
+            case 'f' -> 0xFFFFFFFF; // white
+            case 'r' -> 0xFFFFFFFF; // reset
+            default -> 0xFFFFFFFF;
+        };
     }
 
     @Override
