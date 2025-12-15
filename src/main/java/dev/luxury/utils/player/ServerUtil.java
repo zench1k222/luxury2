@@ -1,58 +1,59 @@
 package dev.luxury.utils.player;
 
-import net.minecraft.scoreboard.*;
-import org.apache.commons.lang3.StringUtils;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.item.Items;
+import net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket;
+import net.minecraft.scoreboard.ScoreHolder;
+import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.scoreboard.ScoreboardDisplaySlot;
+import net.minecraft.scoreboard.ScoreboardObjective;
+
+import java.util.Locale;
 
 import static dev.luxury.utils.player.InventoryUtil.mc;
 
-public class ServerUtil {
-    public static String server = "Vanilla";
-    public static String selectedServerMode = "reallyworld";
+public class ServerUtil  {
 
-    public ServerUtil(){
-        server = getServer();
-    }
+    public static float getHealth(LivingEntity target) {
+        if (mc.getCurrentServerEntry() == null) {
+            return target.getHealth();
+        }
 
-    private int getAnarchyMode() {
-        Scoreboard scoreboard = mc.world.getScoreboard();
-        ScoreboardObjective objective = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
-        switch (server) {
-            case "FunTime" -> {
-                if (objective != null) {
-                    String[] string = objective.getDisplayName().getString().split("-");
-                    if (string.length > 1) return Integer.parseInt(string[1]);
-                }
-            }
-            case "HolyWorld" -> {
-                for (ScoreboardEntry scoreboardEntry : scoreboard.getScoreboardEntries(objective)) {
-                    String text = Team.decorateName(scoreboard.getScoreHolderTeam(scoreboardEntry.owner()), scoreboardEntry.name()).getString();
-                    if (!text.isEmpty()) {
-                        String string = StringUtils.substringBetween(text, "#", " -◆-");
-                        if (string != null && !string.isEmpty()) return Integer.parseInt(string.replace(" (1.20)", ""));
+        String serverAddress = mc.getCurrentServerEntry().address.toLowerCase(Locale.ROOT);
+        boolean isLocal = mc.isConnectedToLocalServer();
+
+        if (isLocal || serverAddress.isEmpty()) {
+            return target.getHealth();
+        }
+
+        if (target instanceof MobEntity) {
+            return target.getHealth();
+        }
+
+        if (serverAddress.contains("reallyworld") || serverAddress.contains("playrw") ||
+                serverAddress.contains("saturn-x") || serverAddress.contains("skytime") ||
+                serverAddress.contains("space-times")) {
+            Scoreboard scoreboard = target.getWorld().getScoreboard();
+            ScoreboardObjective scoreObjective = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.BELOW_NAME);
+
+            if (scoreObjective != null) {
+                try {
+                    int hp = scoreboard.getOrCreateScore(ScoreHolder.fromName(target.getNameForScoreboard()), scoreObjective).getScore();
+                    if (hp >= 0 && hp <= target.getMaxHealth()) {
+                        return (float) hp;
                     }
+                } catch (NumberFormatException ignored) {
                 }
             }
         }
-        return -1;
+
+        return target.getHealth();
+    }
+    public static boolean isConnected(String ip) {
+        if (mc.getCurrentServerEntry() == null) return false;
+        String serverAddress = mc.getCurrentServerEntry().address;
+        return serverAddress != null && serverAddress.contains(ip);
     }
 
-    public String getServer() {
-        if (PlayerIntersectionUtil.nullCheck() || mc.getNetworkHandler() == null || mc.getNetworkHandler().getServerInfo() == null || mc.getNetworkHandler().getBrand() == null) return "Vanilla";
-        String serverIp = mc.getNetworkHandler().getServerInfo().address.toLowerCase();
-        String brand = mc.getNetworkHandler().getBrand().toLowerCase();
-
-        if (brand.contains("botfilter")) return "FunTime";
-        else if (brand.contains("§6spooky§ccore")) return "SpookyTime";
-        else if (serverIp.contains("funtime") || serverIp.contains("skytime") || serverIp.contains("space-times") || serverIp.contains("funsky")) return "CopyTime";
-        else if (brand.contains("holyworld") || brand.contains("vk.com/idwok")) return "HolyWorld";
-        else if (serverIp.contains("reallyworld")) return "ReallyWorld";
-        else if (serverIp.contains("aresmine") || serverIp.contains("craftyou")) return "AresMine";
-        return "Vanilla";
-    }
-    public boolean isCopyTime() {return selectedServerMode.equals("funtime");}
-    public boolean isFunTime() {return selectedServerMode.equals("funtime");}
-    public boolean isReallyWorld() {return selectedServerMode.equals("reallyworld");}
-    public boolean isHolyWorld() {return selectedServerMode.equals("holyworld");}
-    public boolean isVanilla() {return selectedServerMode.equals("vanilla");}
-    public boolean isAresMine() {return selectedServerMode.equals("aresmine");}
 }

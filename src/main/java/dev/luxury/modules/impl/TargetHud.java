@@ -10,6 +10,7 @@ import dev.luxury.utils.animations.infinity.InfinityAnimation;
 import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.player.PlayerIntersectionUtil;
+import dev.luxury.utils.player.ServerUtil;
 import dev.luxury.utils.render.ColorUtil;
 import dev.luxury.utils.render.RenderUtil;
 import dev.luxury.utils.render.ScissorUtil;
@@ -88,11 +89,13 @@ public class TargetHud extends Module {
         int colorstandart = new Color(29,29,29,242).getRGB();
 
         String name = target.getName().getString();
-        float health = PlayerIntersectionUtil.getHealth(target);
+        float health = ServerUtil.getHealth(target);
         float maxHealth = target.getMaxHealth();
         DecimalFormat df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
-        String hp = "hp " + df.format(health);
-        float targetHealth = target.getHealth() + target.getAbsorptionAmount();
+        float absorption = target.getAbsorptionAmount();
+        float totalHealth = health + absorption;
+        String hp = "hp " + df.format(totalHealth);
+        float targetHealth = health + target.getAbsorptionAmount();
         displayedHealth += (targetHealth - displayedHealth) * 0.2f;
         float screenWidth = e.getDrawContext().getScaledWindowWidth();
         float screenHeight = e.getDrawContext().getScaledWindowHeight();
@@ -104,7 +107,7 @@ public class TargetHud extends Module {
         float barWidth = 67.5f;
         float barHeight = 4.5f;
         float healthPercent = MathHelper.clamp(health / maxHealth, 0.0f, 1.0f);
-        float animatedHealth = healthAnim.animate(healthPercent,100);
+        float animatedHealth = healthAnim.animate(healthPercent ,100);
         float currentBarWidth = barWidth * animatedHealth;
         int colorfonts1= new Color(255,255,255,255).getRGB();
         int colorfonts2= new Color(153,153,153,255).getRGB();
@@ -113,7 +116,6 @@ public class TargetHud extends Module {
             RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), barX, barY, barWidth, barHeight, new Vector4f(1f, 1f, 1f, 1f), new Color(77,77,77,48).getRGB());
             RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), startX + 40, startY, 0.9f, 42, new Vector4f(0f, 0f, 0f, 0f), new Color(254, 254, 254, 150).getRGB());
             RenderUtil.drawRoundedRectGradient(e.getDrawContext().getMatrices(), barX, barY, currentBarWidth, barHeight, new Vector4f(1f, 1f, 1, 1f),new Color(255,195,0,255).getRGB(), new Color(153,117,0,255).getRGB());
-            float absorption = target.getAbsorptionAmount();
             if (absorption > 0) {
 
                 float absorptionPercent = MathHelper.clamp(absorption / maxHealth, 0.0f, 1.0f);
@@ -167,6 +169,7 @@ public class TargetHud extends Module {
         if (needsClipping) {
             ScissorUtil.pop();
         }
+
         sfpro2.drawFontLeft(e.getDrawContext().getMatrices(), hp, hpX, startY + 6f, getHealthColor(animatedHealth));
 
         if (target instanceof PlayerEntity) {

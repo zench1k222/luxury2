@@ -14,6 +14,7 @@ import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.managers.FriendManager;
 import dev.luxury.utils.player.PlayerIntersectionUtil;
+import dev.luxury.utils.player.ServerUtil;
 import dev.luxury.utils.render.ColorUtil;
 import dev.luxury.utils.render.RenderUtil;
 import net.minecraft.client.gl.ShaderProgramKeys;
@@ -447,7 +448,7 @@ public class ESP extends Module {
             }
         }
 
-        float health = PlayerIntersectionUtil.getHealth(living);
+        float health = ServerUtil.getHealth(living);
 
         String text;
         if (entity instanceof PlayerEntity) {
