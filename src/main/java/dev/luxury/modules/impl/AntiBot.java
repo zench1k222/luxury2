@@ -5,110 +5,153 @@ import dev.luxury.events.impl.eventapi.EventTarget;
 import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
+import dev.luxury.modules.api.settings.ModeSetting;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.Vec3d;
 
 import java.util.*;
+import java.util.stream.StreamSupport;
 
 @ModuleAnnotation(
         name = "AntiBot",
-        desc = "Игнорирует античит-ботов",
+        desc = "Античит анти-бот",
         category = Category.Combat
 )
 public final class AntiBot extends Module {
 
     public static final AntiBot INSTANCE = new AntiBot();
 
-    private final Set<UUID> bots = new HashSet<>();
-    private final Map<UUID, Vec3d> lastPos = new HashMap<>();
-    private final Map<UUID, Long> lastMove = new HashMap<>();
+    private final Set<UUID> suspectSet = new HashSet<>();
+    private final Set<UUID> botSet = new HashSet<>();
+
+    private final ModeSetting mode = new ModeSetting(
+            "Mode",
+            "Matrix",
+            new String[]{"Matrix", "ReallyWorld"}
+    );
+
+    public AntiBot() {
+        addSettings(mode);
+    }
 
     @EventTarget
     public void onTick(EventTick e) {
-        if (mc.player == null || mc.world == null) return;
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.world == null || mc.player == null) return;
 
-        for (PlayerEntity player : mc.world.getPlayers()) {
-            if (player == mc.player) continue;
+        for (UUID uuid : new HashSet<>(suspectSet)) {
+            PlayerEntity p = mc.world.getPlayerByUuid(uuid);
+            if (p != null) {
+                evaluateSuspect(p);
+            }
+            suspectSet.remove(uuid);
+        }
 
-            UUID uuid = player.getUuid();
+        if (mode.is("Matrix")) {
+            matrixMode();
+        } else {
+            reallyWorldMode();
+        }
 
-            if (checkBot(player)) {
-                bots.add(uuid);
+        botSet.removeIf(uuid -> mc.world.getPlayerByUuid(uuid) == null);
+    }
+
+
+    private void matrixMode() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        for (PlayerEntity p : mc.world.getPlayers()) {
+            if (p == mc.player) continue;
+
+            String name = p.getName().getString();
+
+            boolean nameBot =
+                    name.startsWith("CIT-") &&
+                            !name.contains("NPC") &&
+                            !name.startsWith("[ZNPC]");
+
+            boolean fakeUUID = !p.getUuid().equals(getOfflineUUID(name));
+
+            int armor = 0;
+            for (var stack : p.getArmorItems()) {
+                if (!stack.isEmpty()) armor++;
             }
 
-            checkSpeed(player);
+            if (armor == 4 || nameBot || fakeUUID) {
+                botSet.add(p.getUuid());
+            }
         }
-
-        // очистка мёртвых
-        bots.removeIf(uuid -> mc.world.getPlayerByUuid(uuid) == null);
-        lastPos.keySet().removeIf(uuid -> mc.world.getPlayerByUuid(uuid) == null);
-        lastMove.keySet().removeIf(uuid -> mc.world.getPlayerByUuid(uuid) == null);
     }
 
-    private boolean checkBot(PlayerEntity p) {
-        // мёртвый
-        if (!p.isAlive() || p.getHealth() <= 0) return true;
+    private void reallyWorldMode() {
+        MinecraftClient mc = MinecraftClient.getInstance();
 
-        // слишком рано появился
-        if (p.age < 20) return true;
+        for (PlayerEntity p : mc.world.getPlayers()) {
+            if (p == mc.player) continue;
 
-        // странный UUID
-        if (!p.getUuid().equals(getOfflineUUID(p.getName().getString()))) {
-            return true;
+            if (mc.getNetworkHandler().getPlayerListEntry(p.getUuid()) == null) {
+                botSet.add(p.getUuid());
+                continue;
+            }
+
+            int diamond = 0;
+            int netherite = 0;
+            int totalArmor = 0;
+
+            for (var stack : p.getArmorItems()) {
+                if (stack.isEmpty()) continue;
+
+                totalArmor++;
+
+                String id = stack.getItem().toString();
+
+                if (id.contains("diamond")) diamond++;
+                if (id.contains("netherite")) netherite++;
+            }
+
+            boolean fullDiamond = diamond == 4;
+            boolean fullNetherite = netherite == 4;
+
+            if (totalArmor > 0 && !fullDiamond && !fullNetherite) {
+                botSet.add(p.getUuid());
+            }
         }
+    }
 
-        // фулл броня сразу
+
+    private void evaluateSuspect(PlayerEntity p) {
         int armor = 0;
-        for (ItemStack stack : p.getArmorItems()) {
+        for (var stack : p.getArmorItems()) {
             if (!stack.isEmpty()) armor++;
         }
-        return armor == 4;
+
+        if (armor == 4) {
+            botSet.add(p.getUuid());
+        }
     }
 
-    //ууид так делаем, пидоры метод удалили
     private UUID getOfflineUUID(String name) {
         return UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes());
     }
 
 
-    private void checkSpeed(PlayerEntity p) {
-        UUID uuid = p.getUuid();
-        Vec3d current = p.getPos();
-        long now = System.currentTimeMillis();
+    public boolean isBot(PlayerEntity p) {
+        if (p == null) return false;
 
-        if (lastPos.containsKey(uuid)) {
-            Vec3d prev = lastPos.get(uuid);
-            long time = now - lastMove.getOrDefault(uuid, now);
+        String name = p.getName().getString();
 
-            if (time > 0) {
-                double speed = current.distanceTo(prev) / (time / 1000.0);
-                if (speed > 20.0) {
-                    bots.add(uuid);
-                }
-            }
-        }
+        boolean nameBot =
+                name.startsWith("CIT-") &&
+                        !name.contains("NPC") &&
+                        !name.startsWith("[ZNPC]");
 
-        lastPos.put(uuid, current);
-        lastMove.put(uuid, now);
-    }
-
-    public boolean isBot(PlayerEntity player) {
-        return bots.contains(player.getUuid());
-    }
-
-    @Override
-    public void onEnable() {
-        bots.clear();
-        lastPos.clear();
-        lastMove.clear();
+        return nameBot || botSet.contains(p.getUuid());
     }
 
     @Override
     public void onDisable() {
-        bots.clear();
-        lastPos.clear();
-        lastMove.clear();
+        botSet.clear();
+        suspectSet.clear();
+        super.onDisable();
     }
 }
