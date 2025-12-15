@@ -55,7 +55,9 @@ public class ModuleManager {
                 new JumpCircle(),
                 new HitBubles(),
                 new PacketCriticals(),
-                new NoWeb()
+                new NoWeb(),
+                new Jesus(),
+                new AutoDuel()
 
         );
         DiscordRPC.getInstance().enable();

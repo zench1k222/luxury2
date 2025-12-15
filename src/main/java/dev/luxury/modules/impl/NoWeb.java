@@ -18,7 +18,7 @@ import net.minecraft.entity.MovementType;
 )
 public class NoWeb extends Module {
 
-    private final SliderSetting speedS = new SliderSetting("Скорость", 0, 0.1, 0.8, 0.1);
+    private final SliderSetting speedS = new SliderSetting("Скорость", 0.1, 0.1, 0.6, 0.1);
 
     public NoWeb() {
         addSettings(speedS);

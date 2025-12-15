@@ -62,6 +62,7 @@ public class KillAura extends Module {
     private LivingEntity target = null;
     private LivingEntity lastTarget = null;
     private float lastTargetHealth = 0f;
+    public static boolean state = false;
     private boolean legitBackStop = false;
     @Getter
     private boolean preAttack = false;
@@ -257,11 +258,13 @@ public class KillAura extends Module {
     @Override
     public void onEnable() {
         super.onEnable();
+        state = true;
     }
 
     @Override
     public void onDisable() {
         super.onDisable();
+        state = false;
         lastTarget = null;
         lastTargetHealth = 0f;
     }
