@@ -83,6 +83,10 @@ public class ColorRGBA {
         return new float[]{hue, saturation, maxC};
     }
 
+    public ColorRGBA withAlpha(int alpha) {
+        return new ColorRGBA(this.red, this.green, this.blue, alpha);
+    }
+
     public boolean equals(Object o) {
         if (this == o) {
             return true;
