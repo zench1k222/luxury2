@@ -58,7 +58,8 @@ public class ModuleManager {
                 new NoWeb(),
                 new Jesus(),
                 new AutoDuel(),
-                new TpLoot()
+                new TpLoot(),
+                new AutoPotion()
 
         );
         DiscordRPC.getInstance().enable();

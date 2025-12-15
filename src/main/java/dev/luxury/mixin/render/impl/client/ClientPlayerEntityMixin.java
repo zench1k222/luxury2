@@ -2,6 +2,7 @@ package dev.luxury.mixin.render.impl.client;
 
 import com.mojang.authlib.GameProfile;
 import dev.luxury.Luxury;
+import dev.luxury.events.impl.client.EventMotion;
 import dev.luxury.events.impl.client.EventMove;
 import dev.luxury.events.impl.client.EventSlowWalking;
 import dev.luxury.events.impl.client.EventSprintUpdate;
@@ -19,6 +20,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import static dev.luxury.modules.api.Module.mc;
+
 @Mixin(ClientPlayerEntity.class)
 public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity {
 

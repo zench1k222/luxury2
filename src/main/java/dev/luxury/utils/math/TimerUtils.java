@@ -9,6 +9,7 @@ public class TimerUtils {
 
     private long millis;
     private long startTime;
+    public long lastMS = System.currentTimeMillis();
 
     public TimerUtils() {
         reset();
@@ -17,11 +18,20 @@ public class TimerUtils {
     public boolean finished(float delay) {
         return System.currentTimeMillis() - millis >= delay;
     }
-
+    public boolean hasTimeElapsed(long time) {
+        return System.currentTimeMillis() - lastMS > time;
+    }
     public boolean finished(long delay) {
         return System.currentTimeMillis() - millis >= delay;
     }
+    public boolean hasTimeElapsed(long time, boolean reset) {
+        if (System.currentTimeMillis() - lastMS > time) {
+            if (reset) reset();
+            return true;
+        }
 
+        return false;
+    }
     public void reset() {
         this.millis = System.currentTimeMillis();
         this.startTime = System.currentTimeMillis();

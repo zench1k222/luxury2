@@ -40,17 +40,18 @@ public class AutoTotem extends Module {
     private final BooleanSetting back = new BooleanSetting("Возвращать предмет", true);
     private final BooleanSetting noBallSwitch = new BooleanSetting("Не брать если шар", false);
     private final BooleanSetting saveEnchantedtotem = new BooleanSetting("Сохранять чаренные тотемы", true);
-    private final SliderSetting hp = new SliderSetting("Здоровье", 4.5f, 2.0f, 20.0f, 0.1f);
+    public final SliderSetting hp = new SliderSetting("Здоровье", 4.5f, 2.0f, 20.0f, 0.1f);
 
     private final SliderSetting crystalDistance = new SliderSetting("Дистанция кристалла", 4, 2, 6, 1);
     private final SliderSetting anchorDistance = new SliderSetting("Дистанция якоря", 4, 2, 6, 1);
 
     private int item = -1;
     private int returnDelay = 0;
-
+       public static AutoTotem instance;
     public AutoTotem() {
         addSettings(mode, hp, HPElytra, back, noBallSwitch, saveEnchantedtotem,
                 crystalDistance, anchorDistance);
+        instance = this;
     }
 
     @EventTarget

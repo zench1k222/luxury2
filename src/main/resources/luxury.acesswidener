@@ -1,4 +1,5 @@
 accessWidener v2 named
+accessible method net/minecraft/client/world/ClientWorld getPendingUpdateManager ()Lnet/minecraft/client/network/PendingUpdateManager;
 accessible field net/minecraft/client/render/WorldRenderer frustum Lnet/minecraft/client/render/Frustum;
 accessible method net/minecraft/client/network/ClientPlayerEntity isWalking ()Z
 accessible method net/minecraft/client/network/ClientPlayerEntity isBlind ()Z

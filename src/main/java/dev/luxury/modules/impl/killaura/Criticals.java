@@ -91,9 +91,10 @@ public class Criticals {
     }
 
     public boolean isPlayerInCriticalState() {
-        boolean fall = mc.player.fallDistance > 0;
-        return !mc.player.isOnGround() && (fall);
+        boolean crit = mc.player.fallDistance > 0 && (mc.player.fallDistance < 0.08 || !Simulation.simulateLocalPlayer(1).onGround);
+        return !mc.player.isOnGround() && (crit );
     }
+
 
     public boolean isPrePlayerInCriticalState(  Simulation simulatedPlayer) {
         boolean crit = simulatedPlayer.fallDistance > 0 && (simulatedPlayer.fallDistance < 0.08 || !Simulation.simulateLocalPlayer(2).onGround);
