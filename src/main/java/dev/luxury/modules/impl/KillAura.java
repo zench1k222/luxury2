@@ -123,9 +123,6 @@ public class KillAura extends Module {
             Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getSlothAISetup(), angle), aim.getSlothAISetup()), 3, this);
         }
 
-        if (rotationMode.is("ReallyWorld")) {
-            Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getReallyWorldSetup(), angle), aim.getReallyWorldSetup()), 3, this);
-        }
 
         if (preAttack || isCanAttack) {
             updateSprint();
@@ -238,15 +235,15 @@ public class KillAura extends Module {
 
         if (target == null) return;
 
-        float bodyYaw = Luxury.getInstance().getRotationManager().getBodyRotation().getYaw();
-
         if (correction.is("Сфокусированная")) {
             Rotate angle = RotateUtils.fromVec3d(target.getBoundingBox().getCenter().subtract(mc.player.getBoundingBox().getCenter()));
-            Move.fixMovement(eventMoveInput, bodyYaw, angle.getYaw());
+            Move.fixMovement(eventMoveInput, Luxury.getInstance().getRotationManager().getCurrentRotate().getYaw(), angle.getYaw());
         } else {
-            Move.fixMovement(eventMoveInput, bodyYaw, mc.player.getYaw());
+            Move.fixMovement(eventMoveInput, Luxury.getInstance().getRotationManager().getCurrentRotate().getYaw(), mc.player.getYaw());
         }
     }
+
+
     public LivingEntity getTarget() {
         return this.isEnabled() ? target : null;
     }

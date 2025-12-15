@@ -57,7 +57,8 @@ public class ModuleManager {
                 new PacketCriticals(),
                 new NoWeb(),
                 new Jesus(),
-                new AutoDuel()
+                new AutoDuel(),
+                new TpLoot()
 
         );
         DiscordRPC.getInstance().enable();

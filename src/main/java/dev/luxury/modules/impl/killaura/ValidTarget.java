@@ -78,11 +78,11 @@ public class ValidTarget {
         List<String> targetSettings;
 
         public boolean isValid(LivingEntity entity) {
-           // ElytraTarget module = ElytraTarget.getInstance();
+            // ElytraTarget module = ElytraTarget.getInstance();
             if (isLocalPlayer(entity)) return false;
             if (isInvalidHealth(entity)) return false;
             if (isBotPlayer(entity)) return false;
-           // if (module.isState() && module.getTarget() != null && module.getTarget() != entity) return false;
+            // if (module.isState() && module.getTarget() != null && module.getTarget() != entity) return false;
 
             return isValidEntityType(entity);
         }
@@ -97,7 +97,7 @@ public class ValidTarget {
         }
 
         private boolean isBotPlayer(LivingEntity entity) {
-            return entity instanceof PlayerEntity player && AntiBot.INSTANCE.isBot(player);
+            return entity instanceof PlayerEntity player && AntiBot.instance.isBot(player);
         }
 
         private boolean isNakedPlayer(LivingEntity entity) {

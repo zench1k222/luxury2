@@ -3,13 +3,11 @@ package dev.luxury.modules.impl.killaura.rotate;
 
 import dev.luxury.Luxury;
 import dev.luxury.modules.impl.killaura.rotate.mods.OrdinaryMode;
-import dev.luxury.modules.impl.killaura.rotate.mods.ReallyWorldMode;
 import dev.luxury.modules.impl.killaura.rotate.mods.Interpolation;
 import dev.luxury.modules.impl.killaura.rotate.mods.SlothAIMode;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.OrdinaryConfig;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.InterpolationConfig;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.SlothAIConfig;
-import dev.luxury.modules.impl.killaura.rotate.mods.config.ReallyWorldConfig;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.api.RotationConfig;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.api.RotationModeType;
 import lombok.Getter;
@@ -27,9 +25,6 @@ public class Aim {
     private final SlothAIMode slothAIMod = new SlothAIMode();
     private final SlothAIConfig slothAISetup = new SlothAIConfig();
 
-    private final ReallyWorldMode reallyWorldMod = new ReallyWorldMode();
-    private final ReallyWorldConfig reallyWorldSetup = new ReallyWorldConfig();
-
     public SlothAIConfig getSlothAISetup() {
         return slothAISetup;
     }
@@ -37,12 +32,6 @@ public class Aim {
         return slothAIMod;
     }
 
-    public ReallyWorldConfig getReallyWorldSetup() {
-        return reallyWorldSetup;
-    }
-    public ReallyWorldMode getReallyWorldMod() {
-        return reallyWorldMod;
-    }
 
     public Rotate rotate(RotationConfig config, Rotate targetRotate) {
         if (config.getType() != RotationModeType.INSTANT && config.getType() != RotationModeType.SLOTH_AI && config.getType() != RotationModeType.REALLY_WORLD) {
@@ -61,7 +50,7 @@ public class Aim {
             case INSTANT -> newRotate = instantMod.process(targetRotate);
             case INTERPOLATION -> newRotate = interpolationMod.process((InterpolationConfig) config, Luxury.getInstance().getRotationManager().getCurrentRotate(), targetRotate);
             case SLOTH_AI -> newRotate = slothAIMod.process(targetRotate);
-            case REALLY_WORLD -> newRotate = reallyWorldMod.process(targetRotate);
+
             default -> newRotate = Luxury.getInstance().getRotationManager().getCurrentRotate();
         }
 
