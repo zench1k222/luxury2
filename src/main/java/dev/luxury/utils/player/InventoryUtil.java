@@ -145,6 +145,30 @@ public class InventoryUtil {
         return false;
     }
 
+    public static void clickSlot(int slotId, int button, SlotActionType type) {
+        if (mc.player == null || mc.interactionManager == null) return;
+
+        mc.interactionManager.clickSlot(
+                mc.player.currentScreenHandler.syncId,
+                slotId,
+                button,
+                type,
+                mc.player
+        );
+    }
+
+    public static void clickSlotLegit(int slotId, int button, SlotActionType type, boolean silent) {
+        if (mc.player == null || mc.interactionManager == null) return;
+
+        int syncId = mc.player.currentScreenHandler.syncId;
+
+        mc.interactionManager.clickSlot(syncId, slotId, button, type, mc.player);
+
+        if (silent) {
+            mc.player.currentScreenHandler.onSlotClick(slotId, button, type, mc.player);
+        }
+    }
+
 
     public static void windowClick(int conteinerId, int slot, int mouse, SlotActionType type, PlayerEntity player) {
         mc.interactionManager.clickSlot(conteinerId, slot, mouse, type, player);
@@ -196,6 +220,4 @@ public class InventoryUtil {
             return MathHelper.sqrt((float) (n7 * n7 + n8 * n8 + n9 * n9));
         }
     }
-
-
 }
