@@ -4,6 +4,7 @@ import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.events.impl.client.EventRender3D;
 import dev.luxury.modules.impl.KillAura;
 import dev.luxury.modules.impl.elytraaura.ElytraAura;
+import dev.luxury.modules.impl.targetesp.mode.Crystals;
 import dev.luxury.modules.impl.targetesp.mode.Ghosts;
 import dev.luxury.modules.impl.targetesp.mode.Circle;
 import dev.luxury.modules.impl.targetesp.mode.Marker;
@@ -56,7 +57,7 @@ public class TargetESPHandler {
                 case "Маркер" -> Marker.render(target, matrixStack);
                 case "Призраки" -> Ghosts.render(target);
                 case "Круг" -> Circle.render(target, matrixStack);
-
+                case "Кристаллы" -> Crystals.render(target, matrixStack);
             }
         }
     }
@@ -69,6 +70,7 @@ public class TargetESPHandler {
                 case "Маркер" -> Marker.render(target, event.getMatrices());
                 case "Призраки" -> Ghosts.render(target);
                 case "Круг" -> Circle.render(target, event.getMatrices());
+                case "Кристаллы" -> Crystals.render(target, event.getMatrices());
             }
         }
     }
