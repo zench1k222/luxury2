@@ -19,6 +19,7 @@ public class ChatUtil {
 
         mc.player.sendMessage(Text.literal(text), false);
     }
+
     //Похуй, пусть так будет. Я не понимаю как ебаный градиент сделать из 1.16.5
 
 //    public static MutableText gradient(String text, int startRGB, int endRGB) {
