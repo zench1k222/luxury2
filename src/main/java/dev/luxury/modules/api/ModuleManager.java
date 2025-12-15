@@ -54,7 +54,8 @@ public class ModuleManager {
                 new FireFly(),
                 new JumpCircle(),
                 new HitBubles(),
-                new PacketCriticals()
+                new PacketCriticals(),
+                new NoWeb()
 
         );
         DiscordRPC.getInstance().enable();

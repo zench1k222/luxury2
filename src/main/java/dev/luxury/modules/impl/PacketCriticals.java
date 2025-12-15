@@ -32,7 +32,7 @@ public class PacketCriticals extends Module {
         if (mc.player == null || mc.world == null) return;
 
         if (e.isSend() && e.getPacket() instanceof PlayerInteractEntityC2SPacket packet) {
-            if (((PlayerInteractEntityC2SPacket.InteractTypeHandler)packet.type).getType() == PlayerInteractEntityC2SPacket.InteractType.ATTACK) {
+            if (packet.type.getType() == PlayerInteractEntityC2SPacket.InteractType.ATTACK) {
                 if (mode.get().equals("Default")) {
                     handleDefaultCrit();
                 } else if (mode.get().equals("RW")) {
