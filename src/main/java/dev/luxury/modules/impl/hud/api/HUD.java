@@ -13,6 +13,7 @@ import dev.luxury.modules.impl.hud.impl.KeyBinds;
 import dev.luxury.modules.impl.hud.impl.Staffs;
 import dev.luxury.modules.impl.hud.impl.TargetHud;
 import dev.luxury.modules.impl.hud.impl.WaterMark;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ChatScreen;
 import org.joml.Vector2f;
 
@@ -50,7 +51,7 @@ public class HUD extends Module {
     }
 
     private void initDraggables() {
-        draggableWaterMark = new WaterMark("WaterMark", 10, 10);
+        draggableWaterMark = new WaterMark("WaterMark", 5, 5);
         draggableTargetHud = new TargetHud("TargetHud", 400, 250);
         draggableKeyBinds = new KeyBinds("KeyBinds", 600, 50);
         draggableStaffs = new Staffs("Staffs", 600, 200);
@@ -61,9 +62,11 @@ public class HUD extends Module {
         draggableElements.add(draggableStaffs);
     }
 
+
     @EventTarget
     public void onRender2D(EventRender2D e) {
         boolean editMode = mc.currentScreen instanceof ChatScreen;
+        DrawContext dc = e.getDrawContext();
 
         if (editMode) {
             if (draggingElement != null) {
@@ -78,11 +81,11 @@ public class HUD extends Module {
             }
 
             for (DraggableHudElement element : draggableElements) {
-                element.render(e.getDrawContext().getMatrices());
-                element.drawBorder(e.getDrawContext().getMatrices());
+                element.render(dc);
 
                 if (element == draggingElement) {
-                    element.renderSnapLines(e.getDrawContext().getMatrices());
+                    element.drawBorder(dc);
+                    element.renderSnapLines(dc);
                 }
             }
         } else {
@@ -93,22 +96,22 @@ public class HUD extends Module {
 
             BooleanSetting waterMarkSetting = type.getValueByName("WaterMark");
             if (waterMarkSetting != null && waterMarkSetting.isValue()) {
-                draggableWaterMark.render(e.getDrawContext().getMatrices());
+                draggableWaterMark.render(dc);
             }
 
             BooleanSetting targetHudSetting = type.getValueByName("TargetHud");
             if (targetHudSetting != null && targetHudSetting.isValue()) {
-                draggableTargetHud.render(e.getDrawContext().getMatrices());
+                draggableTargetHud.render(dc);
             }
 
             BooleanSetting keyBindsSetting = type.getValueByName("KeyBinds");
             if (keyBindsSetting != null && keyBindsSetting.isValue()) {
-                draggableKeyBinds.render(e.getDrawContext().getMatrices());
+                draggableKeyBinds.render(dc);
             }
 
             BooleanSetting staffsSetting = type.getValueByName("Staffs");
             if (staffsSetting != null && staffsSetting.isValue()) {
-                draggableStaffs.render(e.getDrawContext().getMatrices());
+                draggableStaffs.render(dc);
             }
         }
     }

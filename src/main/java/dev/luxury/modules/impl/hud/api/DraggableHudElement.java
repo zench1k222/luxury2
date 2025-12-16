@@ -1,9 +1,9 @@
 package dev.luxury.modules.impl.hud.api;
 
-import com.google.gson.JsonObject;
 import dev.luxury.utils.render.RenderUtil;
 import lombok.Getter;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
@@ -27,16 +27,16 @@ public abstract class DraggableHudElement {
         this.y = y;
     }
 
-    public void tick() {
-    }
+    public void tick() {}
 
-    public abstract void render(MatrixStack matrices);
+    public abstract void render(DrawContext context);
 
     public boolean isMouseOver(double mouseX, double mouseY) {
         return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
     }
 
-    protected void drawBorder(MatrixStack matrices) {
+    public void drawBorder(DrawContext context) {
+        MatrixStack matrices = context.getMatrices();
         RenderUtil.drawBorder(matrices, x, y, width, height, new Vector4f(4, 4, 4, 4), new Color(100, 100, 255, 200).getRGB(), 1f, 1, 1, false);
     }
 
@@ -65,17 +65,11 @@ public abstract class DraggableHudElement {
         SheetCode finalX = getBestCode(xCode, xCode2, xCode3);
         SheetCode finalY = getBestCode(yCode, yCode2, yCode3);
 
-        if (finalX.pos != -1) {
-            this.newX = finalX.pos + finalX.offset;
-        } else {
-            this.newX = -1;
-        }
+        if (finalX.pos != -1) this.newX = finalX.pos + finalX.offset;
+        else this.newX = -1;
 
-        if (finalY.pos != -1) {
-            this.newY = finalY.pos + finalY.offset;
-        } else {
-            this.newY = -1;
-        }
+        if (finalY.pos != -1) this.newY = finalY.pos + finalY.offset;
+        else this.newY = -1;
     }
 
     private SheetCode getBestCode(SheetCode code1, SheetCode code2, SheetCode code3) {
@@ -84,18 +78,24 @@ public abstract class DraggableHudElement {
         return code3;
     }
 
-    public void renderSnapLines(MatrixStack matrices) {
+    public void renderSnapLines(DrawContext context) {
+        MatrixStack matrices = context.getMatrices();
+
         float screenWidth = mc.getWindow().getScaledWidth();
         float screenHeight = mc.getWindow().getScaledHeight();
 
         if (newX != -1) {
-            float lineX = (newX < x) ? newX : newX;
-            RenderUtil.drawRoundedRect(matrices, lineX, 0, 1, screenHeight, new Vector4f(0, 0, 0, 0), new Color(100, 100, 255, 150).getRGB());
+            float lineX = newX;
+            RenderUtil.drawRoundedRect(matrices, lineX, 0, 1, screenHeight,
+                    new Vector4f(0, 0, 0, 0),
+                    new Color(100, 100, 255, 150).getRGB());
         }
 
         if (newY != -1) {
-            float lineY = (newY < y) ? newY : newY;
-            RenderUtil.drawRoundedRect(matrices, 0, lineY, screenWidth, 1, new Vector4f(0, 0, 0, 0), new Color(100, 100, 255, 150).getRGB());
+            float lineY = newY;
+            RenderUtil.drawRoundedRect(matrices, 0, lineY, screenWidth, 1,
+                    new Vector4f(0, 0, 0, 0),
+                    new Color(100, 100, 255, 150).getRGB());
         }
     }
 
@@ -110,27 +110,17 @@ public abstract class DraggableHudElement {
     public void windowResized(float newWindowWidth, float newWindowHeight) {
         if (newWindowHeight <= 0 || newWindowWidth <= 0) return;
 
-        if (this.x < 0) {
-            this.x = 0;
-        }
-        if (this.y < 0) {
-            this.y = 0;
-        }
+        if (this.x < 0) this.x = 0;
+        if (this.y < 0) this.y = 0;
 
-        if (this.x + width > newWindowWidth) {
-            this.x = newWindowWidth - width;
-        }
-        if (this.y + height > newWindowHeight) {
-            this.y = newWindowHeight - height;
-        }
+        if (this.x + width > newWindowWidth) this.x = newWindowWidth - width;
+        if (this.y + height > newWindowHeight) this.y = newWindowHeight - height;
     }
 
     public void setPosition(float x, float y) {
         this.x = x;
         this.y = y;
     }
-
-
 
     @Getter
     protected static class SheetCode {

@@ -6,6 +6,7 @@ import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.render.RenderUtil;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
@@ -28,7 +29,7 @@ public class WaterMark extends DraggableHudElement {
     }
 
     @Override
-    public void render(MatrixStack matrices) {
+    public void render(DrawContext matrices) {
         FontDraw sfpro1 = FontHelper.sfprobold[17];
         FontDraw sfpro2 = FontHelper.sfprobold[10];
         FontDraw sfpro3 = FontHelper.sfprobold[15];
@@ -74,20 +75,19 @@ public class WaterMark extends DraggableHudElement {
         float startX = this.x;
         float startY = this.y;
 
-        // Обновляем размеры для драга
         this.width = totalwidth2 + 82;
-        this.height = 41; // 20 + 1 + 20
+        this.height = 41;
 
-        RenderUtil.drawRoundedRect(matrices, startX, startY, totalwidth2 + 82, 20, new Vector4f(8, 8, 8, 8), colorstandart);
-        RenderUtil.drawRoundedRect(matrices, startX, startY + 21, totalwidth5 + 60, 20, new Vector4f(8, 8, 8, 8), colorstandart);
-        RenderUtil.drawRoundedRectGradient(matrices, startX + 36, startY + 6, 20.5f, 6.5f, new Vector4f(2.5f, 2.5f, 2.5f, 2.5f), new Color(45, 125, 255).getRGB(), new Color(80, 160, 255).getRGB());
+        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX, startY, totalwidth2 + 82, 20, new Vector4f(8, 8, 8, 8), colorstandart);
+        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX, startY + 21, totalwidth5 + 60, 20, new Vector4f(8, 8, 8, 8), colorstandart);
+        RenderUtil.drawRoundedRectGradient(matrices.getMatrices(), startX + 36, startY + 6, 20.5f, 6.5f, new Vector4f(2.5f, 2.5f, 2.5f, 2.5f), new Color(45, 125, 255).getRGB(), new Color(80, 160, 255).getRGB());
 
-        RenderUtil.drawBorder(matrices, startX + 35.5f, startY + 5.5f, 21.5f, 7.5f, new Vector4f(2.5f, 2.5f, 2.5f, 2.5f), new Color(45, 125, 255).getRGB(), 0.1f, 1, 1, false);
-        RenderUtil.drawRoundedRect(matrices, startX + 60, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices, startX + width + 83, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices, startX + totalwidth3 + 59, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices, startX + totalwidth4 + 69, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices, startX + totalwidth8 + 47, startY + 28.5f, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
+        RenderUtil.drawBorder(matrices.getMatrices(), startX + 35.5f, startY + 5.5f, 21.5f, 7.5f, new Vector4f(2.5f, 2.5f, 2.5f, 2.5f), new Color(45, 125, 255).getRGB(), 0.1f, 1, 1, false);
+        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX + 60, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX + width + 83, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX + totalwidth3 + 59, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX + totalwidth4 + 69, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX + totalwidth8 + 47, startY + 28.5f, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
 
         sfpro1.drawGradientText(matrices, "Luxury", startX + 5, startY + 4, colorfonts1, colorfonts2);
         sfpro1.drawGradientText(matrices, user, startX + 79, startY + 4, colorfonts1, colorfonts2);

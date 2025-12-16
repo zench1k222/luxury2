@@ -7,6 +7,7 @@ import dev.luxury.modules.impl.hud.api.DraggableHudElement;
 import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.render.RenderUtil;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Vector4f;
@@ -25,7 +26,7 @@ public class KeyBinds extends DraggableHudElement {
     }
 
     @Override
-    public void render(MatrixStack matrices) {
+    public void render(DrawContext matrices) {
         FontDraw sfpro = FontHelper.sfprobold[18];
         FontDraw sfpro1 = FontHelper.sfprobold[16];
         FontDraw sfpro2 = FontHelper.sfprobold[13];
@@ -52,10 +53,10 @@ public class KeyBinds extends DraggableHudElement {
         this.width = width;
         this.height = totalHeight;
 
-        RenderUtil.drawRoundedRect(matrices, startX, startY, width, totalHeight, new Vector4f(8, 8, 8, 8), colorstandart);
+        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX, startY, width, totalHeight, new Vector4f(8, 8, 8, 8), colorstandart);
         sfpro.drawGradientText(matrices, "KeyBinds", startX + PADDING + 13, startY + PADDING - 3, colorfonts1, colorfonts2);
         iconsFont.drawFontLeft(matrices, icons[7], startX + 5, startY + 3, new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices, startX, startY + 14, 97.5f, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
+        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX, startY + 14, 97.5f, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
 
         int currentY = (int) (startY + PADDING + titleHeight);
         for (Module module : boundModules) {
@@ -68,7 +69,7 @@ public class KeyBinds extends DraggableHudElement {
             float iconX = startX + PADDING + 1;
 
             categoryIconFont.drawFontLeft(matrices, categoryIcon, iconX, currentY, new Color(45, 125, 255).getRGB());
-            RenderUtil.drawRoundedRect(matrices, iconX + 10, currentY + 1.5f, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
+            RenderUtil.drawRoundedRect(matrices.getMatrices(), iconX + 10, currentY + 1.5f, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
 
             sfpro1.drawGradientText(matrices, moduleName, startX + PADDING + 18, currentY - 1.5f, colorfonts1, colorfonts2);
 

@@ -6,6 +6,7 @@ import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.render.RenderUtil;
 import dev.luxury.utils.render.ScissorUtil;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
@@ -31,8 +32,10 @@ public class Staffs extends DraggableHudElement {
     }
 
     @Override
-    public void render(MatrixStack matrices) {
+    public void render(DrawContext context) {
         if (mc.player == null || mc.world == null) return;
+
+        MatrixStack matrices = context.getMatrices();
 
         updateStaffList();
 
@@ -46,10 +49,10 @@ public class Staffs extends DraggableHudElement {
         int colorfonts1 = Color.WHITE.getRGB();
         int colorfonts2 = new Color(150, 150, 160).getRGB();
 
-        List<Staffs.StaffInfo> staffList = new ArrayList<>(staffCache.values());
+        List<StaffInfo> staffList = new ArrayList<>(staffCache.values());
 
         float maxWidth = 97.5f;
-        for (Staffs.StaffInfo staff : staffList) {
+        for (StaffInfo staff : staffList) {
             float nameWidth = sfpro1.getWidth(staff.getName());
             float prefixWidth = prefixFont.getWidth(staff.getPrefix());
             float timeWidth = sfpro2.getWidth(staff.getOnlineTime());
@@ -77,13 +80,15 @@ public class Staffs extends DraggableHudElement {
         RenderUtil.drawRoundedRect(matrices, startX, startY + 14, width, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
 
         int currentY = (int) (startY + PADDING + titleHeight);
-        for (Staffs.StaffInfo staff : staffList) {
+        for (StaffInfo staff : staffList) {
             renderStaffEntry(matrices, startX, currentY, width, staff, sfpro1, sfpro2, prefixFont, colorfonts1, colorfonts2);
             currentY += ITEM_HEIGHT;
         }
     }
 
-    private void renderStaffEntry(MatrixStack matrices, float startX, float currentY, float width, Staffs.StaffInfo staff, FontDraw nameFont, FontDraw timeFont, FontDraw prefixFont, int colorfonts1, int colorfonts2) {
+    // ... остальной код остаётся без изменений ...
+
+    private void renderStaffEntry(MatrixStack matrices, float startX, float currentY, float width, StaffInfo staff, FontDraw nameFont, FontDraw timeFont, FontDraw prefixFont, int colorfonts1, int colorfonts2) {
         boolean isVanished = staff.isVanished();
         int nameAlpha = isVanished ? 255 : 150;
         int color1 = new Color(255, 255, 255, nameAlpha).getRGB();
@@ -176,10 +181,10 @@ public class Staffs extends DraggableHudElement {
 
             String key = display;
 
-            Staffs.StaffStatus status = (entry.getGameMode() == GameMode.SPECTATOR) ? Staffs.StaffStatus.VANISHED : Staffs.StaffStatus.ONLINE;
+            StaffStatus status = (entry.getGameMode() == GameMode.SPECTATOR) ? StaffStatus.VANISHED : StaffStatus.ONLINE;
 
             staffCache.computeIfAbsent(key, k ->
-                    new Staffs.StaffInfo(displayName, name, donatePrefix, status, currentTime));
+                    new StaffInfo(displayName, name, donatePrefix, status, currentTime));
 
             currentKeys.add(key);
         }
@@ -255,6 +260,7 @@ public class Staffs extends DraggableHudElement {
         }
         return false;
     }
+
     public static class StaffInfo {
         private final Text displayName;
         private final String name;
@@ -270,25 +276,11 @@ public class Staffs extends DraggableHudElement {
             this.joinTime = joinTime;
         }
 
-        public Text getDisplayName() {
-            return displayName;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getPrefix() {
-            return prefix;
-        }
-
-        public StaffStatus getStatus() {
-            return status;
-        }
-
-        public long getJoinTime() {
-            return joinTime;
-        }
+        public Text getDisplayName() { return displayName; }
+        public String getName() { return name; }
+        public String getPrefix() { return prefix; }
+        public StaffStatus getStatus() { return status; }
+        public long getJoinTime() { return joinTime; }
 
         public String getOnlineTime() {
             long ms = System.currentTimeMillis() - joinTime;
