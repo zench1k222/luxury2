@@ -1,14 +1,13 @@
-package dev.luxury.modules.impl;
+package dev.luxury.modules.impl.hud.impl;
 
 import com.mojang.authlib.GameProfile;
-import dev.luxury.events.impl.render.EventRender2D;
+import dev.luxury.modules.impl.hud.api.DraggableHudElement;
 import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.render.RenderUtil;
 import dev.luxury.utils.render.ScissorUtil;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.PlayerListEntry;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.GameMode;
@@ -18,20 +17,21 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
-public class Staffs {
-    private static final MinecraftClient mc = MinecraftClient.getInstance();
+public class Staffs extends DraggableHudElement {
     private static final int PADDING = 5;
     private static final int ITEM_HEIGHT = 12;
-
     private static final Set<String> STAFF_PREFIXES = Set.of("helper", "ᴀдмин", "moder", "staff", "admin", "curator", "стажёр", "сотрудник", "помощник", "админ", "модер");
-
     private static final Map<String, StaffInfo> staffCache = new LinkedHashMap<>();
     private static long lastUpdate = 0;
     private static final long UPDATE_INTERVAL = 1000;
+    private final String[] icons = {"A", "B", "C", "D", "E", "F", "G", "H", "I"};
 
-    String[] icons = {"A", "B", "C", "D", "E", "F", "G", "H", "I"};
+    public Staffs(String name, float x, float y) {
+        super(name, x, y);
+    }
 
-    public void render(EventRender2D e) {
+    @Override
+    public void render(MatrixStack matrices) {
         if (mc.player == null || mc.world == null) return;
 
         updateStaffList();
@@ -43,15 +43,13 @@ public class Staffs {
         FontDraw iconsFont = FontHelper.icons[20];
 
         int colorstandart = new Color(25, 25, 30, 255).getRGB();
-        int colorfonts1   = Color.WHITE.getRGB();
-        int colorfonts2   = new Color(150, 150, 160).getRGB();
+        int colorfonts1 = Color.WHITE.getRGB();
+        int colorfonts2 = new Color(150, 150, 160).getRGB();
 
-        List<StaffInfo> staffList = new ArrayList<>(staffCache.values());
-
-        int screenWidth = mc.getWindow().getScaledWidth();
+        List<Staffs.StaffInfo> staffList = new ArrayList<>(staffCache.values());
 
         float maxWidth = 97.5f;
-        for (StaffInfo staff : staffList) {
+        for (Staffs.StaffInfo staff : staffList) {
             float nameWidth = sfpro1.getWidth(staff.getName());
             float prefixWidth = prefixFont.getWidth(staff.getPrefix());
             float timeWidth = sfpro2.getWidth(staff.getOnlineTime());
@@ -64,39 +62,32 @@ public class Staffs {
         }
 
         float width = maxWidth;
-        float startX = screenWidth - width - 200;
-        int startY = 40;
+        float startX = this.x;
+        float startY = this.y;
         int titleHeight = 14;
 
         int totalHeight = (PADDING * 2 + titleHeight + staffList.size() * ITEM_HEIGHT - 3);
 
-        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), startX, startY, width, totalHeight, new Vector4f(8, 8, 8, 8), colorstandart);
+        this.width = width;
+        this.height = totalHeight;
 
-        sfpro.drawGradientText(e.getDrawContext().getMatrices(), "Staffs", startX + PADDING + 13, startY + PADDING - 3, colorfonts1, colorfonts2);
+        RenderUtil.drawRoundedRect(matrices, startX, startY, width, totalHeight, new Vector4f(8, 8, 8, 8), colorstandart);
+        sfpro.drawGradientText(matrices, "Staffs", startX + PADDING + 13, startY + PADDING - 3, colorfonts1, colorfonts2);
+        iconsFont.drawFontLeft(matrices, icons[8], startX + 5, startY + 3, new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(matrices, startX, startY + 14, width, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
 
-        iconsFont.drawFontLeft(
-                e.getDrawContext().getMatrices(),
-                icons[8],
-                startX + 5,
-                startY + 3,
-                new Color(45, 125, 255).getRGB()
-        );
-
-        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), startX, startY + 14, width, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
-
-        int currentY = startY + PADDING + titleHeight;
-        for (StaffInfo staff : staffList) {
-            renderStaffEntry(e, startX, currentY, width, staff, sfpro1, sfpro2);
+        int currentY = (int) (startY + PADDING + titleHeight);
+        for (Staffs.StaffInfo staff : staffList) {
+            renderStaffEntry(matrices, startX, currentY, width, staff, sfpro1, sfpro2, prefixFont, colorfonts1, colorfonts2);
             currentY += ITEM_HEIGHT;
         }
     }
 
-    private void renderStaffEntry(EventRender2D e, float startX, float currentY, float width,
-                                  StaffInfo staff, FontDraw nameFont, FontDraw timeFont) {
+    private void renderStaffEntry(MatrixStack matrices, float startX, float currentY, float width, Staffs.StaffInfo staff, FontDraw nameFont, FontDraw timeFont, FontDraw prefixFont, int colorfonts1, int colorfonts2) {
         boolean isVanished = staff.isVanished();
         int nameAlpha = isVanished ? 255 : 150;
-        int colorfonts1 = new Color(255, 255, 255, nameAlpha).getRGB();
-        int colorfonts2 = new Color(150, 150, 160, nameAlpha).getRGB();
+        int color1 = new Color(255, 255, 255, nameAlpha).getRGB();
+        int color2 = new Color(150, 150, 160, nameAlpha).getRGB();
 
         float headSize = 8f;
         float headX = startX + PADDING;
@@ -105,12 +96,12 @@ public class Staffs {
         PlayerListEntry playerEntry = getPlayerEntry(staff.getName());
         if (playerEntry != null && playerEntry.getSkinTextures() != null) {
             Identifier skinTexture = playerEntry.getSkinTextures().texture();
-            RenderUtil.drawRoundedImage(e.getDrawContext().getMatrices(), skinTexture, headX, headY, headSize, headSize, 0.125f, 0.126f, 0.25f, 0.26f, new Vector4f(3f, 3f, 3f, 3f), 0xFFFFFFFF);
+            RenderUtil.drawRoundedImage(matrices, skinTexture, headX, headY, headSize, headSize, 0.125f, 0.126f, 0.25f, 0.26f, new Vector4f(3f, 3f, 3f, 3f), 0xFFFFFFFF);
         }
 
         float squareX = headX + headSize + 3f;
         float squareY = currentY + 1.5f;
-        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), squareX, squareY, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(matrices, squareX, squareY, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
 
         float nameX = squareX + 4 + 3f;
 
@@ -118,7 +109,6 @@ public class Staffs {
         float timeWidth = timeFont.getWidth(timeText);
         float timeX = startX + width - timeWidth - PADDING;
 
-        FontDraw prefixFont = FontHelper.sfprobold[10];
         String prefix = staff.getPrefix();
         float prefixWidth = prefixFont.getWidth(prefix);
 
@@ -133,8 +123,7 @@ public class Staffs {
             ScissorUtil.setFromComponentCoordinates(nameX, currentY - 1.5f, actualNameWidth, nameFont.getHeight());
         }
 
-        nameFont.drawGradientText(e.getDrawContext().getMatrices(), staff.getName(),
-                nameX, currentY - 1.5f, colorfonts1, colorfonts2);
+        nameFont.drawGradientText(matrices, staff.getName(), nameX, currentY - 1.5f, color1, color2);
 
         if (needsClipping) {
             ScissorUtil.pop();
@@ -143,9 +132,8 @@ public class Staffs {
         float prefixX = nameX + actualNameWidth + 2;
         float prefixY = currentY - 1.5f;
 
-        prefixFont.drawFontLeft(e.getDrawContext().getMatrices(), prefix, prefixX, prefixY, colorfonts2);
-
-        timeFont.drawFontLeft(e.getDrawContext().getMatrices(), timeText, timeX, currentY - 1, colorfonts2);
+        prefixFont.drawFontLeft(matrices, prefix, prefixX, prefixY, colorfonts2);
+        timeFont.drawFontLeft(matrices, timeText, timeX, currentY - 1, colorfonts2);
     }
 
     private PlayerListEntry getPlayerEntry(String playerName) {
@@ -157,11 +145,10 @@ public class Staffs {
                 return entry;
             }
         }
-
         return null;
     }
 
-    private static void updateStaffList() {
+    private void updateStaffList() {
         if (mc.getNetworkHandler() == null) return;
 
         long currentTime = System.currentTimeMillis();
@@ -189,21 +176,21 @@ public class Staffs {
 
             String key = display;
 
-            StaffStatus status = (entry.getGameMode() == GameMode.SPECTATOR) ? StaffStatus.VANISHED : StaffStatus.ONLINE;
+            Staffs.StaffStatus status = (entry.getGameMode() == GameMode.SPECTATOR) ? Staffs.StaffStatus.VANISHED : Staffs.StaffStatus.ONLINE;
 
             staffCache.computeIfAbsent(key, k ->
-                    new StaffInfo(displayName, name, donatePrefix, status, currentTime));
+                    new Staffs.StaffInfo(displayName, name, donatePrefix, status, currentTime));
 
             currentKeys.add(key);
         }
 
         staffCache.entrySet().removeIf(entry -> !currentKeys.contains(entry.getKey()));
     }
-    private static String extractDonatePrefix(String fullPrefix) {
+
+    private String extractDonatePrefix(String fullPrefix) {
         if (fullPrefix == null || fullPrefix.isEmpty()) return "";
 
         String cleaned = repairString(fullPrefix).trim();
-
         cleaned = cleaned.replaceAll("^[^a-zA-Zа-яА-ЯёЁ0-9]+", "").trim();
 
         if (cleaned.isEmpty()) return "";
@@ -242,7 +229,7 @@ public class Staffs {
         return validWords.get(0);
     }
 
-    private static String repairString(String input) {
+    private String repairString(String input) {
         if (input == null) return "";
         StringBuilder sb = new StringBuilder(input.length());
         for (char c : input.toCharArray()) {
@@ -256,7 +243,8 @@ public class Staffs {
         }
         return sb.toString();
     }
-    private static boolean containsStaffKeyword(String text) {
+
+    private boolean containsStaffKeyword(String text) {
         if (text == null || text.isEmpty()) return false;
 
         String lower = text.toLowerCase(Locale.US);
@@ -267,41 +255,6 @@ public class Staffs {
         }
         return false;
     }
-
-    public static boolean isStaff(String playerName) {
-        if (mc.getNetworkHandler() == null) return false;
-
-        for (PlayerListEntry entry : mc.getNetworkHandler().getPlayerList()) {
-            GameProfile profile = entry.getProfile();
-            Text displayName = entry.getDisplayName();
-
-            if (profile == null || displayName == null) continue;
-            if (!profile.getName().equals(playerName)) continue;
-
-            String display = displayName.getString();
-            String prefix = display.replace(playerName, "").trim();
-
-            return prefix.length() >= 2 && containsStaffKeyword(prefix);
-        }
-
-        return false;
-    }
-
-    public static List<StaffInfo> getStaffList() {
-        updateStaffList();
-        return new ArrayList<>(staffCache.values());
-    }
-
-    public static StaffInfo getStaffInfo(String playerName) {
-        updateStaffList();
-        return staffCache.values().stream().filter(info -> info.getName().equals(playerName)).findFirst().orElse(null);
-    }
-
-    public static void clearCache() {
-        staffCache.clear();
-        lastUpdate = 0;
-    }
-
     public static class StaffInfo {
         private final Text displayName;
         private final String name;

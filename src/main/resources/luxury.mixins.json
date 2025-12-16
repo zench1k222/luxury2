@@ -11,14 +11,17 @@
     "render.impl.client.EntityMixin",
     "render.impl.client.LivingEntityMixin",
     "render.impl.client.MixinAbstractBlockState",
+    "render.impl.client.MixinFlowableFluid",
     "render.impl.client.PlayerEntityMixin",
     "render.impl.client.ScoreboardMixin"
   ],
   "client": [
+    "render.impl.EntityRendererMixin",
     "render.impl.INativeImage",
     "render.impl.MinecraftClientAccessor",
     "render.impl.WorldRendererAccessor",
     "render.impl.client.CameraMixin",
+    "render.impl.client.ChatInputSuggestorMixin",
     "render.impl.client.ChatListenerMixin",
     "render.impl.client.ClientPlayerEntityAccessor",
     "render.impl.client.ClientPlayerEntityMixin",
@@ -27,17 +30,17 @@
     "render.impl.client.KeyboardInputMixin",
     "render.impl.client.KeyboardMixin",
     "render.impl.client.LivingEntityRendererMixin",
+    "render.impl.client.MinecraftClientMixin",
     "render.impl.client.MixinArmorFeatureRenderer_Skip",
+    "render.impl.client.MixinClientPlayNetworkHandler",
+    "render.impl.client.MixinInGameOverlayRenderer",
     "render.impl.client.MixinLivingEntityRenderer_SkipPlayerModel",
     "render.impl.client.MixinMinecraftClient",
     "render.impl.client.MouseMixin",
     "render.impl.client.TitleScreenMixin",
     "render.impl.render.GameRendererMixin",
     "render.impl.render.MixinInGameHud",
-    "render.impl.render.PlayerInfoMixin",
-    "render.impl.EntityRendererMixin",
-    "render.impl.client.MinecraftClientMixin",
-    "render.impl.client.ChatInputSuggestorMixin"
+    "render.impl.render.PlayerInfoMixin"
   ],
   "injectors": {
     "defaultRequire": 1

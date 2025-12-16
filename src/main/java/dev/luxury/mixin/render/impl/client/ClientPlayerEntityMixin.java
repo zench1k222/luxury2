@@ -7,6 +7,8 @@ import dev.luxury.events.impl.client.EventMove;
 import dev.luxury.events.impl.client.EventSlowWalking;
 import dev.luxury.events.impl.client.EventSprintUpdate;
 import dev.luxury.events.impl.eventapi.EventManager;
+import dev.luxury.modules.api.ModuleManager;
+import dev.luxury.modules.impl.NoPush;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -49,6 +51,13 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
         EventManager.call(eventSprintUpdate);
         if (!eventSprintUpdate.isCancelled()) {
             this.sendSprintingPacket();
+        }
+    }
+    @Inject(method = "pushOutOfBlocks", at = @At("HEAD"), cancellable = true)
+    private void onPushOutOfBlocksHook(double x, double d, CallbackInfo ci) {
+        NoPush noPush = ModuleManager.getModule(NoPush.class);
+        if (noPush != null && noPush.isEnabled() && noPush.mods.getValueByName("Блоки").get()) {
+            ci.cancel();
         }
     }
 
