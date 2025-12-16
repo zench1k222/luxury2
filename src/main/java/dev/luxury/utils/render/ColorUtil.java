@@ -323,7 +323,7 @@ public class ColorUtil {
         return cacheEntry.getColor();
     }
 
-    public int getColor(int red, int green, int blue) {
+    public static int getColor(int red, int green, int blue) {
         return getColor(red, green, blue, 255);
     }
 
@@ -432,6 +432,54 @@ public class ColorUtil {
         int green = (gradientColor >> 8) & 0xFF;
         int blue = gradientColor & 0xFF;
         return new Color(red, green, blue, alpha).getRGB();
+    }
+
+    // ДОБАВЬ ЭТИ МЕТОДЫ В КОНЕЦ КЛАССА
+
+    public static int getColorWithAlpha(int color, float alpha) {
+        int red = (color >> 16) & 0xFF;
+        int green = (color >> 8) & 0xFF;
+        int blue = color & 0xFF;
+        int alphaInt = (int) (alpha * 255);
+        return getColor(red, green, blue, alphaInt);
+    }
+
+    public static int applyAlpha(int color, int alpha) {
+        Color c = new Color(color, true);
+        int newAlpha = (int) ((c.getAlpha() / 255.0) * alpha);
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.min(255, newAlpha)).getRGB();
+    }
+
+    public static int applyAlpha(int color, float alpha) {
+        Color c = new Color(color, true);
+        int newAlpha = (int) ((c.getAlpha() / 255.0) * (alpha * 255));
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.min(255, newAlpha)).getRGB();
+    }
+
+    // Метод для создания цвета из java.awt.Color
+    public static int fromAwtColor(java.awt.Color color) {
+        return getColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+    }
+
+    // Быстрые методы для часто используемых цветов
+    public static int getTextColor() {
+        return getColor(230, 230, 230, 255);
+    }
+
+    public static int getSecondaryTextColor() {
+        return getColor(150, 150, 150, 255);
+    }
+
+    public static int getButtonColor() {
+        return getColor(50, 50, 50, 180);
+    }
+
+    public static int getButtonHoverColor() {
+        return getColor(60, 60, 60, 200);
+    }
+
+    public static int getAccentColor() {
+        return getColor(1, 235, 1, 200);
     }
 
     public static int gradient(int speed, int index, int... colors) {

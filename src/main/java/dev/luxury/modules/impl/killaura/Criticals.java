@@ -91,10 +91,16 @@ public class Criticals {
     }
 
     public boolean isPlayerInCriticalState() {
-        boolean crit = mc.player.fallDistance > 0 && (mc.player.fallDistance < 0.08 || !Simulation.simulateLocalPlayer(1).onGround);
-        return !mc.player.isOnGround() && (crit );
+        if (KillAura.attackMethod.is("New")) {
+            boolean crit = mc.player.fallDistance > 0 && (mc.player.fallDistance < 0.08 || !Simulation.simulateLocalPlayer(1).onGround);
+            return !mc.player.isOnGround() && (crit);
+        }
+        if (KillAura.attackMethod.is("Old")) {
+            boolean fall = mc.player.fallDistance > 0.08;
+            return !mc.player.isOnGround() && (fall);
+        }
+        return false;
     }
-
 
     public boolean isPrePlayerInCriticalState(  Simulation simulatedPlayer) {
         boolean crit = simulatedPlayer.fallDistance > 0 && (simulatedPlayer.fallDistance < 0.08 || !Simulation.simulateLocalPlayer(2).onGround);

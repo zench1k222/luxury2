@@ -379,6 +379,44 @@ public class RenderUtil {
         disableRender();
     }
 
+    public static void drawRoundedRect(MatrixStack matrices, float x, float y, float width, float height,
+                                       Vector4f rounding, int colorTopLeft, int colorTopRight,
+                                       int colorBottomRight, int colorBottomLeft) {
+        enableRender();
+        ShaderProgram shader = RenderSystem.setShader(ResourceProvider.RECTANGLE_SHADER_KEY);
+        setRoundedRectShaderUniforms(shader, width, height, rounding, 1.0f);
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+        BufferBuilder bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        float aTL = (float)(colorTopLeft >> 24 & 255) / 255.0F;
+        float rTL = (float)(colorTopLeft >> 16 & 255) / 255.0F;
+        float gTL = (float)(colorTopLeft >> 8 & 255) / 255.0F;
+        float bTL = (float)(colorTopLeft & 255) / 255.0F;
+
+        float aTR = (float)(colorTopRight >> 24 & 255) / 255.0F;
+        float rTR = (float)(colorTopRight >> 16 & 255) / 255.0F;
+        float gTR = (float)(colorTopRight >> 8 & 255) / 255.0F;
+        float bTR = (float)(colorTopRight & 255) / 255.0F;
+
+        float aBR = (float)(colorBottomRight >> 24 & 255) / 255.0F;
+        float rBR = (float)(colorBottomRight >> 16 & 255) / 255.0F;
+        float gBR = (float)(colorBottomRight >> 8 & 255) / 255.0F;
+        float bBR = (float)(colorBottomRight & 255) / 255.0F;
+
+        float aBL = (float)(colorBottomLeft >> 24 & 255) / 255.0F;
+        float rBL = (float)(colorBottomLeft >> 16 & 255) / 255.0F;
+        float gBL = (float)(colorBottomLeft >> 8 & 255) / 255.0F;
+        float bBL = (float)(colorBottomLeft & 255) / 255.0F;
+
+        bufferBuilder.vertex(matrix, x, y, 0.0F).color(rTL, gTL, bTL, aTL);
+        bufferBuilder.vertex(matrix, x, y + height, 0.0F).color(rBL, gBL, bBL, aBL);
+        bufferBuilder.vertex(matrix, x + width, y + height, 0.0F).color(rBR, gBR, bBR, aBR);
+        bufferBuilder.vertex(matrix, x + width, y, 0.0F).color(rTR, gTR, bTR, aTR);
+
+        endBuilding(bufferBuilder);
+        disableRender();
+    }
+
     public static void drawBorder(MatrixStack matrices, float x, float y, float width, float height,
                                   Vector4f radius, int color, float thickness,
                                   float internalSmoothness, float externalSmoothness, boolean shadow) {
@@ -427,6 +465,24 @@ public class RenderUtil {
     public static void disableRender() {
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
+    }
+
+    public static void enableScissor(int x, int y, int width, int height) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) return;
+
+        double scale = client.getWindow().getScaleFactor();
+        int scissorX = (int) (x * scale);
+        int scissorY = (int) (client.getWindow().getHeight() - (y + height) * scale);
+        int scissorWidth = (int) (width * scale);
+        int scissorHeight = (int) (height * scale);
+
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        GL11.glScissor(scissorX, scissorY, scissorWidth, scissorHeight);
+    }
+
+    public static void disableScissor() {
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
     }
 
     public static void endBuilding(BufferBuilder bb) {

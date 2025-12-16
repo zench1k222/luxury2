@@ -28,9 +28,9 @@ public class Arrows extends Module {
     public static final Arrows INSTANCE = new Arrows();
     public static Identifier TRIANGLE_TEXTURE = Identifier.of("luxury", "images/triangle.png");
 
-    private static final ColorRGBA FRIEND_COLOR = new ColorRGBA(0, 255, 0, 200);
-    private static final ColorRGBA ENEMY_COLOR = new ColorRGBA(255, 255, 0, 200);
-    private static final ColorRGBA DIST_COLOR = new ColorRGBA(255, 255, 255, 200);
+    private static final ColorRGBA FRIEND_COLOR = new ColorRGBA(45, 125, 255, 220);
+    private static final ColorRGBA ENEMY_COLOR = new ColorRGBA(200, 80, 80, 220);
+    private static final ColorRGBA DIST_COLOR = new ColorRGBA(150, 150, 160, 220);
 
     private final SliderSetting size = new SliderSetting("Радиус", "Радиус стрелок", 60, 40, 200, 5);
     private final SliderSetting distance = new SliderSetting("Дистанция", "Максимальная дистанция отображения", 50, 10, 200, 5);
@@ -140,28 +140,31 @@ public class Arrows extends Module {
                                 boolean isFriend, double distance) {
         FontDraw sfpro2 = FontHelper.sfprobold[15];
 
-        int textColor = isFriend ? FRIEND_COLOR.getRGB() : ENEMY_COLOR.getRGB();
-        int textColor1 = DIST_COLOR.getRGB();
+        boolean isFriendPlayer = dev.luxury.Luxury.getInstance().getFriendManager().isFriend(player.getName().getString());
+
+        int friendColor = isFriendPlayer ? FRIEND_COLOR.getRGB() : DIST_COLOR.getRGB();
+        int neutralColor = DIST_COLOR.getRGB();
+
         int startY = (int)(y + 20);
         int lineHeight = 10;
         int lineIndex = 0;
 
         if (showNames.get()) {
             String name = player.getName().getString();
-            sfpro2.drawCentered(e.getDrawContext().getMatrices(), name, x, startY + (lineIndex * lineHeight), textColor1);
+            sfpro2.drawCentered(e.getDrawContext().getMatrices(), name, x, startY + (lineIndex * lineHeight), neutralColor);
             lineIndex++;
         }
 
         if (showHealth.get()) {
             float health = player.getHealth();
             String healthText = "❤ " + String.format("%.1f", health);
-            sfpro2.drawCentered(e.getDrawContext().getMatrices(), healthText, x, startY + (lineIndex * lineHeight), textColor);
+            sfpro2.drawCentered(e.getDrawContext().getMatrices(), healthText, x, startY + (lineIndex * lineHeight), friendColor);
             lineIndex++;
         }
 
         if (showDistance.get()) {
             String distanceText = "↔ " + String.format("%.1f", distance) + " m";
-            sfpro2.drawCentered(e.getDrawContext().getMatrices(), distanceText, x, startY + (lineIndex * lineHeight), textColor1);
+            sfpro2.drawCentered(e.getDrawContext().getMatrices(), distanceText, x, startY + (lineIndex * lineHeight), neutralColor);
         }
     }
 

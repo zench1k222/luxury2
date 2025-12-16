@@ -32,10 +32,10 @@ public class KeyBinds {
         FontDraw iconsFontRender = FontHelper.icons[14];
         FontDraw iconsFontPlayer = FontHelper.icons[14];
 
-        int colorfonts1= new Color(255,255,255,255).getRGB();
-        int colorfonts2= new Color(153,153,153,255).getRGB();
+        int colorfonts1 = Color.WHITE.getRGB();
+        int colorfonts2 = new Color(150, 150, 160).getRGB();
 
-        int colorstandart = new Color(29,29,29,242).getRGB();
+        int colorstandart = new Color(25, 25, 30, 255).getRGB();
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.world == null) {
             return;
@@ -52,8 +52,8 @@ public class KeyBinds {
 
         RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), startX, startY, width, totalHeight, new Vector4f(8, 8, 8, 8), colorstandart);
         sfpro.drawGradientText(e.getDrawContext().getMatrices(), "KeyBinds", startX + PADDING + 13, startY + PADDING - 3, colorfonts1, colorfonts2);
-        iconsFont.drawFontLeft(e.getDrawContext().getMatrices(), icons[7], startX + 5, startY + 3, Color.yellow.getRGB());
-        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), startX, startY + 14, 97.5f, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(254, 254, 254, 150).getRGB());
+        iconsFont.drawFontLeft(e.getDrawContext().getMatrices(), icons[7], startX + 5, startY + 3, new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), startX, startY + 14, 97.5f, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
 
         int currentY = startY + PADDING + titleHeight;
         for (Module module : boundModules) {
@@ -65,9 +65,15 @@ public class KeyBinds {
 
             float iconX = startX + PADDING + 1;
 
-            categoryIconFont.drawFontLeft(e.getDrawContext().getMatrices(), categoryIcon, iconX, currentY, Color.yellow.getRGB());
+            categoryIconFont.drawFontLeft(
+                    e.getDrawContext().getMatrices(),
+                    categoryIcon,
+                    iconX,
+                    currentY,
+                    new Color(45, 125, 255).getRGB()
+            );
 
-            RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), iconX + 10, currentY + 1.5f, 4, 4, new Vector4f(1,1,1,1), new Color(217,217,217,255).getRGB());
+            RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), iconX + 10, currentY + 1.5f, 4, 4, new Vector4f(1,1,1,1), new Color(45, 125, 255).getRGB());
 
             sfpro1.drawGradientText(e.getDrawContext().getMatrices(), moduleName, startX + PADDING + 18 , currentY - 1.5f , colorfonts1,colorfonts2);
 

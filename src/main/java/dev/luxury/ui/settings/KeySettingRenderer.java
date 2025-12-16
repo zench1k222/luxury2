@@ -30,8 +30,17 @@ public class KeySettingRenderer extends SettingRenderer {
         int key = keySetting.getValue();
         boolean isMouse = keySetting.isMouse();
 
-        int bgColor = isWaiting ? 0xFFFFFF00 : (isHovered ? 0xFF333333 : 0xFF2A2A2A);
-        RenderUtil.drawRoundedRect(context.getMatrices(), x, actualY, width, SETTING_HEIGHT, new Vector4f(5f, 5f, 5f, 5f), bgColor);
+        Color bgColor;
+        if (isWaiting) {
+            bgColor = new Color(255, 255, 0, 50);
+        } else if (isHovered) {
+            bgColor = new Color(40, 40, 45);
+        } else {
+            bgColor = new Color(35, 35, 40);
+        }
+
+        RenderUtil.drawRoundedRect(context.getMatrices(), x, actualY, width, SETTING_HEIGHT,
+                new Vector4f(4f, 4f, 4f, 4f), bgColor.getRGB());
 
         FontDraw montserratMaloy = FontHelper.monsterrat[14];
         String keyName;
@@ -41,13 +50,14 @@ public class KeySettingRenderer extends SettingRenderer {
         } else if (key == -1) {
             keyName = "None";
         } else if (isMouse) {
-            keyName = "M" + (key + 1); // Mouse buttons: M1, M2, M3, etc.
+            keyName = "M" + (key + 1);
         } else {
             String glfwName = GLFW.glfwGetKeyName(key, 0);
             keyName = glfwName != null ? glfwName : "Key " + key;
         }
 
-        montserratMaloy.drawFontLeft(context.getMatrices(), keySetting.getName() + ": " + keyName, x + 5, actualY + 6, Color.WHITE.getRGB());
+        Color textColor = isWaiting ? Color.YELLOW : Color.WHITE;
+        montserratMaloy.drawFontLeft(context.getMatrices(), keySetting.getName() + ": " + keyName, x + 5, actualY + 6, textColor.getRGB());
 
         return y + SETTING_HEIGHT + SETTING_PADDING;
     }
@@ -85,7 +95,7 @@ public class KeySettingRenderer extends SettingRenderer {
 
         KeySetting keySetting = (KeySetting) setting;
 
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == GLFW.GLFW_KEY_DELETE) {
             keySetting.setValue(-1);
             keySetting.setMouse(false);
         } else {

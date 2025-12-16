@@ -42,9 +42,9 @@ public class Staffs {
         FontDraw prefixFont = FontHelper.sfprobold[10];
         FontDraw iconsFont = FontHelper.icons[20];
 
-        int colorfonts1 = new Color(255, 255, 255, 255).getRGB();
-        int colorfonts2 = new Color(153, 153, 153, 255).getRGB();
-        int colorstandart = new Color(29, 29, 29, 242).getRGB();
+        int colorstandart = new Color(25, 25, 30, 255).getRGB();
+        int colorfonts1   = Color.WHITE.getRGB();
+        int colorfonts2   = new Color(150, 150, 160).getRGB();
 
         List<StaffInfo> staffList = new ArrayList<>(staffCache.values());
 
@@ -74,9 +74,15 @@ public class Staffs {
 
         sfpro.drawGradientText(e.getDrawContext().getMatrices(), "Staffs", startX + PADDING + 13, startY + PADDING - 3, colorfonts1, colorfonts2);
 
-        iconsFont.drawFontLeft(e.getDrawContext().getMatrices(), icons[8], startX + 5, startY + 3, Color.yellow.getRGB());
+        iconsFont.drawFontLeft(
+                e.getDrawContext().getMatrices(),
+                icons[8],
+                startX + 5,
+                startY + 3,
+                new Color(45, 125, 255).getRGB()
+        );
 
-        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), startX, startY + 14, width, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(254, 254, 254, 150).getRGB());
+        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), startX, startY + 14, width, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
 
         int currentY = startY + PADDING + titleHeight;
         for (StaffInfo staff : staffList) {
@@ -90,7 +96,7 @@ public class Staffs {
         boolean isVanished = staff.isVanished();
         int nameAlpha = isVanished ? 255 : 150;
         int colorfonts1 = new Color(255, 255, 255, nameAlpha).getRGB();
-        int colorfonts2 = new Color(153, 153, 153, nameAlpha).getRGB();
+        int colorfonts2 = new Color(150, 150, 160, nameAlpha).getRGB();
 
         float headSize = 8f;
         float headX = startX + PADDING;
@@ -104,7 +110,7 @@ public class Staffs {
 
         float squareX = headX + headSize + 3f;
         float squareY = currentY + 1.5f;
-        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), squareX, squareY, 4, 4, new Vector4f(1, 1, 1, 1), new Color(217, 217, 217, 255).getRGB());
+        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), squareX, squareY, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
 
         float nameX = squareX + 4 + 3f;
 

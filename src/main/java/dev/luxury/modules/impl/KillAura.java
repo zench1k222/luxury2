@@ -35,6 +35,7 @@ public class KillAura extends Module {
     private final ModeSetting correction = new ModeSetting("Коррекция Движения", "Свободная", new String[]{"Сфокусированная", "Свободная", "Без корекции"});
 
     public final SliderSetting distance = new SliderSetting("Расстония", "Дистанция атаки", 3.0, 0.5, 6.0, 0.1);
+    public static final ModeSetting attackMethod = new ModeSetting("Метод аттаки", "New", new String[]{"New", "Old"});
     private final SliderSetting distanceRotation = new SliderSetting("пре-расстония", 0.1, 0.0, 6.0, 0.1);
 
     private final ModeListSetting settings = new ModeListSetting("Настройки",
@@ -52,7 +53,7 @@ public class KillAura extends Module {
     private final BooleanSetting smartCrit = new BooleanSetting("Умные криты", "Бьет критами если зажата кнопка прыжка", false);
 
     public KillAura() {
-        addSettings(rotationMode, sprintMode, correction, distance, distanceRotation, settings, targetTypeSetting, onlyCrit, smartCrit);
+        addSettings(rotationMode, sprintMode, correction, distance, attackMethod, distanceRotation, settings, targetTypeSetting, onlyCrit, smartCrit);
     }
 
     Aim aim = new Aim();

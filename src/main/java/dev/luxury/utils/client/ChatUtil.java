@@ -12,7 +12,7 @@ public class ChatUtil {
     public static void sendChat(String message) {
         if (mc.player == null) return;
 
-        String prefix = "§eLuxury Free";
+        String prefix = "§1Luxury Free";
         String arrow = " §r» ";
 
         String text = prefix + arrow + message;

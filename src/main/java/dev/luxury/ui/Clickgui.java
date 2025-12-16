@@ -1,18 +1,15 @@
 package dev.luxury.ui;
 
 import dev.luxury.Luxury;
-import dev.luxury.events.impl.eventapi.EventTarget;
-import dev.luxury.events.impl.render.EventRender2D;
 import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
-import dev.luxury.modules.api.ModuleManager;
 import net.minecraft.client.MinecraftClient;
 import org.lwjgl.glfw.GLFW;
 
 @ModuleAnnotation(
         name = "ClickGui",
-        desc = "Custom Click GUI",
+        desc = "Tabbed GUI with modern design",
         category = Category.Render
 )
 public class Clickgui extends Module {
@@ -26,7 +23,7 @@ public class Clickgui extends Module {
     public void onEnable() {
         super.onEnable();
         if (mc.currentScreen == null) {
-            mc.setScreen(new Csgui(Luxury.getInstance().getModuleManager()));
+            mc.setScreen(new TabbedGUI(Luxury.getInstance().getModuleManager()));
         }
         disable();
     }

@@ -30,10 +30,12 @@ public class WaterMark {
     FontDraw icons1 = FontHelper.icons[16];
     FontDraw icons2 = FontHelper.icons[18];
         String tpsText = getTPSString() + "tps";
-    int colorstandart = new Color(29,29,29,242).getRGB();
-    int colorfonts1= new Color(255,255,255,255).getRGB();
-    int colorfonts2= new Color(153,153,153,255).getRGB();
-    int iconscolor = new Color(251,225,0,255).getRGB();
+
+        int colorstandart = new Color(25, 25, 30, 255).getRGB();
+        int colorfonts1   = Color.WHITE.getRGB();
+        int colorfonts2   = new Color(150, 150, 160).getRGB();
+        int iconscolor    = new Color(45, 125, 255).getRGB();
+
         String fps = mc.getCurrentFps() +"fps";
         String user = DiscordRPC.getInstance().getUserRole();
         String ping = getPing();
@@ -63,14 +65,14 @@ public class WaterMark {
         float totalwidth8 = width9 + width10 + width11;
         RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),5,4.5f,totalwidth2 + 82,20,new Vector4f(8,8,8,8),colorstandart);
         RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),5,25.5f,totalwidth5 + 60,20,new Vector4f(8,8,8,8),colorstandart);
-        RenderUtil.drawRoundedRectGradient(e.getDrawContext().getMatrices(),41,10.5f,20.5f,6.5f,new Vector4f(2.5f,2.5f,2.5f,2.5f),new Color(195,189,141,255).getRGB(),new Color(221,195,0,255).getRGB());
+        RenderUtil.drawRoundedRectGradient(e.getDrawContext().getMatrices(),41,10.5f,20.5f,6.5f,new Vector4f(2.5f,2.5f,2.5f,2.5f),new Color(45, 125, 255).getRGB(),new Color(80, 160, 255).getRGB());
 
-       RenderUtil.drawBorder(e.getDrawContext().getMatrices(),40.5f,10f,21.5f,7.5f,new Vector4f(2.5f,2.5f,2.5f,2.5f),new Color(221,195,0,255).getRGB(),0.1f,1,1,false);
-       RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),65,12.5f,4,4,new Vector4f(1,1,1,1),new Color(217,217,217,255).getRGB());
-        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),width + 88 ,12.5f,4,4,new Vector4f(1,1,1,1),new Color(217,217,217,255).getRGB());
-        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),totalwidth3 + 64   ,12.5f,4,4,new Vector4f(1,1,1,1),new Color(217,217,217,255).getRGB());
-        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),totalwidth4 + 74  ,12.5f,4,4,new Vector4f(1,1,1,1),new Color(217,217,217,255).getRGB());
-        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),totalwidth8+ 52  ,33f,4,4,new Vector4f(1,1,1,1),new Color(217,217,217,255).getRGB());
+       RenderUtil.drawBorder(e.getDrawContext().getMatrices(),40.5f,10f,21.5f,7.5f,new Vector4f(2.5f,2.5f,2.5f,2.5f),new Color(45, 125, 255).getRGB(),0.1f,1,1,false);
+       RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),65,12.5f,4,4,new Vector4f(1,1,1,1),new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),width + 88 ,12.5f,4,4,new Vector4f(1,1,1,1),new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),totalwidth3 + 64   ,12.5f,4,4,new Vector4f(1,1,1,1),new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),totalwidth4 + 74  ,12.5f,4,4,new Vector4f(1,1,1,1),new Color(45, 125, 255).getRGB());
+        RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(),totalwidth8+ 52  ,33f,4,4,new Vector4f(1,1,1,1),new Color(45, 125, 255).getRGB());
 
 
         sfpro1.drawGradientText(e.getDrawContext().getMatrices(),"Luxury",10f,8.5f,colorfonts1,colorfonts2);

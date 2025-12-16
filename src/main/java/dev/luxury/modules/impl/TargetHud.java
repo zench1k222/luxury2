@@ -86,7 +86,7 @@ public class TargetHud extends Module {
         if (target == null) return;
         FontDraw sfpro1 = FontHelper.sfprobold[18];
         FontDraw sfpro2  = FontHelper.sfprobold[15];
-        int colorstandart = new Color(29,29,29,242).getRGB();
+        int colorstandart = new Color(25, 25, 30, 255).getRGB();
 
         String name = target.getName().getString();
         float health = ServerUtil.getHealth(target);
@@ -109,13 +109,14 @@ public class TargetHud extends Module {
         float healthPercent = MathHelper.clamp(health / maxHealth, 0.0f, 1.0f);
         float animatedHealth = healthAnim.animate(healthPercent ,100);
         float currentBarWidth = barWidth * animatedHealth;
-        int colorfonts1= new Color(255,255,255,255).getRGB();
-        int colorfonts2= new Color(153,153,153,255).getRGB();
+        int colorfonts1 = Color.WHITE.getRGB();
+        int colorfonts2 = new Color(150, 150, 160).getRGB();
+
         if (currentBarWidth > 0) {
 
-            RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), barX, barY, barWidth, barHeight, new Vector4f(1f, 1f, 1f, 1f), new Color(77,77,77,48).getRGB());
-            RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), startX + 40, startY, 0.9f, 42, new Vector4f(0f, 0f, 0f, 0f), new Color(254, 254, 254, 150).getRGB());
-            RenderUtil.drawRoundedRectGradient(e.getDrawContext().getMatrices(), barX, barY, currentBarWidth, barHeight, new Vector4f(1f, 1f, 1, 1f),new Color(255,195,0,255).getRGB(), new Color(153,117,0,255).getRGB());
+            RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), barX, barY, barWidth, barHeight, new Vector4f(1f, 1f, 1f, 1f), new Color(45, 45, 50, 120).getRGB());
+            RenderUtil.drawRoundedRect(e.getDrawContext().getMatrices(), startX + 40, startY, 0.9f, 42, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
+            RenderUtil.drawRoundedRectGradient(e.getDrawContext().getMatrices(), barX, barY, currentBarWidth, barHeight, new Vector4f(1f, 1f, 1, 1f),new Color(45, 125, 255).getRGB(), new Color(80, 160, 255).getRGB());
             if (absorption > 0) {
 
                 float absorptionPercent = MathHelper.clamp(absorption / maxHealth, 0.0f, 1.0f);
@@ -124,7 +125,9 @@ public class TargetHud extends Module {
 
                 float absorptionY = barY ;
 
-                int[] gradient2 = ColorUtil.getAnimatedGradient(0xFFE3D381, 0xFFffd700, 8, 0);
+                int[] gradient2 = ColorUtil.getAnimatedGradient(
+                        0xFF2D7DFF, 0xFF50A0FF, 8, 0
+                );
 
                 RenderUtil.drawRoundedRectGradient(e.getDrawContext().getMatrices(), barX, absorptionY, absorptionBarWidth, barHeight, new Vector4f(1f, 1f, 1f, 1f), gradient2[0], gradient2[1]);
             }
@@ -194,9 +197,9 @@ public class TargetHud extends Module {
         MatrixStack matrices = e.getDrawContext().getMatrices();
 
         for (int i = 0; i < 6; i++) {
-            RenderUtil.drawRoundedRect(matrices, currentX, startY - 3.5f, slotSize, slotSize, new Vector4f(2, 2, 2, 2), new Color(53, 53, 53, 255).getRGB());
+            RenderUtil.drawRoundedRect(matrices, currentX, startY - 3.5f, slotSize, slotSize, new Vector4f(2, 2, 2, 2), new Color(35, 35, 40, 255).getRGB());
 
-            RenderUtil.drawBorder(matrices, currentX, startY - 3.5f, slotSize, slotSize, new Vector4f(2, 2, 2, 2), new Color(78, 78, 78, 255).getRGB(), -0.8f, 1, 1, false);
+            RenderUtil.drawBorder(matrices, currentX, startY - 3.5f, slotSize, slotSize, new Vector4f(2, 2, 2, 2), new Color(60, 60, 70, 255).getRGB(), -0.8f, 1, 1, false);
 
             if (items[i] != null && !items[i].isEmpty()) {
                 matrices.push();

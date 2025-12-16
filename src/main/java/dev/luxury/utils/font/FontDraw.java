@@ -68,24 +68,32 @@ public class FontDraw implements Closeable {
 
     private static final Char2ObjectMap<float[]> colorcodes = new Char2ObjectArrayMap<>();
     static {
-        colorcodes.put('0', new float[]{0f, 0f, 0f});
-        colorcodes.put('1', new float[]{0f, 0f, 0.6666667f});
-        colorcodes.put('2', new float[]{0f, 0.6666667f, 0f});
-        colorcodes.put('3', new float[]{0f, 0.6666667f, 0.6666667f});
-        colorcodes.put('4', new float[]{0.6666667f, 0f, 0f});
-        colorcodes.put('5', new float[]{0.6666667f, 0f, 0.6666667f});
-        colorcodes.put('6', new float[]{1f, 0.6666667f, 0f});
-        colorcodes.put('7', new float[]{0.6666667f, 0.6666667f, 0.6666667f});
-        colorcodes.put('8', new float[]{0.33333334f, 0.33333334f, 0.33333334f});
-        colorcodes.put('9', new float[]{0.33333334f, 0.33333334f, 1f});
-        colorcodes.put('a', new float[]{0.33333334f, 1f, 0.33333334f});
-        colorcodes.put('b', new float[]{0.33333334f, 1f, 1f});
-        colorcodes.put('c', new float[]{1f, 0.33333334f, 0.33333334f});
-        colorcodes.put('d', new float[]{1f, 0.33333334f, 1f});
-        colorcodes.put('e', new float[]{1f, 1f, 0.33333334f});
-        colorcodes.put('f', new float[]{1f, 1f, 1f});
-    }
+        // Minecraft color codes
+        colorcodes.put('0', new float[]{0f, 0f, 0f}); // Black
+        colorcodes.put('1', new float[]{0f, 0f, 0.6666667f}); // Dark Blue
+        colorcodes.put('2', new float[]{0f, 0.6666667f, 0f}); // Dark Green
+        colorcodes.put('3', new float[]{0f, 0.6666667f, 0.6666667f}); // Dark Aqua
+        colorcodes.put('4', new float[]{0.6666667f, 0f, 0f}); // Dark Red
+        colorcodes.put('5', new float[]{0.6666667f, 0f, 0.6666667f}); // Dark Purple
+        colorcodes.put('6', new float[]{1f, 0.6666667f, 0f}); // Gold
+        colorcodes.put('7', new float[]{0.6666667f, 0.6666667f, 0.6666667f}); // Gray
+        colorcodes.put('8', new float[]{0.33333334f, 0.33333334f, 0.33333334f}); // Dark Gray
+        colorcodes.put('9', new float[]{0.33333334f, 0.33333334f, 1f}); // Blue
+        colorcodes.put('a', new float[]{0.33333334f, 1f, 0.33333334f}); // Green
+        colorcodes.put('b', new float[]{0.33333334f, 1f, 1f}); // Aqua
+        colorcodes.put('c', new float[]{1f, 0.33333334f, 0.33333334f}); // Red
+        colorcodes.put('d', new float[]{1f, 0.33333334f, 1f}); // Light Purple
+        colorcodes.put('e', new float[]{1f, 1f, 0.33333334f}); // Yellow
+        colorcodes.put('f', new float[]{1f, 1f, 1f}); // White
 
+        // Additional formatting codes (RGB values are ignored for these)
+        colorcodes.put('k', new float[]{0f, 0f, 0f}); // Obfuscated
+        colorcodes.put('l', new float[]{0f, 0f, 0f}); // Bold
+        colorcodes.put('m', new float[]{0f, 0f, 0f}); // Strikethrough
+        colorcodes.put('n', new float[]{0f, 0f, 0f}); // Underline
+        colorcodes.put('o', new float[]{0f, 0f, 0f}); // Italic
+        colorcodes.put('r', new float[]{1f, 1f, 1f}); // Reset
+    }
 
     private static final ThreadLocal<StringBuilder> STRING_BUILDER_POOL = ThreadLocal.withInitial(StringBuilder::new);
     private static final ThreadLocal<char[]> CHAR_ARRAY_BUFFER = ThreadLocal.withInitial(() -> new char[1024]);
@@ -111,7 +119,7 @@ public class FontDraw implements Closeable {
     private void initializeFont(Font baseFont, float sizePx) {
         this.font = baseFont.deriveFont(sizePx);
         if (prebakeGlyphs != null && !prebakeGlyphs.isEmpty()) {
-            prebakeGlyphsFuture =async.submit(() -> {
+            prebakeGlyphsFuture = async.submit(() -> {
                 for (char c : prebakeGlyphs.toCharArray()) {
                     if (Thread.interrupted()) break;
                     locateGlyph(c);
@@ -121,6 +129,45 @@ public class FontDraw implements Closeable {
         }
     }
 
+    // Методы для DrawContext
+    public void drawFontLeft(net.minecraft.client.gui.DrawContext context, String text, float x, float y, int color) {
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        draw(matrices, text, x, y, color, false);
+        matrices.pop();
+    }
+
+    public void drawFontRight(net.minecraft.client.gui.DrawContext context, String text, float x, float y, int color) {
+        float width = getWidth(text);
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        draw(matrices, text, x - width, y, color, false);
+        matrices.pop();
+    }
+
+    public void drawCenteredText(MatrixStack matrices, String text, float x, float y, int color) {
+        float width = getWidth(text);
+        matrices.push();
+        draw(matrices, text, x - width * 0.5f, y, color, false);
+        matrices.pop();
+    }
+
+    public void drawCenteredText(net.minecraft.client.gui.DrawContext context, String text, float x, float y, int color) {
+        float width = getWidth(text);
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        draw(matrices, text, x - width * 0.5f, y, color, false);
+        matrices.pop();
+    }
+
+    public void drawAnimatedGradientText(net.minecraft.client.gui.DrawContext context, String text, float x, float y, int color1, int color2, float time) {
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        drawGradientInternalText(matrices, text, x, y, color1, color2, time, true);
+        matrices.pop();
+    }
+
+    // Оригинальные методы с MatrixStack (для обратной совместимости)
     public void drawFontLeft(MatrixStack ms, String text, float x, float y, int color) {
         draw(ms, text, x, y, color, false);
     }
@@ -133,6 +180,10 @@ public class FontDraw implements Closeable {
     public void drawCentered(MatrixStack ms, String text, float x, float y, int color) {
         float width = getWidth(text);
         draw(ms, text, x - width * 0.5f, y, color, false);
+    }
+
+    public void drawAnimatedGradientText(MatrixStack ms, String text, float x, float y, int color1, int color2, float time) {
+        drawGradientInternalText(ms, text, x, y, color1, color2, time, true);
     }
 
     public float getWidth(String text) {
@@ -203,8 +254,17 @@ public class FontDraw implements Closeable {
             clipped.append(c);
             width += glyphWidth;
         }
-       draw(ms, clipped.toString(), x, y, color, false);
+        draw(ms, clipped.toString(), x, y, color, false);
     }
+
+    // Метод для DrawContext
+    public void drawClipped(net.minecraft.client.gui.DrawContext context, String text, float maxWidth, float x, float y, int color) {
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        drawClipped(matrices, text, maxWidth, x, y, color);
+        matrices.pop();
+    }
+
     public List<String> splitTextToLines(String text, float maxWidth) {
         List<String> lines = new ArrayList<>();
         if (text == null || text.isEmpty()) return lines;
@@ -245,6 +305,31 @@ public class FontDraw implements Closeable {
 
         return lines;
     }
+
+    public float getStringWidthWithShadow(String text) {
+        return getWidth(text) + 1; // +1 пиксель для тени
+    }
+
+    public float getLineHeight() {
+        return getHeight() + 2; // +2 пикселя для междустрочного интервала
+    }
+
+    public void drawWithShadow(MatrixStack ms, String text, float x, float y, int color) {
+        // Рисуем тень (немного смещенную)
+        int shadowColor = (color & 0x00FFFFFF) | 0x44000000; // Полупрозрачная черная тень
+        draw(ms, text, x + 1, y + 1, shadowColor, false);
+        // Рисуем основной текст
+        draw(ms, text, x, y, color, false);
+    }
+
+    // Метод для DrawContext
+    public void drawWithShadow(net.minecraft.client.gui.DrawContext context, String text, float x, float y, int color) {
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        drawWithShadow(matrices, text, x, y, color);
+        matrices.pop();
+    }
+
     private void draw(MatrixStack ms, String text, float x, float y, int color, boolean isGradient) {
         if (text == null || text.isEmpty()) return;
 
@@ -328,12 +413,16 @@ public class FontDraw implements Closeable {
         drawGradientInternalText(matrixStack, text, x, y, color1, color2, 0f, false);
     }
 
-    public void drawAnimatedGradientText(MatrixStack matrixStack, String text, float x, float y, int color1, int color2, float time) {
-        drawGradientInternalText(matrixStack, text, x, y, color1, color2, time, true);
+    // Метод для DrawContext
+    public void drawGradientText(net.minecraft.client.gui.DrawContext context, String text, float x, float y, int color1, int color2) {
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        drawGradientInternalText(matrices, text, x, y, color1, color2, 0f, false);
+        matrices.pop();
     }
 
     private void drawGradientInternalText(MatrixStack matrixStack, String text, float x, float y,
-                                        int color1, int color2, float time, boolean animated) {
+                                          int color1, int color2, float time, boolean animated) {
         if (text == null || text.isEmpty()) return;
 
         int length = text.length();
@@ -415,6 +504,32 @@ public class FontDraw implements Closeable {
         matrixStack.pop();
         RenderUtil.disableRender();
         RenderSystem.setShaderColor(1, 1, 1, 1);
+    }
+
+    public void drawString(MatrixStack matrices, String text, float x, float y, int color) {
+        draw(matrices, text, x, y, color, false);
+    }
+
+    public void drawString(net.minecraft.client.gui.DrawContext context, String text, float x, float y, int color) {
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        draw(matrices, text, x, y, color, false);
+        matrices.pop();
+    }
+
+    public void drawCenteredString(MatrixStack matrices, String text, float x, float y, int color) {
+        float width = getWidth(text);
+        matrices.push();
+        draw(matrices, text, x - width * 0.5f, y, color, false);
+        matrices.pop();
+    }
+
+    public void drawCenteredString(net.minecraft.client.gui.DrawContext context, String text, float x, float y, int color) {
+        float width = getWidth(text);
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        draw(matrices, text, x - width * 0.5f, y, color, false);
+        matrices.pop();
     }
 
     @Nullable
@@ -605,21 +720,25 @@ public class FontDraw implements Closeable {
         }
     }
 
-        static MinecraftClient mc = MinecraftClient.getInstance();
+    static MinecraftClient mc = MinecraftClient.getInstance();
 
-        static RenderTickCounter tickCounter() {
-            return Holder.tickCounter;
-        }
-        static Tessellator tessellator() {
-            return Holder.tessellator;
-        }
-        static MinecraftClient getMc() {
-            return Holder.minecraftClient;
-        }
-        class Holder {
-            private static final MinecraftClient minecraftClient = MinecraftClient.getInstance();
-            private static final RenderTickCounter tickCounter = mc.getRenderTickCounter();
-            private static final Tessellator tessellator = Tessellator.getInstance();
-        }
+    static RenderTickCounter tickCounter() {
+        return Holder.tickCounter;
+    }
+
+    static Tessellator tessellator() {
+        return Holder.tessellator;
+    }
+
+    static MinecraftClient getMc() {
+        return Holder.minecraftClient;
+    }
+
+    static class Holder {
+        private static final MinecraftClient minecraftClient = MinecraftClient.getInstance();
+        private static final RenderTickCounter tickCounter = mc.getRenderTickCounter();
+        private static final Tessellator tessellator = Tessellator.getInstance();
+    }
+
     private record CharMetrics(char character, int width, int height) {}
 }

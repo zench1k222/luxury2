@@ -41,22 +41,14 @@ public class Csgui extends Screen {
     private float lastPanelHeight = -1;
 
     private Module waitingForKeybind = null;
-    
+
     private Map<Module, Boolean> openSettings = new HashMap<>();
-    
+    private Map<Module, Float> settingsScrollOffsets = new HashMap<>();
+
     private float modulesScrollOffset = 0f;
     private final float moduleSpacing = 3f;
     private final float moduleAreaTop = 30f;
     private final float moduleAreaBottom = 10f;
-
-    public Csgui(ModuleManager moduleManager) {
-        super(Text.literal("Csgui"));
-        this.moduleManager = moduleManager;
-    }
-
-    @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
-    }
 
     private static class ModuleAnimState {
         float indicatorX = -1;
@@ -69,6 +61,15 @@ public class Csgui extends Screen {
 
     private Map<Module, ModuleAnimState> animStates = new HashMap<>();
 
+    public Csgui(ModuleManager moduleManager) {
+        super(Text.literal("Csgui"));
+        this.moduleManager = moduleManager;
+    }
+
+    @Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    }
+
     @Override
     public boolean shouldPause() {
         return false;
@@ -78,19 +79,29 @@ public class Csgui extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         FontDraw montserratBig = FontHelper.monsterrat[20];
         FontDraw montserratMedium = FontHelper.monsterrat[16];
-        
+
         float screenWidth = context.getScaledWindowWidth();
         float screenHeight = context.getScaledWindowHeight();
         panelX = (screenWidth - panelWidth) / 2;
         panelY = (screenHeight - panelHeight) / 2;
+
+        // Основной фон GUI
         RenderUtil.drawRoundedRect(context.getMatrices(), panelX, panelY, 121, panelHeight, new Vector4f(8f, 8f, 0f, 0f), Color.gray.getRGB());
         RenderUtil.drawRoundedRect(context.getMatrices(), panelX + 120, panelY, 400 - 134, panelHeight, new Vector4f(0f, 0f, 8f, 8f), new Color(9, 10, 10).getRGB());
+
+        // Разделительные линии
         RenderUtil.drawRoundedRect(context.getMatrices(), panelX, panelY + 35, 385, 2, new Vector4f(0f, 0f, 0f, 0f), new Color(145, 145, 145, 100).getRGB());
         RenderUtil.drawRoundedRect(context.getMatrices(), panelX + 120, panelY + 36, 2, 225, new Vector4f(0f, 0f, 0f, 0f), new Color(145, 145, 145, 50).getRGB());
         RenderUtil.drawRoundedRect(context.getMatrices(), panelX, panelY + 200, 121, 2, new Vector4f(0f, 0f, 0f, 0f), new Color(145, 145, 145, 100).getRGB());
-        RenderUtil.drawRoundedRect(context.getMatrices(), panelX + 300, panelY + 9.5f, 75, 17.5f, new Vector4f(8, 8, 8, 8), new Color(145, 145, 145, 50).getRGB());
-        float currentY = panelY + 45;
 
+        // Поисковая панель
+        RenderUtil.drawRoundedRect(context.getMatrices(), panelX + 300, panelY + 9.5f, 75, 17.5f, new Vector4f(8, 8, 8, 8), new Color(145, 145, 145, 50).getRGB());
+
+        // Заголовок
+        montserratBig.drawAnimatedGradientText(context.getMatrices(), "Luxury 1.21.4", panelX + 25, panelY + 20, 0xFFff910e, 0xFFf5cc22, System.currentTimeMillis() / 1000f);
+
+        // Отрисовка категорий
+        float currentY = panelY + 45;
         float categoryX = panelX + 10;
         for (Category category : Category.values()) {
             boolean isSelected = category == selectedCategory;
@@ -100,7 +111,6 @@ public class Csgui extends Screen {
 
             RenderUtil.drawRoundedRect(context.getMatrices(), categoryX, currentY, 100, categoryHeight, new Vector4f(8f, 8f, 8f, 8f), bgColor);
 
-            montserratBig.drawAnimatedGradientText(context.getMatrices(), "Luxury 1.21.4", panelX + 25, panelY + 20, 0xFFff910e, 0xFFf5cc22, System.currentTimeMillis() / 1000f);
             int textColor = isSelected || isHovered ? Color.white.getRGB() : 0xFFaaaaaa;
             montserratMedium.drawFontLeft(context.getMatrices(), category.name(), categoryX + 10, currentY + 9, textColor);
             currentY += categoryHeight + 5;
@@ -119,6 +129,8 @@ public class Csgui extends Screen {
 
         if (lastSelectedCategory != selectedCategory && searchText.isEmpty()) {
             animStates.clear();
+            openSettings.clear();
+            settingsScrollOffsets.clear();
             lastSelectedCategory = selectedCategory;
         }
 
@@ -137,6 +149,7 @@ public class Csgui extends Screen {
         float visibleAreaBottom = panelY + panelHeight - moduleAreaBottom;
         float visibleAreaHeight = visibleAreaBottom - visibleAreaTop;
 
+        // Расчет позиций модулей
         Map<Integer, Float> baseColumnY = calculateBasePositions(categoryModules, startModuleY, moduleWidth, columnGap);
         float maxContentHeight = Math.max(baseColumnY.get(0) - startModuleY, baseColumnY.get(1) - startModuleY);
         float maxScroll = Math.max(0, maxContentHeight - visibleAreaHeight);
@@ -156,14 +169,17 @@ public class Csgui extends Screen {
 
             boolean settingsOpen = openSettings.getOrDefault(module, false);
             float moduleTotalHeight = moduleHeight + moduleSpacing;
+
+            // Расчет высоты настроек
+            float settingsHeight = 0;
             if (settingsOpen && !module.getSettings().isEmpty()) {
-                float settingsHeight = 0;
                 for (Setting setting : module.getSettings()) {
                     settingsHeight += getEstimatedHeight(setting);
                 }
                 moduleTotalHeight += settingsHeight + 5;
             }
 
+            // Пропуск если модуль вне видимой области
             if (actualY + moduleTotalHeight < visibleAreaTop || actualY > visibleAreaBottom) {
                 columnY.put(column, baseY + moduleTotalHeight);
                 column++;
@@ -171,156 +187,189 @@ public class Csgui extends Screen {
                 continue;
             }
 
-            boolean isEnabled = module.isEnabled();
+            // Отрисовка модуля
             int bgColor = 0xFF2A2A2A;
-
             RenderUtil.drawRoundedRect(context.getMatrices(), moduleX, actualY, moduleWidth, moduleHeight, new Vector4f(7f, 7f, 7f, 7f), bgColor);
-            int textColor = isEnabled ? 0xFF00ff11 : Color.WHITE.getRGB();
 
             String displayName;
+            int textColor;
             if (waitingForKeybind == module) {
                 displayName = "Waiting...";
                 textColor = 0xFFFFFF00;
             } else {
                 displayName = module.getName();
+                textColor = module.isEnabled() ? 0xFF00ff11 : Color.WHITE.getRGB();
             }
 
             montserratMedium.drawFontLeft(context.getMatrices(), displayName, moduleX + 7, actualY + 9.5f, textColor);
 
-            float toggleX = moduleX + moduleWidth - 30;
-            float toggleY = actualY + 5;
+            // Отрисовка тоггл-свитча
+            drawToggleSwitch(context, module, moduleX, actualY, moduleWidth, currentTime);
 
-            float baseWidth = 11f;
-            float maxStretch = 22f;
-            float toggleWidth = 26f;
-            float padding = 2f;
-
-            float centerOff = toggleX + padding + baseWidth / 2f;
-            float centerOn = toggleX + toggleWidth - padding - baseWidth / 2f;
-            float targetCenter = isEnabled ? centerOn : centerOff;
-
-            ModuleAnimState state = animStates.computeIfAbsent(module, k -> new ModuleAnimState());
-
-            if (state.indicatorX < 0) {
-                state.indicatorX = targetCenter;
-                state.width = baseWidth;
-                state.lastUpdate = currentTime;
-            }
-
-            long deltaTime = currentTime - state.lastUpdate;
-            if (deltaTime > 100) deltaTime = 16;
-            state.lastUpdate = currentTime;
-
-            float deltaFactor = Math.min(deltaTime / 16f, 2f);
-
-            float distance = targetCenter - state.indicatorX;
-            float absDistance = Math.abs(distance);
-
-            float lerpSpeed = 0.15f * deltaFactor;
-            state.indicatorX += distance * lerpSpeed;
-            if (absDistance < 0.05f) {
-                state.indicatorX = targetCenter;
-            }
-
-            float targetWidth;
-
-            if (absDistance > 0.5f) {
-                float movementSpeed = Math.abs(distance * lerpSpeed);
-                float stretchFromDistance = Math.min(absDistance / 8f, 1f);
-                float stretchFromSpeed = Math.min(movementSpeed * 15f, 1f);
-                float stretchFactor = Math.max(stretchFromDistance, stretchFromSpeed);
-
-                targetWidth = baseWidth + (maxStretch - baseWidth) * stretchFactor;
-            } else {
-                targetWidth = baseWidth;
-            }
-
-            float widthLerpSpeed = 0.20f * deltaFactor;
-            float widthDiff = targetWidth - state.width;
-            state.width += widthDiff * widthLerpSpeed;
-
-            if (Math.abs(state.width - baseWidth) < 0.05f && absDistance < 0.5f) {
-                state.width = baseWidth;
-            }
-
-            state.width = Math.max(baseWidth, Math.min(state.width, maxStretch));
-
-            float stretch = state.width - baseWidth;
-            float drawX;
-
-            if (distance > 0.3f) {
-                drawX = state.indicatorX - state.width / 2f - stretch * 0.3f;
-            } else if (distance < -0.3f) {
-                drawX = state.indicatorX - state.width / 2f + stretch * 0.3f;
-            } else {
-                drawX = state.indicatorX - state.width / 2f;
-            }
-
-            float minX = toggleX + padding;
-            float maxX = toggleX + toggleWidth - state.width - padding;
-            drawX = Math.max(minX, Math.min(drawX, maxX));
-
-            if (isEnabled) {
-                RenderUtil.drawRoundedRectGradientAnimated(context.getMatrices(), drawX + 1, toggleY + 1, state.width, 12, new Vector4f(5f, 5f, 5f, 5f), 0xFFfc03a9, 0xFFff910e, 0xFFfc03a9, 0xFFff910e, 3000);
-            } else {
-                int grayColor = 0xFF808080;
-                RenderUtil.drawRoundedRect(context.getMatrices(), drawX - 1, toggleY + 1, state.width, 12, new Vector4f(5f, 5f, 5f, 5f), grayColor);
-            }
-
-            RenderUtil.drawBorder(context.getMatrices(), toggleX, toggleY, 26, 14, new Vector4f(6, 6, 6, 6), -1, 0.1f, 1, 1, false);
-            
             float nextY = actualY + moduleHeight + moduleSpacing;
-            
+
+            // Отрисовка настроек модуля
             if (settingsOpen && !module.getSettings().isEmpty()) {
                 float settingsY = actualY + moduleHeight + moduleSpacing;
                 float settingsX = moduleX;
                 float settingsWidth = moduleWidth;
-                
+
+                // Расчет максимальной высоты для настроек
+                float maxSettingsHeight = visibleAreaBottom - settingsY - 5;
                 float totalSettingsHeight = 0;
                 for (Setting setting : module.getSettings()) {
                     totalSettingsHeight += getEstimatedHeight(setting);
                 }
-                
-                float maxSettingsHeight = visibleAreaBottom - settingsY - 5;
-                if (totalSettingsHeight > maxSettingsHeight) {
-                    totalSettingsHeight = maxSettingsHeight;
-                }
-                
-                RenderUtil.drawRoundedRect(context.getMatrices(), settingsX, settingsY, settingsWidth, totalSettingsHeight + 5, new Vector4f(5f, 5f, 5f, 5f), 0xFF1F1F1F);
-                
-                float currentSettingY = settingsY + 5;
-                float settingsBottom = settingsY + totalSettingsHeight + 5;
-                
+
+                // Ограничение высоты и добавление скролла
+                boolean needsScroll = totalSettingsHeight > maxSettingsHeight;
+                float actualSettingsHeight = needsScroll ? maxSettingsHeight : totalSettingsHeight;
+
+                // Фон настроек
+                RenderUtil.drawRoundedRect(context.getMatrices(), settingsX, settingsY, settingsWidth, actualSettingsHeight + 5, new Vector4f(5f, 5f, 5f, 5f), 0xFF1F1F1F);
+
+                // Установка области отсечения для настроек
+                context.getMatrices().push();
+                context.getMatrices().translate(0, 0, 100); // Небольшой z-offset
+
+                // Clip область для настроек
+                RenderUtil.enableScissor(
+                        (int)(settingsX + 1),
+                        (int)(settingsY + 1),
+                        (int)(settingsWidth - 2),
+                        (int)(actualSettingsHeight + 3)
+                );
+
+                float settingsScroll = settingsScrollOffsets.getOrDefault(module, 0f);
+                float currentSettingY = settingsY + 5 - settingsScroll;
+                float settingsBottom = settingsY + actualSettingsHeight + 5;
+
                 for (Setting setting : module.getSettings()) {
                     if (currentSettingY >= settingsBottom) break;
-                    
+
                     SettingRenderer renderer = SettingRendererManager.getRenderer(setting);
                     if (renderer != null) {
                         float settingHeight = getEstimatedHeight(setting);
-                        if (currentSettingY + settingHeight > settingsBottom) {
-                            settingHeight = settingsBottom - currentSettingY;
-                        }
-                        if (currentSettingY < visibleAreaBottom) {
-                            currentSettingY = renderer.render(context, setting, settingsX + 5, currentSettingY, settingsWidth - 10, mouseX, mouseY, 0);
+                        if (currentSettingY + settingHeight < settingsBottom) {
+                            currentSettingY = renderer.render(context, setting, settingsX + 5, currentSettingY, settingsWidth - 10, mouseX, mouseY, settingsScroll);
                         } else {
                             currentSettingY += settingHeight;
                         }
                     }
                 }
-                
-                nextY = settingsY + totalSettingsHeight + moduleSpacing;
+
+                // Отключение области отсечения
+                RenderUtil.disableScissor();
+                context.getMatrices().pop();
+
+                // Индикатор скролла (если нужно)
+                if (needsScroll) {
+                    float scrollbarX = settingsX + settingsWidth - 5;
+                    float scrollbarY = settingsY + 5;
+                    float scrollbarHeight = actualSettingsHeight - 10;
+
+                    float scrollPercent = settingsScroll / (totalSettingsHeight - maxSettingsHeight);
+                    float scrollbarThumbY = scrollbarY + (scrollbarHeight - 10) * scrollPercent;
+
+                    RenderUtil.drawRoundedRect(context.getMatrices(), scrollbarX, scrollbarY, 3, scrollbarHeight, new Vector4f(1.5f, 1.5f, 1.5f, 1.5f), 0xFF444444);
+                    RenderUtil.drawRoundedRect(context.getMatrices(), scrollbarX, scrollbarThumbY, 3, 10, new Vector4f(1.5f, 1.5f, 1.5f, 1.5f), 0xFF888888);
+                }
+
+                nextY = settingsY + actualSettingsHeight + moduleSpacing;
             }
-            
+
             columnY.put(column, baseY + (nextY - actualY));
             column++;
             if (column >= 2) column = 0;
         }
 
+        // Сообщение если модулей нет
         if (categoryModules.isEmpty()) {
             String message = !searchText.isEmpty() ? "Ничего не найдено" : "Здесь пока что нету функций";
             float emptyY = startModuleY - modulesScrollOffset + 20;
             montserratMedium.drawFontLeft(context.getMatrices(), message, moduleStartX + 20, emptyY, 0xFF888888);
         }
+    }
+
+    private void drawToggleSwitch(DrawContext context, Module module, float moduleX, float actualY, float moduleWidth, long currentTime) {
+        boolean isEnabled = module.isEnabled();
+        float toggleX = moduleX + moduleWidth - 30;
+        float toggleY = actualY + 5;
+        float baseWidth = 11f;
+        float maxStretch = 22f;
+        float toggleWidth = 26f;
+        float padding = 2f;
+
+        float centerOff = toggleX + padding + baseWidth / 2f;
+        float centerOn = toggleX + toggleWidth - padding - baseWidth / 2f;
+        float targetCenter = isEnabled ? centerOn : centerOff;
+
+        ModuleAnimState state = animStates.computeIfAbsent(module, k -> new ModuleAnimState());
+
+        if (state.indicatorX < 0) {
+            state.indicatorX = targetCenter;
+            state.width = baseWidth;
+            state.lastUpdate = currentTime;
+        }
+
+        long deltaTime = currentTime - state.lastUpdate;
+        if (deltaTime > 100) deltaTime = 16;
+        state.lastUpdate = currentTime;
+
+        float deltaFactor = Math.min(deltaTime / 16f, 2f);
+        float distance = targetCenter - state.indicatorX;
+        float absDistance = Math.abs(distance);
+
+        float lerpSpeed = 0.15f * deltaFactor;
+        state.indicatorX += distance * lerpSpeed;
+        if (absDistance < 0.05f) {
+            state.indicatorX = targetCenter;
+        }
+
+        float targetWidth;
+        if (absDistance > 0.5f) {
+            float movementSpeed = Math.abs(distance * lerpSpeed);
+            float stretchFromDistance = Math.min(absDistance / 8f, 1f);
+            float stretchFromSpeed = Math.min(movementSpeed * 15f, 1f);
+            float stretchFactor = Math.max(stretchFromDistance, stretchFromSpeed);
+            targetWidth = baseWidth + (maxStretch - baseWidth) * stretchFactor;
+        } else {
+            targetWidth = baseWidth;
+        }
+
+        float widthLerpSpeed = 0.20f * deltaFactor;
+        float widthDiff = targetWidth - state.width;
+        state.width += widthDiff * widthLerpSpeed;
+
+        if (Math.abs(state.width - baseWidth) < 0.05f && absDistance < 0.5f) {
+            state.width = baseWidth;
+        }
+
+        state.width = Math.max(baseWidth, Math.min(state.width, maxStretch));
+
+        float stretch = state.width - baseWidth;
+        float drawX;
+
+        if (distance > 0.3f) {
+            drawX = state.indicatorX - state.width / 2f - stretch * 0.3f;
+        } else if (distance < -0.3f) {
+            drawX = state.indicatorX - state.width / 2f + stretch * 0.3f;
+        } else {
+            drawX = state.indicatorX - state.width / 2f;
+        }
+
+        float minX = toggleX + padding;
+        float maxX = toggleX + toggleWidth - state.width - padding;
+        drawX = Math.max(minX, Math.min(drawX, maxX));
+
+        if (isEnabled) {
+            RenderUtil.drawRoundedRectGradientAnimated(context.getMatrices(), drawX + 1, toggleY + 1, state.width, 12, new Vector4f(5f, 5f, 5f, 5f), 0xFFfc03a9, 0xFFff910e, 0xFFfc03a9, 0xFFff910e, 3000);
+        } else {
+            int grayColor = 0xFF808080;
+            RenderUtil.drawRoundedRect(context.getMatrices(), drawX - 1, toggleY + 1, state.width, 12, new Vector4f(5f, 5f, 5f, 5f), grayColor);
+        }
+
+        RenderUtil.drawBorder(context.getMatrices(), toggleX, toggleY, 26, 14, new Vector4f(6, 6, 6, 6), -1, 0.1f, 1, 1, false);
     }
 
     private Map<Integer, Float> calculateBasePositions(List<Module> modules, float startY, float moduleWidth, float columnGap) {
@@ -332,7 +381,7 @@ public class Csgui extends Screen {
         for (Module module : modules) {
             float baseY = columnY.get(column);
             float moduleTotalHeight = moduleHeight + moduleSpacing;
-            
+
             boolean settingsOpen = openSettings.getOrDefault(module, false);
             if (settingsOpen && !module.getSettings().isEmpty()) {
                 float settingsHeight = 0;
@@ -341,7 +390,7 @@ public class Csgui extends Screen {
                 }
                 moduleTotalHeight += settingsHeight + 5;
             }
-            
+
             columnY.put(column, baseY + moduleTotalHeight);
             column++;
             if (column >= 2) column = 0;
@@ -354,18 +403,18 @@ public class Csgui extends Screen {
         if (!searchText.isEmpty()) {
             String searchLower = searchText.toLowerCase();
             return moduleManager.getSorted().stream()
-                .filter(module -> module.getName().toLowerCase().contains(searchLower))
-                .collect(Collectors.toList());
+                    .filter(module -> module.getName().toLowerCase().contains(searchLower))
+                    .collect(Collectors.toList());
         } else {
             return moduleManager.getSorted().stream()
-                .filter(module -> module.getCategory() == selectedCategory)
-                .collect(Collectors.toList());
+                    .filter(module -> module.getCategory() == selectedCategory)
+                    .collect(Collectors.toList());
         }
     }
 
     private void searchPanel(DrawContext context, int mouseX, int mouseY) {
         FontDraw montserratMedium = FontHelper.monsterrat[16];
-        
+
         float maxWidth = 75 - 10;
         String displayText = searchText;
 
@@ -410,26 +459,82 @@ public class Csgui extends Screen {
         }
         return SettingRenderer.SETTING_HEIGHT + SettingRenderer.SETTING_PADDING;
     }
-    
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // В начале метода mouseClicked добавьте:
+        // Обработка нажатия на KeySetting
         for (Map.Entry<Module, Boolean> entry : openSettings.entrySet()) {
             if (entry.getValue() && !entry.getKey().getSettings().isEmpty()) {
-                for (Setting setting : entry.getKey().getSettings()) {
-                    SettingRenderer renderer = SettingRendererManager.getRenderer(setting);
-                    if (renderer instanceof KeySettingRenderer) {
-                        KeySettingRenderer keyRenderer = (KeySettingRenderer) renderer;
-                        if (keyRenderer.getWaitingKey() != null) {
-                            // Передаем клик в KeySettingRenderer
-                            if (keyRenderer.mouseClicked(setting, mouseX, mouseY, button, 0, 0, 0, 0)) {
-                                return true;
+                Module module = entry.getKey();
+                float moduleStartX = panelX + 125;
+                float startModuleY = panelY + moduleAreaTop;
+                float moduleWidth = (panelWidth - 165) / 2;
+
+                // Найти позицию модуля
+                List<Module> modules = getCategoryModules();
+                int column = 0;
+                Map<Integer, Float> columnY = new HashMap<>();
+                columnY.put(0, startModuleY);
+                columnY.put(1, startModuleY);
+
+                for (Module m : modules) {
+                    float moduleX = moduleStartX + 5 + (column * (moduleWidth + 10));
+                    float baseY = columnY.get(column);
+                    float actualY = baseY - modulesScrollOffset;
+
+                    if (m == module) {
+                        float settingsY = actualY + moduleHeight + moduleSpacing;
+                        float settingsX = moduleX;
+                        float settingsWidth = moduleWidth;
+
+                        float settingsScroll = settingsScrollOffsets.getOrDefault(module, 0f);
+                        float currentSettingY = settingsY + 5 - settingsScroll;
+
+                        for (Setting setting : module.getSettings()) {
+                            SettingRenderer renderer = SettingRendererManager.getRenderer(setting);
+                            if (renderer instanceof KeySettingRenderer) {
+                                KeySettingRenderer keyRenderer = (KeySettingRenderer) renderer;
+                                if (keyRenderer.getWaitingKey() != null) {
+                                    if (keyRenderer.mouseClicked(setting, mouseX, mouseY, button, settingsX + 5, currentSettingY, settingsWidth - 10, settingsScroll)) {
+                                        return true;
+                                    }
+                                }
                             }
+                            currentSettingY += getEstimatedHeight(setting);
                         }
+                        break;
                     }
+
+                    column++;
+                    if (column >= 2) column = 0;
                 }
             }
         }
+
+        // Обработка клика по кнопке поиска
+        if (button == 0 && isMouseOver((int) mouseX, (int) mouseY, panelX + 300, panelY + 9.5f, 75, 17.5f)) {
+            searchActive = true;
+            cursorVisible = true;
+            lastCursorBlink = System.currentTimeMillis();
+            return true;
+        } else {
+            searchActive = false;
+        }
+
+        // Обработка клика по категориям
+        float currentY = panelY + 40;
+        float categoryX = panelX + 10;
+        for (Category category : Category.values()) {
+            if (isMouseOver((int) mouseX, (int) mouseY, categoryX, currentY, 100, categoryHeight)) {
+                selectedCategory = category;
+                openSettings.clear();
+                settingsScrollOffsets.clear();
+                return true;
+            }
+            currentY += categoryHeight + 5;
+        }
+
+        // Обработка кликов по модулям и их настройкам
         List<Module> categoryModules = getCategoryModules();
         float moduleStartX = panelX + 125;
         float startModuleY = panelY + moduleAreaTop;
@@ -439,170 +544,96 @@ public class Csgui extends Screen {
         float visibleAreaTop = panelY + moduleAreaTop;
         float visibleAreaBottom = panelY + panelHeight - moduleAreaBottom;
 
-        if (button == 1) {
-            Map<Integer, Float> columnY = new HashMap<>();
-            columnY.put(0, startModuleY);
-            columnY.put(1, startModuleY);
-            int column = 0;
+        Map<Integer, Float> columnY = new HashMap<>();
+        columnY.put(0, startModuleY);
+        columnY.put(1, startModuleY);
+        int column = 0;
 
-            for (Module module : categoryModules) {
-                float moduleX = moduleStartX + 5 + (column * (moduleWidth + columnGap));
-                float baseY = columnY.get(column);
-                float actualY = baseY - modulesScrollOffset;
+        for (Module module : categoryModules) {
+            float moduleX = moduleStartX + 5 + (column * (moduleWidth + columnGap));
+            float baseY = columnY.get(column);
+            float actualY = baseY - modulesScrollOffset;
 
-                boolean settingsOpen = openSettings.getOrDefault(module, false);
-                float moduleTotalHeight = moduleHeight + moduleSpacing;
-                if (settingsOpen && !module.getSettings().isEmpty()) {
-                    float settingsHeight = 0;
-                    for (Setting setting : module.getSettings()) {
-                        settingsHeight += getEstimatedHeight(setting);
-                    }
-                    moduleTotalHeight += settingsHeight + 5;
+            boolean settingsOpen = openSettings.getOrDefault(module, false);
+            float moduleTotalHeight = moduleHeight + moduleSpacing;
+            if (settingsOpen && !module.getSettings().isEmpty()) {
+                float settingsHeight = 0;
+                for (Setting setting : module.getSettings()) {
+                    settingsHeight += getEstimatedHeight(setting);
                 }
-
-                if (actualY + moduleHeight >= visibleAreaTop && actualY <= visibleAreaBottom) {
-                    if (isMouseOver((int) mouseX, (int) mouseY, moduleX, actualY, moduleWidth, moduleHeight)) {
-                        if (!module.getSettings().isEmpty()) {
-                            boolean currentlyOpen = openSettings.getOrDefault(module, false);
-                            openSettings.put(module, !currentlyOpen);
-                            return true;
-                        }
-                    }
-                }
-                
-                columnY.put(column, baseY + moduleTotalHeight);
-                column++;
-                if (column >= 2) column = 0;
+                moduleTotalHeight += settingsHeight + 5;
             }
-        }
-        
-        if (button == 2) {
-            Map<Integer, Float> columnY = new HashMap<>();
-            columnY.put(0, startModuleY);
-            columnY.put(1, startModuleY);
-            int column = 0;
 
-            for (Module module : categoryModules) {
-                float moduleX = moduleStartX + 5 + (column * (moduleWidth + columnGap));
-                float baseY = columnY.get(column);
-                float actualY = baseY - modulesScrollOffset;
-
-                boolean settingsOpen = openSettings.getOrDefault(module, false);
-                float moduleTotalHeight = moduleHeight + moduleSpacing;
-                if (settingsOpen && !module.getSettings().isEmpty()) {
-                    float settingsHeight = 0;
-                    for (Setting setting : module.getSettings()) {
-                        settingsHeight += getEstimatedHeight(setting);
-                    }
-                    moduleTotalHeight += settingsHeight + 5;
-                }
-
-                if (actualY + moduleHeight >= visibleAreaTop && actualY <= visibleAreaBottom) {
-                    if (isMouseOver((int) mouseX, (int) mouseY, moduleX, actualY, moduleWidth, moduleHeight)) {
-                        waitingForKeybind = module;
+            // Проверка видимости модуля
+            if (actualY + moduleHeight >= visibleAreaTop && actualY <= visibleAreaBottom) {
+                // ПКМ по модулю - открыть/закрыть настройки
+                if (button == 1 && isMouseOver((int) mouseX, (int) mouseY, moduleX, actualY, moduleWidth, moduleHeight)) {
+                    if (!module.getSettings().isEmpty()) {
+                        boolean currentlyOpen = openSettings.getOrDefault(module, false);
+                        openSettings.put(module, !currentlyOpen);
+                        if (!currentlyOpen) {
+                            settingsScrollOffsets.put(module, 0f);
+                        }
                         return true;
                     }
                 }
-                
-                columnY.put(column, baseY + moduleTotalHeight);
-                column++;
-                if (column >= 2) column = 0;
-            }
-        }
 
-        if (button == 0) {
-            if (isMouseOver((int) mouseX, (int) mouseY, panelX + 300, panelY + 9.5f, 75, 17.5f)) {
-                searchActive = true;
-                cursorVisible = true;
-                lastCursorBlink = System.currentTimeMillis();
-                return true;
-            } else {
-                searchActive = false;
-            }
-
-            float currentY = panelY + 40;
-            float categoryX = panelX + 10;
-
-            for (Category category : Category.values()) {
-                if (isMouseOver((int) mouseX, (int) mouseY, categoryX, currentY, 100, categoryHeight)) {
-                    selectedCategory = category;
+                // Средняя кнопка мыши - изменить кейбинд
+                if (button == 2 && isMouseOver((int) mouseX, (int) mouseY, moduleX, actualY, moduleWidth, moduleHeight)) {
+                    waitingForKeybind = module;
                     return true;
                 }
-                currentY += categoryHeight + 5;
+
+                // ЛКМ по модулю - включить/выключить
+                if (button == 0 && isMouseOver((int) mouseX, (int) mouseY, moduleX, actualY, moduleWidth, moduleHeight)) {
+                    module.toggle();
+                    return true;
+                }
             }
 
-            Map<Integer, Float> columnY = new HashMap<>();
-            columnY.put(0, startModuleY);
-            columnY.put(1, startModuleY);
-            int column = 0;
+            // Обработка кликов по настройкам модуля
+            if (settingsOpen && !module.getSettings().isEmpty()) {
+                float settingsY = actualY + moduleHeight + moduleSpacing;
+                float settingsX = moduleX;
+                float settingsWidth = moduleWidth;
 
-            for (Module module : categoryModules) {
-                float moduleX = moduleStartX + 5 + (column * (moduleWidth + columnGap));
-                float baseY = columnY.get(column);
-                float actualY = baseY - modulesScrollOffset;
-
-                boolean settingsOpen = openSettings.getOrDefault(module, false);
-                float moduleTotalHeight = moduleHeight + moduleSpacing;
-                if (settingsOpen && !module.getSettings().isEmpty()) {
-                    float settingsHeight = 0;
-                    for (Setting setting : module.getSettings()) {
-                        settingsHeight += getEstimatedHeight(setting);
-                    }
-                    moduleTotalHeight += settingsHeight + 5;
+                // Расчет области настроек
+                float maxSettingsHeight = visibleAreaBottom - settingsY - 5;
+                float totalSettingsHeight = 0;
+                for (Setting setting : module.getSettings()) {
+                    totalSettingsHeight += getEstimatedHeight(setting);
                 }
 
-                if (actualY + moduleHeight >= visibleAreaTop && actualY <= visibleAreaBottom) {
-                    if (isMouseOver((int) mouseX, (int) mouseY, moduleX, actualY, moduleWidth, moduleHeight)) {
-                        module.toggle();
-                        return true;
-                    }
-                }
-                
-                if (settingsOpen && !module.getSettings().isEmpty()) {
-                    float settingsY = actualY + moduleHeight + moduleSpacing;
-                    float settingsX = moduleX;
-                    float settingsWidth = moduleWidth;
-                    
-                    float totalSettingsHeight = 0;
+                boolean needsScroll = totalSettingsHeight > maxSettingsHeight;
+                float actualSettingsHeight = needsScroll ? maxSettingsHeight : totalSettingsHeight;
+
+                // Проверка клика внутри области настроек
+                if (mouseX >= settingsX && mouseX <= settingsX + settingsWidth &&
+                        mouseY >= settingsY && mouseY <= settingsY + actualSettingsHeight + 5) {
+
+                    float settingsScroll = settingsScrollOffsets.getOrDefault(module, 0f);
+                    float currentSettingY = settingsY + 5 - settingsScroll;
+
                     for (Setting setting : module.getSettings()) {
-                        totalSettingsHeight += getEstimatedHeight(setting);
-                    }
-                    
-                    float maxSettingsHeight = visibleAreaBottom - settingsY - 5;
-                    if (totalSettingsHeight > maxSettingsHeight) {
-                        totalSettingsHeight = maxSettingsHeight;
-                    }
-                    
-                    if (settingsY < visibleAreaBottom && settingsY + totalSettingsHeight >= visibleAreaTop) {
-                        float currentSettingY = settingsY + 5;
-                        float settingsBottom = settingsY + totalSettingsHeight + 5;
-                        
-                        for (Setting setting : module.getSettings()) {
-                            if (currentSettingY >= settingsBottom) break;
-                            
-                            SettingRenderer renderer = SettingRendererManager.getRenderer(setting);
-                            if (renderer != null) {
-                                float settingHeight = getEstimatedHeight(setting);
-                                if (currentSettingY + settingHeight > settingsBottom) {
-                                    settingHeight = settingsBottom - currentSettingY;
+                        if (currentSettingY >= settingsY + actualSettingsHeight + 5) break;
+
+                        SettingRenderer renderer = SettingRendererManager.getRenderer(setting);
+                        if (renderer != null) {
+                            float settingHeight = getEstimatedHeight(setting);
+                            if (currentSettingY + settingHeight >= settingsY + 5) {
+                                if (renderer.mouseClicked(setting, mouseX, mouseY, button, settingsX + 5, currentSettingY, settingsWidth - 10, settingsScroll)) {
+                                    return true;
                                 }
-                                
-                                if (currentSettingY < visibleAreaBottom && currentSettingY + settingHeight >= visibleAreaTop) {
-                                    if (renderer.mouseClicked(setting, (int)mouseX, (int)mouseY, button, settingsX + 5, currentSettingY, settingsWidth - 10, 0)) {
-                                        return true;
-                                    }
-                                }
-                                
-                                currentSettingY += getEstimatedHeight(setting);
                             }
+                            currentSettingY += settingHeight;
                         }
                     }
                 }
-                
-                columnY.put(column, baseY + moduleTotalHeight);
-                column++;
-                if (column >= 2) column = 0;
             }
+
+            columnY.put(column, baseY + moduleTotalHeight);
+            column++;
+            if (column >= 2) column = 0;
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
@@ -614,6 +645,7 @@ public class Csgui extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // Обработка KeySetting
         for (Map.Entry<Module, Boolean> entry : openSettings.entrySet()) {
             if (entry.getValue() && !entry.getKey().getSettings().isEmpty()) {
                 for (Setting setting : entry.getKey().getSettings()) {
@@ -629,28 +661,29 @@ public class Csgui extends Screen {
                 }
             }
         }
-        
+
+        // Обработка установки кейбинда модуля
         if (waitingForKeybind != null) {
-            if (keyCode == 256) {
+            if (keyCode == 256) { // ESC
                 waitingForKeybind.setKey(-1);
-                waitingForKeybind = null;
             } else {
                 waitingForKeybind.setKey(keyCode);
-                waitingForKeybind = null;
             }
+            waitingForKeybind = null;
             return true;
         }
 
+        // Обработка поиска
         if (searchActive) {
-            if (keyCode == 259) {
+            if (keyCode == 259) { // Backspace
                 if (!searchText.isEmpty()) {
                     searchText = searchText.substring(0, searchText.length() - 1);
                 }
                 return true;
-            } else if (keyCode == 257 || keyCode == 335) {
+            } else if (keyCode == 257 || keyCode == 335) { // Enter
                 searchActive = false;
                 return true;
-            } else if (keyCode == 256) {
+            } else if (keyCode == 256) { // Escape
                 searchActive = false;
                 return true;
             }
@@ -670,111 +703,151 @@ public class Csgui extends Screen {
         }
         return super.charTyped(chr, modifiers);
     }
-    
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         float moduleStartX = panelX + 125;
         float moduleAreaY = panelY + moduleAreaTop;
         float moduleAreaHeight = panelHeight - moduleAreaTop - moduleAreaBottom;
-        
+
+        // Скролл основной области модулей
         if (mouseX >= moduleStartX && mouseX <= moduleStartX + (panelWidth - 150) &&
-            mouseY >= moduleAreaY && mouseY <= moduleAreaY + moduleAreaHeight) {
-            modulesScrollOffset -= verticalAmount * 10;
-            modulesScrollOffset = Math.max(0, modulesScrollOffset);
-            return true;
-        }
-        
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
-    }
-    
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (button == 0) {
-            List<Module> categoryModules = getCategoryModules();
-            
-            float moduleStartX = panelX + 125;
-            float startModuleY = panelY + moduleAreaTop;
-            float totalModuleWidth = panelWidth - 150;
-            float moduleWidth = (totalModuleWidth - 15) / 2;
-            float columnGap = 10;
-            float visibleAreaTop = panelY + moduleAreaTop;
-            float visibleAreaBottom = panelY + panelHeight - moduleAreaBottom;
-            
-            Map<Integer, Float> columnY = new HashMap<>();
-            columnY.put(0, startModuleY);
-            columnY.put(1, startModuleY);
+                mouseY >= moduleAreaY && mouseY <= moduleAreaY + moduleAreaHeight) {
+
+            // Проверка, не над ли настройками какого-либо модуля
+            List<Module> modules = getCategoryModules();
+            float moduleWidth = (panelWidth - 165) / 2;
             int column = 0;
-            
-            for (Module module : categoryModules) {
-                float moduleX = moduleStartX + 5 + (column * (moduleWidth + columnGap));
+            Map<Integer, Float> columnY = new HashMap<>();
+            columnY.put(0, panelY + moduleAreaTop);
+            columnY.put(1, panelY + moduleAreaTop);
+
+            for (Module module : modules) {
+                float moduleX = moduleStartX + 5 + (column * (moduleWidth + 10));
                 float baseY = columnY.get(column);
                 float actualY = baseY - modulesScrollOffset;
 
                 boolean settingsOpen = openSettings.getOrDefault(module, false);
-                float moduleTotalHeight = moduleHeight + moduleSpacing;
-                if (settingsOpen && !module.getSettings().isEmpty()) {
-                    float settingsHeight = 0;
-                    for (Setting setting : module.getSettings()) {
-                        settingsHeight += getEstimatedHeight(setting);
-                    }
-                    moduleTotalHeight += settingsHeight + 5;
-                }
-                
                 if (settingsOpen && !module.getSettings().isEmpty()) {
                     float settingsY = actualY + moduleHeight + moduleSpacing;
                     float settingsWidth = moduleWidth;
-                    
+
+                    // Расчет высоты настроек
+                    float maxSettingsHeight = (panelY + panelHeight - moduleAreaBottom) - settingsY - 5;
                     float totalSettingsHeight = 0;
                     for (Setting setting : module.getSettings()) {
                         totalSettingsHeight += getEstimatedHeight(setting);
                     }
-                    
-                    float maxSettingsHeight = visibleAreaBottom - settingsY - 5;
+
                     if (totalSettingsHeight > maxSettingsHeight) {
-                        totalSettingsHeight = maxSettingsHeight;
+                        float actualSettingsHeight = maxSettingsHeight;
+
+                        // Проверка, находится ли мышь над настройками этого модуля
+                        if (mouseX >= moduleX && mouseX <= moduleX + settingsWidth &&
+                                mouseY >= settingsY && mouseY <= settingsY + actualSettingsHeight + 5) {
+
+                            float scroll = settingsScrollOffsets.getOrDefault(module, 0f);
+                            float maxScroll = totalSettingsHeight - maxSettingsHeight;
+                            scroll -= verticalAmount * 10;
+                            scroll = Math.max(0, Math.min(scroll, maxScroll));
+                            settingsScrollOffsets.put(module, scroll);
+                            return true;
+                        }
                     }
-                    
-                    if (settingsY < visibleAreaBottom && settingsY + totalSettingsHeight >= visibleAreaTop) {
-                        float currentSettingY = settingsY + 5;
-                        float settingsBottom = settingsY + totalSettingsHeight + 5;
-                        
+                }
+
+                column++;
+                if (column >= 2) column = 0;
+            }
+
+            // Если не над настройками, скроллим основную область
+            modulesScrollOffset -= verticalAmount * 10;
+            modulesScrollOffset = Math.max(0, modulesScrollOffset);
+            return true;
+        }
+
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (button == 0) {
+            List<Module> categoryModules = getCategoryModules();
+            float moduleStartX = panelX + 125;
+            float startModuleY = panelY + moduleAreaTop;
+            float moduleWidth = (panelWidth - 165) / 2;
+
+            for (Module module : categoryModules) {
+                boolean settingsOpen = openSettings.getOrDefault(module, false);
+                if (settingsOpen && !module.getSettings().isEmpty()) {
+                    // Найти позицию модуля
+                    int column = 0;
+                    Map<Integer, Float> columnY = new HashMap<>();
+                    columnY.put(0, startModuleY);
+                    columnY.put(1, startModuleY);
+                    boolean found = false;
+                    float moduleX = 0, actualY = 0;
+
+                    for (Module m : categoryModules) {
+                        moduleX = moduleStartX + 5 + (column * (moduleWidth + 10));
+                        float baseY = columnY.get(column);
+                        actualY = baseY - modulesScrollOffset;
+
+                        if (m == module) {
+                            found = true;
+                            break;
+                        }
+
+                        column++;
+                        if (column >= 2) column = 0;
+                    }
+
+                    if (found) {
+                        float settingsY = actualY + moduleHeight + moduleSpacing;
+                        float settingsX = moduleX;
+                        float settingsWidth = moduleWidth;
+
+                        // Проверка, находится ли мышь над настройками
+                        float maxSettingsHeight = (panelY + panelHeight - moduleAreaBottom) - settingsY - 5;
+                        float totalSettingsHeight = 0;
                         for (Setting setting : module.getSettings()) {
-                            if (currentSettingY >= settingsBottom) break;
-                            
-                            SettingRenderer renderer = SettingRendererManager.getRenderer(setting);
-                            if (renderer instanceof SliderSettingRenderer) {
-                                float settingHeight = getEstimatedHeight(setting);
-                                if (currentSettingY + settingHeight > settingsBottom) {
-                                    settingHeight = settingsBottom - currentSettingY;
-                                }
-                                
-                                if (currentSettingY < visibleAreaBottom && currentSettingY + settingHeight >= visibleAreaTop) {
-                                    if (((SliderSettingRenderer) renderer).mouseDragged(setting, (int)mouseX, (int)mouseY, button, moduleX + 5, settingsWidth - 10)) {
-                                        return true;
+                            totalSettingsHeight += getEstimatedHeight(setting);
+                        }
+
+                        if (totalSettingsHeight > maxSettingsHeight &&
+                                mouseX >= settingsX && mouseX <= settingsX + settingsWidth &&
+                                mouseY >= settingsY && mouseY <= settingsY + maxSettingsHeight + 5) {
+
+                            // Обработка SliderSetting
+                            float settingsScroll = settingsScrollOffsets.getOrDefault(module, 0f);
+                            float currentSettingY = settingsY + 5 - settingsScroll;
+
+                            for (Setting setting : module.getSettings()) {
+                                SettingRenderer renderer = SettingRendererManager.getRenderer(setting);
+                                if (renderer instanceof SliderSettingRenderer) {
+                                    float settingHeight = getEstimatedHeight(setting);
+                                    if (currentSettingY + settingHeight >= settingsY + 5) {
+                                        if (((SliderSettingRenderer) renderer).mouseDragged(setting, (int)mouseX, (int)mouseY, button, settingsX + 5, settingsWidth - 10)) {
+                                            return true;
+                                        }
                                     }
                                 }
-                                
-                                currentSettingY += getEstimatedHeight(setting);
-                            } else {
                                 currentSettingY += getEstimatedHeight(setting);
                             }
                         }
                     }
                 }
-                
-                columnY.put(column, baseY + moduleTotalHeight);
-                column++;
-                if (column >= 2) column = 0;
             }
         }
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     }
-    
+
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        for (Map.Entry<Module, Boolean> entry : openSettings.entrySet()) {
-            if (entry.getValue()) {
-                for (Setting setting : entry.getKey().getSettings()) {
+        // Отпускание SliderSetting
+        for (Module module : openSettings.keySet()) {
+            if (openSettings.get(module)) {
+                for (Setting setting : module.getSettings()) {
                     SettingRenderer renderer = SettingRendererManager.getRenderer(setting);
                     if (renderer instanceof SliderSettingRenderer) {
                         ((SliderSettingRenderer) renderer).mouseReleased();

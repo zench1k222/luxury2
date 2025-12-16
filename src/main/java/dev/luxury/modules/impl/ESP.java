@@ -57,6 +57,7 @@ public class ESP extends Module {
             new BooleanSetting("Предметы", false)
     );
 
+    private final BooleanSetting showBox = new BooleanSetting("Показывать ESP Боксы", true);
     private final BooleanSetting corners = new BooleanSetting("Углы", false);
     private final SliderSetting cornerLength = new SliderSetting("Высота", 0.3f, 0.1f, 0.4f, 0.1f);
     private final SliderSetting thickness = new SliderSetting("Толщина", 1.9f, 0.5f, 2.0f, 0.1f);
@@ -98,7 +99,7 @@ public class ESP extends Module {
     private static ESP instance;
 
     public ESP() {
-        addSettings(targets, corners, cornerLength, thickness, showNameTags, hideVanillaTags, showArmor);
+        addSettings(targets, showBox, corners, cornerLength, thickness, showNameTags, hideVanillaTags, showArmor);
         instance = this;
     }
 
@@ -360,7 +361,9 @@ public class ESP extends Module {
                 renderArmorAndHands(e, minX, minY, maxX, maxY, player, getDistanceScale(entity));
             }
 
-            renderBox(e.getMatrixStack(), minX, minY, maxX, maxY, entity);
+            if (showBox.get()) {
+                renderBox(e.getMatrixStack(), minX, minY, maxX, maxY, entity);
+            }
         }
 
         RenderUtil.render3D.endBuilding(buffer);
