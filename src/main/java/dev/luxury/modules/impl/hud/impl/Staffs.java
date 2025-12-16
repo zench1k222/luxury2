@@ -85,9 +85,6 @@ public class Staffs extends DraggableHudElement {
             currentY += ITEM_HEIGHT;
         }
     }
-
-    // ... остальной код остаётся без изменений ...
-
     private void renderStaffEntry(MatrixStack matrices, float startX, float currentY, float width, StaffInfo staff, FontDraw nameFont, FontDraw timeFont, FontDraw prefixFont, int colorfonts1, int colorfonts2) {
         boolean isVanished = staff.isVanished();
         int nameAlpha = isVanished ? 255 : 150;

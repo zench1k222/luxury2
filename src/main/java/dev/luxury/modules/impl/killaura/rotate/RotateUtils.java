@@ -2,6 +2,7 @@ package dev.luxury.modules.impl.killaura.rotate;
 
 import lombok.experimental.UtilityClass;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 import static java.lang.Math.hypot;
@@ -19,6 +20,10 @@ public class RotateUtils {
     }
     public Rotate calculateAngle(Vec3d to) {
         return fromVec3d(to.subtract(mc.player.getEyePos()));
+    }
+
+    public static float computeAngleDifference(float a, float b) {
+        return MathHelper.wrapDegrees(a - b);
     }
 
 }

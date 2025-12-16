@@ -13,10 +13,14 @@ import dev.luxury.modules.api.settings.ModeListSetting;
 import dev.luxury.modules.api.settings.SliderSetting;
 import dev.luxury.modules.impl.killaura.*;
 import dev.luxury.modules.impl.killaura.rotate.*;
+import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.managers.FriendManager;
+import dev.luxury.utils.player.InventoryUtil;
 import lombok.Getter;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.item.AxeItem;
+import net.minecraft.item.Items;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -50,7 +54,7 @@ public class KillAura extends Module {
             new BooleanSetting("Мирные мобы", false));
 
     private final BooleanSetting onlyCrit = new BooleanSetting("Только криты", true);
-    private final BooleanSetting smartCrit = new BooleanSetting("Умные криты", "Бьет критами если зажата кнопка прыжка", false);
+    private final BooleanSetting smartCrit = new BooleanSetting("Умные криты", "Бьет критами если зажата кнопка прыжка", true);
 
     public KillAura() {
         addSettings(rotationMode, sprintMode, correction, distance, attackMethod, distanceRotation, settings, targetTypeSetting, onlyCrit, smartCrit);
@@ -69,6 +73,7 @@ public class KillAura extends Module {
     private boolean preAttack = false;
     @Getter
     private boolean isCanAttack = false;
+    private int shieldBreakCooldown = 0;
 
     @EventTarget
     public void eventRotate(EventRotate e) {
@@ -108,6 +113,11 @@ public class KillAura extends Module {
                 mc.player.sendSprintingPacket();
             }
 
+            BooleanSetting breakShield = settings.getValueByName("Ломать щит");
+            if (breakShield != null && breakShield.get()) {
+                breakShield();
+            }
+
             Criticals.attackEntity(target);
 
             mc.options.sprintKey.setPressed(true);
@@ -135,7 +145,80 @@ public class KillAura extends Module {
         }
     }
 
+    private void breakShield() {
+        if (target == null) return;
+        if (shieldBreakCooldown > 0) {
+            shieldBreakCooldown--;
+            return;
+        }
 
+        BooleanSetting breakShieldSetting = settings.getValueByName("Ломать щит");
+        if (breakShieldSetting == null || !breakShieldSetting.get()) return;
+
+        if (!target.isUsingItem() || !target.getActiveItem().isOf(Items.SHIELD)) return;
+
+        int axeSlot = -1;
+        for (int i = 0; i < 36; i++) {
+            net.minecraft.item.ItemStack stack = mc.player.getInventory().getStack(i);
+            if (stack.getItem() instanceof AxeItem) {
+                axeSlot = i;
+                break;
+            }
+        }
+
+        if (axeSlot == -1) return;
+
+        Vec3d playerCenter = mc.player.getBoundingBox().getCenter();
+        Vec3d targetEyes = target.getEyePos();
+        Rotate angleToPlayer = RotateUtils.fromVec3d(playerCenter.subtract(targetEyes));
+        float angleDiff = Math.abs(RotateUtils.computeAngleDifference(target.getYaw(), angleToPlayer.getYaw()));
+
+        if (angleDiff > 100) return;
+
+        if (!isCanAttack) return;
+
+        int originalSlot = mc.player.getInventory().selectedSlot;
+        net.minecraft.item.ItemStack originalItem = mc.player.getMainHandStack();
+
+        try {
+            if (axeSlot < 9) {
+                mc.player.getInventory().selectedSlot = axeSlot;
+                mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(axeSlot));
+            } else {
+                InventoryUtil.swapSlotsUniversal(axeSlot, mc.player.getInventory().selectedSlot, false, true);
+            }
+
+            shieldBreakCooldown = 2;
+
+            if (mc.interactionManager != null) {
+                mc.interactionManager.attackEntity(mc.player, target);
+                mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
+
+                if (target.isUsingItem() && target.getActiveItem().isOf(Items.SHIELD)) {
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(50);
+                            if (mc.interactionManager != null && target != null && target.isAlive()) {
+                                mc.interactionManager.attackEntity(mc.player, target);
+                                mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
+                            }
+                        } catch (InterruptedException ignored) {}
+                    }).start();
+                }
+            }
+
+            if (axeSlot < 9) {
+                mc.player.getInventory().selectedSlot = originalSlot;
+                mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
+            } else {
+                InventoryUtil.swapSlotsUniversal(mc.player.getInventory().selectedSlot, axeSlot, false, true);
+            }
+
+        } catch (Exception ex) {
+            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
+        }
+    }
 
     private void checkTargetKilled() {
 
@@ -162,6 +245,7 @@ public class KillAura extends Module {
             lastTargetHealth = 0f;
         }
     }
+
     private boolean updatePreAttack() {
         Simulation simulatedPlayer = Simulation.simulateLocalPlayer(1);
         BooleanSetting eatUseAttack = settings.getValueByName("Бить и есть");
@@ -225,9 +309,11 @@ public class KillAura extends Module {
         });
         return targetSelector.getCurrentTarget();
     }
+
     public ModeSetting getRotationMode() {
         return rotationMode;
     }
+
     @EventTarget
     private void setCorrection(EventMoveInput eventMoveInput) {
         if (correction.is("Без корекции")) return;
@@ -244,7 +330,6 @@ public class KillAura extends Module {
         }
     }
 
-
     public LivingEntity getTarget() {
         return this.isEnabled() ? target : null;
     }
@@ -257,6 +342,7 @@ public class KillAura extends Module {
     public void onEnable() {
         super.onEnable();
         state = true;
+        shieldBreakCooldown = 0;
     }
 
     @Override
@@ -265,5 +351,6 @@ public class KillAura extends Module {
         state = false;
         lastTarget = null;
         lastTargetHealth = 0f;
+        shieldBreakCooldown = 0;
     }
 }

@@ -54,6 +54,9 @@ public SwingAnimations(){
 
     @EventTarget
     public void onSwingDuration(SwingDurationEvent e) {
+
+        if (onAura.get() && !KillAura.state) return;
+
         e.setAnimation(swingSpeed);
         e.setCancelled(true);
     }

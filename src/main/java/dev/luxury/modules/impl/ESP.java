@@ -63,7 +63,7 @@ public class ESP extends Module {
     private final SliderSetting thickness = new SliderSetting("Толщина", 1.9f, 0.5f, 2.0f, 0.1f);
     private final BooleanSetting showNameTags = new BooleanSetting("Неймтеги", true);
     private final BooleanSetting hideVanillaTags = new BooleanSetting("Скрыть ванильные", true);
-    private final BooleanSetting showArmor = new BooleanSetting("Броня и предметы", false);
+    private final BooleanSetting showArmor = new BooleanSetting("Броня и предметы", true);
 
     private final Map<String, String> donateSymbols = new HashMap<String, String>() {{
         put("ꔀ", "§7&lPLAYER");

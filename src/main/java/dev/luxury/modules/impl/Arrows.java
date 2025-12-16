@@ -10,11 +10,13 @@ import dev.luxury.modules.api.settings.BooleanSetting;
 import dev.luxury.modules.api.settings.SliderSetting;
 import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
+import dev.luxury.utils.managers.FriendManager;
 import dev.luxury.utils.player.ServerUtil;
 import dev.luxury.utils.render.ColorRGBA;
 import dev.luxury.utils.render.RenderUtil;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -30,7 +32,7 @@ public class Arrows extends Module {
     public static Identifier TRIANGLE_TEXTURE = Identifier.of("luxury", "images/triangle.png");
 
     private static final ColorRGBA FRIEND_COLOR = new ColorRGBA(45, 125, 255, 220);
-    private static final ColorRGBA ENEMY_COLOR = new ColorRGBA(200, 80, 80, 220);
+    private static final ColorRGBA ENEMY_COLOR = new ColorRGBA(45, 125, 255, 200);
     private static final ColorRGBA DIST_COLOR = new ColorRGBA(150, 150, 160, 220);
 
     private final SliderSetting size = new SliderSetting("Радиус", "Радиус стрелок", 60, 40, 200, 5);
@@ -106,7 +108,7 @@ public class Arrows extends Module {
                 matrices.translate(x2, y2, 0);
                 matrices.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Z.rotationDegrees(angle + 90));
 
-                boolean isFriend = Luxury.getInstance().getFriendManager().isFriend(player.getName().getString().toLowerCase());
+                boolean isFriend = FriendManager.getInstance().isFriend(player.getName().getString());
 
                 drawTriangle(matrices, player, isFriend, playerDistance);
 
@@ -123,12 +125,7 @@ public class Arrows extends Module {
     }
 
     private void drawTriangle(MatrixStack matrices, PlayerEntity player, boolean isFriend, double distance) {
-        ColorRGBA color;
-        if (isFriend) {
-            color = FRIEND_COLOR;
-        } else {
-            color = ENEMY_COLOR;
-        }
+        ColorRGBA color = isFriend ? FRIEND_COLOR : ENEMY_COLOR;
 
         float distanceAlpha = (float) (1.0 - (distance / this.distance.getFloatValue()) * 0.5);
         int newAlpha = (int) (color.getAlpha() * distanceAlpha);
@@ -141,9 +138,7 @@ public class Arrows extends Module {
                                 boolean isFriend, double distance) {
         FontDraw sfpro2 = FontHelper.sfprobold[15];
 
-        boolean isFriendPlayer = dev.luxury.Luxury.getInstance().getFriendManager().isFriend(player.getName().getString());
-
-        int friendColor = isFriendPlayer ? FRIEND_COLOR.getRGB() : DIST_COLOR.getRGB();
+        int friendColor = isFriend ? FRIEND_COLOR.getRGB() : DIST_COLOR.getRGB();
         int neutralColor = DIST_COLOR.getRGB();
 
         int startY = (int)(y + 20);

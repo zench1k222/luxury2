@@ -24,8 +24,8 @@ import org.lwjgl.glfw.GLFW;
 )
 public class ElytraHelper extends Module {
 
-    private final KeySetting elytraKey = new KeySetting("Кнопка элитры", GLFW.GLFW_MOUSE_BUTTON_4);
-    private final KeySetting fireworkKey = new KeySetting("Кнопка фейерверка", GLFW.GLFW_MOUSE_BUTTON_5);
+    private final KeySetting elytraKey = new KeySetting("Кнопка элитры", GLFW.GLFW_MOUSE_BUTTON_5);
+    private final KeySetting fireworkKey = new KeySetting("Кнопка фейерверка", GLFW.GLFW_MOUSE_BUTTON_4);
     private final BooleanSetting autoTakeoff = new BooleanSetting("Авто-взлёт", true);
 
     private int takeoffTicks = 0;
