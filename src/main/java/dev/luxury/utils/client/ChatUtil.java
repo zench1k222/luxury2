@@ -73,4 +73,3 @@ public class ChatUtil {
         sendChat("§1[§lLuxury Free§r§1] §r» §b" + message);
     }
 }
-
