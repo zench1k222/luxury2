@@ -62,7 +62,8 @@ public class ModuleManager {
                 new TpLoot(),
                 new AutoPotion(),
                 new NoPush(),
-                new AutoAccept()
+                new AutoAccept(),
+                new SeeInvisible()
 
         );
         DiscordRPC.getInstance().enable();

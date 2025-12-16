@@ -16,15 +16,15 @@ public abstract class EventCancellable implements Event, Cancellable {
     protected EventCancellable() {
     }
 
-    @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
-
-    @Override
     public void setCancelled(boolean state) {
         cancelled = state;
     }
 
+    public void cancel() {
+        cancelled = true;
+    }
 }
