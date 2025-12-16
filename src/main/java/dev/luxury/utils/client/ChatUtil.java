@@ -1,51 +1,75 @@
 package dev.luxury.utils.client;
 
+import dev.luxury.utils.font.FontDraw;
+import dev.luxury.utils.font.FontHelper;
+import dev.luxury.utils.render.ColorUtil;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.MutableText;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
-
-import java.awt.*;
 
 public class ChatUtil {
     private static final MinecraftClient mc = MinecraftClient.getInstance();
+    private static FontDraw chatFont = null;
+
+    static {
+        if (FontHelper.sfprobold != null && FontHelper.sfprobold.length > 17) {
+            chatFont = FontHelper.sfprobold[17];
+        } else if (FontHelper.monsterrat != null && FontHelper.monsterrat.length > 14) {
+            chatFont = FontHelper.monsterrat[14];
+        }
+    }
 
     public static void sendChat(String message) {
         if (mc.player == null) return;
 
-        String prefix = "§1Luxury Free";
-        String arrow = " §r» ";
-
-        String text = prefix + arrow + message;
-
-        mc.player.sendMessage(Text.literal(text), false);
+        String prefix = "§1[§lLuxury Free§r§1] §r» ";
+        mc.player.sendMessage(Text.literal(prefix + message), false);
     }
 
-    //Похуй, пусть так будет. Я не понимаю как ебаный градиент сделать из 1.16.5
+    public static void sendGradientChat(String message, int color1, int color2) {
+        if (mc.player == null || mc.inGameHud == null) return;
 
-//    public static MutableText gradient(String text, int startRGB, int endRGB) {
-//        MutableText result = Text.literal("");
-//
-//        for (int i = 0; i < text.length(); i++) {
-//            float ratio = i / (float) (text.length() - 1);
-//
-//            int startR = (startRGB >> 16) & 0xFF;
-//            int startG = (startRGB >> 8) & 0xFF;
-//            int startB = startRGB & 0xFF;
-//
-//            int endR = (endRGB >> 16) & 0xFF;
-//            int endG = (endRGB >> 8) & 0xFF;
-//            int endB = endRGB & 0xFF;
-//
-//            int red = (int) (startR + ratio * (endR - startR));
-//            int green = (int) (startG + ratio * (endG - startG));
-//            int blue = (int) (startB + ratio * (endB - startB));
-//
-//            String hex = String.format("%02x%02x%02x", red, green, blue);
-//            result.append(Text.literal("§x§" + hex.charAt(0) + "§" + hex.charAt(1) + "§" + hex.charAt(2) +
-//                    "§" + hex.charAt(3) + "§" + hex.charAt(4) + "§" + hex.charAt(5) + text.charAt(i)));
-//        }
-//
-//        return result;
-//    }
-    //Я хотел тут сделать типо ргб от желтого к ярко желтому но у меня нихуя не получается, даже нейронка не может помочь.
+        mc.inGameHud.getChatHud().addMessage(Text.literal("[Luxury Free] » "));
+    }
+
+    public static void drawGradientChatMessage(DrawContext context, String message, float x, float y,
+                                               int color1, int color2) {
+        if (chatFont != null) {
+            chatFont.drawGradientText(context, message, x, y, color1, color2);
+        } else {
+            // Fallback: рисуем обычный текст если шрифт не загружен
+            context.drawText(mc.textRenderer, message, (int)x, (int)y, color1, false);
+        }
+    }
+
+    public static void drawAnimatedGradientChat(DrawContext context, String message, float x, float y,
+                                                int color1, int color2, float time) {
+        if (chatFont != null) {
+            chatFont.drawAnimatedGradientText(context, message, x, y, color1, color2, time);
+        } else {
+            context.drawText(mc.textRenderer, message, (int)x, (int)y, color1, false);
+        }
+    }
+
+    public static void sendError(String message) {
+        sendChat("§c" + message);
+    }
+
+    public static void sendSuccess(String message) {
+        sendChat("§a" + message);
+    }
+
+    public static void sendWarning(String message) {
+        sendChat("§e" + message);
+    }
+
+    public static void sendInfo(String message) {
+        sendChat("§9" + message);
+    }
+
+    public static void sendLuxury(String message) {
+        int color1 = ColorUtil.getColor(0, 200, 255, 255);
+        int color2 = ColorUtil.getColor(138, 43, 226, 255);
+        sendChat("§1[§lLuxury Free§r§1] §r» §b" + message);
+    }
 }
