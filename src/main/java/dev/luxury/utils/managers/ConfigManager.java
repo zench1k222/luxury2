@@ -2,15 +2,17 @@ package dev.luxury.utils.managers;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
+import com.google.gson.reflect.TypeToken;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleManager;
+import dev.luxury.modules.api.settings.*;
 import net.minecraft.client.MinecraftClient;
 
 import java.awt.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,23 +47,27 @@ public class ConfigManager {
         try {
             ConfigData config = new ConfigData();
 
+            // Сохраняем состояния модулей
             Map<String, Boolean> modules = new HashMap<>();
             for (Module module : ModuleManager.getModules()) {
                 modules.put(module.getName(), module.isEnabled());
             }
             config.setModules(modules);
 
+            // Сохраняем ключи
             Map<String, Integer> keybinds = new HashMap<>();
             for (Module module : ModuleManager.getModules()) {
                 keybinds.put(module.getName(), module.getKey());
             }
             config.setKeybinds(keybinds);
 
+            // Сохраняем друзей
             config.setFriends(new ArrayList<>(FriendManager.getInstance().getFriends()));
 
+            // Сохраняем настройки модулей
             Map<String, Map<String, Object>> moduleSettings = new HashMap<>();
             for (Module module : ModuleManager.getModules()) {
-                Map<String, Object> settings = new HashMap<>();
+                Map<String, Object> settings = serializeModuleSettings(module);
                 if (!settings.isEmpty()) {
                     moduleSettings.put(module.getName(), settings);
                 }
@@ -94,6 +100,7 @@ public class ConfigManager {
 
             if (config == null) return false;
 
+            // Загружаем состояния модулей
             Map<String, Boolean> modulesState = config.getModules();
             if (modulesState != null) {
                 for (Module module : ModuleManager.getModules()) {
@@ -111,6 +118,7 @@ public class ConfigManager {
                 }
             }
 
+            // Загружаем ключи
             Map<String, Integer> keybinds = config.getKeybinds();
             if (keybinds != null) {
                 for (Module module : ModuleManager.getModules()) {
@@ -121,14 +129,127 @@ public class ConfigManager {
                 }
             }
 
+            // Загружаем друзей
             if (config.getFriends() != null) {
                 FriendManager.getInstance().setFriends(config.getFriends());
+            }
+
+            // Загружаем настройки модулей
+            Map<String, Map<String, Object>> moduleSettings = config.getModuleSettings();
+            if (moduleSettings != null) {
+                for (Module module : ModuleManager.getModules()) {
+                    String moduleName = module.getName();
+                    if (moduleSettings.containsKey(moduleName)) {
+                        deserializeModuleSettings(module, moduleSettings.get(moduleName));
+                    }
+                }
             }
 
             return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private Map<String, Object> serializeModuleSettings(Module module) {
+        Map<String, Object> settingsMap = new HashMap<>();
+
+        for (Setting setting : module.getSettings()) {
+            String settingName = setting.getName();
+
+            if (setting instanceof BooleanSetting) {
+                settingsMap.put(settingName, ((BooleanSetting) setting).get());
+            }
+            else if (setting instanceof ModeSetting) {
+                Map<String, Object> modeData = new HashMap<>();
+                modeData.put("value", ((ModeSetting) setting).get());
+                modeData.put("index", ((ModeSetting) setting).getIndex());
+                settingsMap.put(settingName, modeData);
+            }
+            else if (setting instanceof ModeListSetting) {
+                Map<String, Boolean> modeListData = new HashMap<>();
+                for (BooleanSetting boolSetting : ((ModeListSetting) setting).getSettings()) {
+                    modeListData.put(boolSetting.getName(), boolSetting.get());
+                }
+                settingsMap.put(settingName, modeListData);
+            }
+            else if (setting instanceof SliderSetting) {
+                Map<String, Object> sliderData = new HashMap<>();
+                sliderData.put("value", ((SliderSetting) setting).getValue());
+                settingsMap.put(settingName, sliderData);
+            }
+            else if (setting instanceof StringSetting) {
+                settingsMap.put(settingName, ((StringSetting) setting).getValue());
+            }
+            else if (setting instanceof ColorSetting) {
+                settingsMap.put(settingName, ((ColorSetting) setting).getValue());
+            }
+            else if (setting instanceof KeySetting) {
+                Map<String, Object> keyData = new HashMap<>();
+                keyData.put("value", ((KeySetting) setting).getValue());
+                keyData.put("mouse", ((KeySetting) setting).isMouse());
+                settingsMap.put(settingName, keyData);
+            }
+        }
+
+        return settingsMap;
+    }
+
+    private void deserializeModuleSettings(Module module, Map<String, Object> settingsMap) {
+        for (Setting setting : module.getSettings()) {
+            String settingName = setting.getName();
+
+            if (!settingsMap.containsKey(settingName)) {
+                continue;
+            }
+
+            Object value = settingsMap.get(settingName);
+
+            if (setting instanceof BooleanSetting && value instanceof Boolean) {
+                ((BooleanSetting) setting).setValue((Boolean) value);
+            }
+            else if (setting instanceof ModeSetting && value instanceof Map) {
+                Map<String, Object> modeData = (Map<String, Object>) value;
+                if (modeData.containsKey("value")) {
+                    ((ModeSetting) setting).setValue(modeData.get("value").toString());
+                }
+            }
+            else if (setting instanceof ModeListSetting && value instanceof Map) {
+                Map<String, Boolean> modeListData = (Map<String, Boolean>) value;
+                ModeListSetting modeListSetting = (ModeListSetting) setting;
+
+                for (BooleanSetting boolSetting : modeListSetting.getSettings()) {
+                    String boolName = boolSetting.getName();
+                    if (modeListData.containsKey(boolName)) {
+                        boolSetting.setValue(modeListData.get(boolName));
+                    }
+                }
+            }
+            else if (setting instanceof SliderSetting && value instanceof Map) {
+                Map<String, Object> sliderData = (Map<String, Object>) value;
+                if (sliderData.containsKey("value") && sliderData.get("value") instanceof Number) {
+                    double doubleValue = ((Number) sliderData.get("value")).doubleValue();
+                    ((SliderSetting) setting).setValue(doubleValue);
+                }
+            }
+            else if (setting instanceof StringSetting && value instanceof String) {
+                ((StringSetting) setting).setValue((String) value);
+            }
+            else if (setting instanceof ColorSetting && value instanceof Number) {
+                ((ColorSetting) setting).setValue(((Number) value).intValue());
+            }
+            else if (setting instanceof KeySetting && value instanceof Map) {
+                Map<String, Object> keyData = (Map<String, Object>) value;
+                KeySetting keySetting = (KeySetting) setting;
+
+                if (keyData.containsKey("value") && keyData.get("value") instanceof Number) {
+                    keySetting.setValue(((Number) keyData.get("value")).intValue());
+                }
+                if (keyData.containsKey("mouse") && keyData.get("mouse") instanceof Boolean) {
+                    keySetting.setMouse((Boolean) keyData.get("mouse"));
+                }
+            }
         }
     }
 
@@ -163,7 +284,10 @@ public class ConfigManager {
 
                 if (os.contains("win")) {
                     runtime.exec("explorer " + configsDir.getAbsolutePath());
-
+                } else if (os.contains("mac")) {
+                    runtime.exec("open " + configsDir.getAbsolutePath());
+                } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                    runtime.exec("xdg-open " + configsDir.getAbsolutePath());
                 }
             }
         } catch (Exception e) {
@@ -174,5 +298,45 @@ public class ConfigManager {
 
     public File getConfigsDir() {
         return configsDir;
+    }
+
+    // Внутренний класс для хранения данных конфига
+    private static class ConfigData {
+        private Map<String, Boolean> modules;
+        private Map<String, Integer> keybinds;
+        private List<String> friends;
+        private Map<String, Map<String, Object>> moduleSettings;
+
+        public Map<String, Boolean> getModules() {
+            return modules;
+        }
+
+        public void setModules(Map<String, Boolean> modules) {
+            this.modules = modules;
+        }
+
+        public Map<String, Integer> getKeybinds() {
+            return keybinds;
+        }
+
+        public void setKeybinds(Map<String, Integer> keybinds) {
+            this.keybinds = keybinds;
+        }
+
+        public List<String> getFriends() {
+            return friends;
+        }
+
+        public void setFriends(List<String> friends) {
+            this.friends = friends;
+        }
+
+        public Map<String, Map<String, Object>> getModuleSettings() {
+            return moduleSettings;
+        }
+
+        public void setModuleSettings(Map<String, Map<String, Object>> moduleSettings) {
+            this.moduleSettings = moduleSettings;
+        }
     }
 }

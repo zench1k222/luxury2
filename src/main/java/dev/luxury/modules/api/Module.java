@@ -89,6 +89,10 @@ public class Module {
         return null;
     }
 
+    public List<Setting> getSettings() {
+        return settings;
+    }
+
 
     @Override
     public String toString() {
