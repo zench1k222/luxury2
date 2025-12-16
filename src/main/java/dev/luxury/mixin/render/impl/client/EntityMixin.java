@@ -2,6 +2,8 @@ package dev.luxury.mixin.render.impl.client;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dev.luxury.Luxury;
+import dev.luxury.modules.api.ModuleManager;
+import dev.luxury.modules.impl.NoPush;
 import dev.luxury.modules.impl.NoWeb;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
@@ -10,12 +12,10 @@ import net.minecraft.entity.Entity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(Entity.class)
 public abstract class EntityMixin {
@@ -49,7 +49,16 @@ public abstract class EntityMixin {
         }
         return pitch;
     }
-
+    @ModifyArgs(method = "pushAwayFrom", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;addVelocity(DDD)V"))
+    private void pushAwayFromHook(Args args) {
+        Entity self = (Entity)(Object)this;
+        NoPush noPush = ModuleManager.getModule(NoPush.class);
+        if (noPush != null && noPush.isEnabled() && noPush.mods.getValueByName("Игроки").get()) {
+            args.set(0, 0d);
+            args.set(1, 0d);
+            args.set(2, 0d);
+        }
+    }
     @ModifyVariable(
             method = "getRotationVector(FF)Lnet/minecraft/util/math/Vec3d;",
             at = @At("HEAD"),

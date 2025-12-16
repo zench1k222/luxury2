@@ -10,6 +10,7 @@ import dev.luxury.modules.api.settings.BooleanSetting;
 import dev.luxury.modules.api.settings.SliderSetting;
 import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
+import dev.luxury.utils.player.ServerUtil;
 import dev.luxury.utils.render.ColorRGBA;
 import dev.luxury.utils.render.RenderUtil;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
@@ -156,8 +157,8 @@ public class Arrows extends Module {
         }
 
         if (showHealth.get()) {
-            float health = player.getHealth();
-            String healthText = "❤ " + String.format("%.1f", health);
+            float health = ServerUtil.getHealth(player);
+            String healthText = "hp " + String.format("%.1f", health);
             sfpro2.drawCentered(e.getDrawContext().getMatrices(), healthText, x, startY + (lineIndex * lineHeight), friendColor);
             lineIndex++;
         }

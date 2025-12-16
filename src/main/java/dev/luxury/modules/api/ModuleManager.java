@@ -7,6 +7,7 @@ import dev.luxury.events.impl.eventapi.EventTarget;
 import dev.luxury.modules.ElytraHelper;
 import dev.luxury.modules.impl.NoDelay;
 import dev.luxury.modules.impl.*;
+import dev.luxury.modules.impl.hud.api.HUD;
 import dev.luxury.modules.impl.taksa.DogPet;
 import dev.luxury.ui.Clickgui;
 import lombok.Getter;
@@ -59,7 +60,8 @@ public class ModuleManager {
                 new Jesus(),
                 new AutoDuel(),
                 new TpLoot(),
-                new AutoPotion()
+                new AutoPotion(),
+                new NoPush()
 
         );
         DiscordRPC.getInstance().enable();
