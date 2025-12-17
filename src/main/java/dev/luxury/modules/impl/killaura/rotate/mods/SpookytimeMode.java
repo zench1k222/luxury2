@@ -26,7 +26,9 @@ public class SpookytimeMode extends RotationMode {
     private static final long TRACKING_DURATION = 1000;
 
     private boolean hadTarget = false;
-    private long lastTargetTime = 0;
+
+    private float returnLastYaw = 0.0f;
+    private float returnLastPitch = 0.0f;
 
     public Rotate process(Rotate target) {
         if (mc.player == null) return target;
@@ -38,16 +40,14 @@ public class SpookytimeMode extends RotationMode {
         LivingEntity entity = getTargetEntity();
         boolean hasTarget = entity != null;
 
-        if (hasTarget) {
-            lastTargetTime = System.currentTimeMillis();
-        }
-
         boolean shouldStartReturning = !isEnabled || (!hasTarget && hadTarget);
 
         if (shouldStartReturning && !isReturning) {
             isReturning = true;
             returnStartTime = System.currentTimeMillis();
             lastTargetRotation = current;
+            returnLastYaw = lastYaw;
+            returnLastPitch = lastPitch;
         }
 
         if (isEnabled && hasTarget && isReturning) {
@@ -57,6 +57,7 @@ public class SpookytimeMode extends RotationMode {
 
         hadTarget = hasTarget;
 
+        // Обработка возвращения
         if (isReturning) {
             long timeSinceReturn = System.currentTimeMillis() - returnStartTime;
 
@@ -133,82 +134,94 @@ public class SpookytimeMode extends RotationMode {
         Vec3d targetPos = entity.getBoundingBox().getCenter();
 
         float targetYaw = (float) Math.toDegrees(Math.atan2(targetPos.z - eyes.z, targetPos.x - eyes.x)) - 90.0f;
-        float targetPitch = (float) -Math.toDegrees(Math.atan2(targetPos.y - eyes.y, Math.sqrt((targetPos.x - eyes.x) * (targetPos.x - eyes.x) + (targetPos.z - eyes.z) * (targetPos.z - eyes.z))));
+        float targetPitch = (float) -Math.toDegrees(Math.atan2(targetPos.y - eyes.y,
+                Math.sqrt((targetPos.x - eyes.x) * (targetPos.x - eyes.x) + (targetPos.z - eyes.z) * (targetPos.z - eyes.z))));
 
-        Rotate target = new Rotate(targetYaw, targetPitch);
+        float yawDelta = MathHelper.wrapDegrees(targetYaw - current.getYaw());
+        float pitchDelta = MathHelper.wrapDegrees(targetPitch - current.getPitch());
 
-        DeltaRotate delta = current.rotationDeltaTo(target);
-        float yawDelta = delta.getDeltaYaw();
-        float pitchDelta = delta.getDeltaPitch();
+        float clampedYaw = Math.min(Math.max(Math.abs(yawDelta), 1.0E-4f), 22.5f);
+        float clampedPitch = Math.min(Math.max(Math.abs(pitchDelta), 1.0E-4f), 7.0f);
 
-        float rotationDifference = (float) Math.hypot(Math.abs(yawDelta), Math.abs(pitchDelta));
+        float randomYawFactor = (random.nextFloat() * 2.5f - 1.5f);
+        float randomPitchFactor = (random.nextFloat() * 2.5f - 1.0f);
+        float randomThreshold = random.nextFloat() * 2.5f;
+        float randomAddition = random.nextFloat() * 3.5f + 2.5f;
 
-        float baseSpeed = 0.35f;
+        clampedPitch /= 3.0f;
 
-        float randomYawJitter = (random.nextFloat() * 2.5f - 1.5f) * 0.5f;
-        float randomPitchJitter = (random.nextFloat() * 2.5f - 1.0f) * 0.3f;
+        if (Math.abs(clampedYaw - returnLastYaw) <= randomThreshold) {
+            clampedYaw = returnLastYaw + randomAddition;
+        }
 
-        float moveYaw = rotationDifference > 0 ? MathHelper.clamp(yawDelta, -Math.abs(yawDelta / rotationDifference * 180), Math.abs(yawDelta / rotationDifference * 180)) : yawDelta;
-        float movePitch = rotationDifference > 0 ? MathHelper.clamp(pitchDelta, -Math.abs(pitchDelta / rotationDifference * 180), Math.abs(pitchDelta / rotationDifference * 180)) : pitchDelta;
+        clampedYaw += randomYawFactor;
+        clampedPitch += randomPitchFactor;
 
-        float finalYaw = MathHelper.lerp(baseSpeed, current.getYaw(), current.getYaw() + moveYaw) + randomYawJitter;
-        float finalPitch = MathHelper.lerp(baseSpeed, current.getPitch(), current.getPitch() + movePitch) + randomPitchJitter;
-
-        finalPitch = MathHelper.clamp(finalPitch, -90.0f, 90.0f);
-        finalYaw = MathHelper.wrapDegrees(finalYaw);
+        float yaw = current.getYaw() + (yawDelta > 0.0f ? clampedYaw : -clampedYaw);
+        float pitch = MathHelper.clamp(current.getPitch() + (pitchDelta > 0.0f ? clampedPitch : -clampedPitch), -80.0f, 70.0f);
 
         float gcd = Rotate.gcd();
         if (gcd > 0.0f && gcd < 10.0f && !Float.isInfinite(gcd) && !Float.isNaN(gcd)) {
-            finalYaw = (float) (finalYaw - (finalYaw - current.getYaw()) % gcd);
-            finalPitch = (float) (finalPitch - (finalPitch - current.getPitch()) % gcd);
+            yaw = (float) (yaw - (yaw - current.getYaw()) % gcd);
+            pitch = (float) (pitch - (pitch - current.getPitch()) % gcd);
         }
 
-        return new Rotate(finalYaw, finalPitch);
+        yaw = MathHelper.wrapDegrees(yaw);
+
+        returnLastYaw = clampedYaw;
+        returnLastPitch = clampedPitch;
+
+        return new Rotate(yaw, pitch);
     }
 
     private Rotate processSmoothReturn(Rotate current) {
         Rotate playerRotation = new Rotate(mc.player.getYaw(), mc.player.getPitch());
-        DeltaRotate delta = current.rotationDeltaTo(playerRotation);
 
-        float yawDelta = delta.getDeltaYaw();
-        float pitchDelta = delta.getDeltaPitch();
+        float yawDelta = MathHelper.wrapDegrees(playerRotation.getYaw() - current.getYaw());
+        float pitchDelta = MathHelper.wrapDegrees(playerRotation.getPitch() - current.getPitch());
 
-        if (Math.abs(yawDelta) < 1.0f && Math.abs(pitchDelta) < 1.0f) {
+        if (Math.abs(yawDelta) < 1.5f && Math.abs(pitchDelta) < 1.5f) {
             isReturning = false;
             lastTargetRotation = null;
             lastTarget = null;
             return playerRotation;
         }
 
-        float rotationDifference = (float) Math.hypot(Math.abs(yawDelta), Math.abs(pitchDelta));
+        float clampedYaw = Math.min(Math.max(Math.abs(yawDelta), 1.0E-4f), 22.5f);
+        float clampedPitch = Math.min(Math.max(Math.abs(pitchDelta), 1.0E-4f), 7.0f);
 
-        float returnSpeed = MathHelper.clamp(0.3f + (rotationDifference / 180.0f) * 0.25f, 0.3f, 0.55f);
-
-        float jitterScale = Math.min(rotationDifference / 45.0f, 1.0f);
-        float randomYawJitter = (random.nextFloat() * 2.5f - 1.5f) * jitterScale;
-        float randomPitchJitter = (random.nextFloat() * 2.5f - 1.0f) * jitterScale * 0.5f;
-
+        float randomYawFactor = (random.nextFloat() * 2.5f - 1.5f);
+        float randomPitchFactor = (random.nextFloat() * 2.5f - 1.0f);
         float randomThreshold = random.nextFloat() * 2.5f;
-        if (random.nextFloat() < 0.1f && rotationDifference > 15.0f) {
-            randomYawJitter += (random.nextFloat() - 0.5f) * 3.5f;
+        float randomAddition = random.nextFloat() * 3.5f + 2.5f;
+
+        clampedPitch /= 3.0f;
+
+        if (Math.abs(clampedYaw - returnLastYaw) <= randomThreshold) {
+            clampedYaw = returnLastYaw + randomAddition;
         }
 
-        float moveYaw = rotationDifference > 0 ? MathHelper.clamp(yawDelta, -Math.abs(yawDelta / rotationDifference * 180), Math.abs(yawDelta / rotationDifference * 180)) : yawDelta;
-        float movePitch = rotationDifference > 0 ? MathHelper.clamp(pitchDelta, -Math.abs(pitchDelta / rotationDifference * 180), Math.abs(pitchDelta / rotationDifference * 180)) : pitchDelta;
+        clampedYaw += randomYawFactor;
+        clampedPitch += randomPitchFactor;
 
-        float finalYaw = MathHelper.lerp(returnSpeed, current.getYaw(), current.getYaw() + moveYaw) + randomYawJitter;
-        float finalPitch = MathHelper.lerp(returnSpeed, current.getPitch(), current.getPitch() + movePitch) + randomPitchJitter;
+        clampedYaw *= 0.7f;
+        clampedPitch *= 0.7f;
 
-        finalPitch = MathHelper.clamp(finalPitch, -90.0f, 90.0f);
-        finalYaw = MathHelper.wrapDegrees(finalYaw);
+        float yaw = current.getYaw() + (yawDelta > 0.0f ? clampedYaw : -clampedYaw);
+        float pitch = MathHelper.clamp(current.getPitch() + (pitchDelta > 0.0f ? clampedPitch : -clampedPitch), -80.0f, 70.0f);
 
         float gcd = Rotate.gcd();
         if (gcd > 0.0f && gcd < 10.0f && !Float.isInfinite(gcd) && !Float.isNaN(gcd)) {
-            finalYaw = (float) (finalYaw - (finalYaw - current.getYaw()) % gcd);
-            finalPitch = (float) (finalPitch - (finalPitch - current.getPitch()) % gcd);
+            yaw = (float) (yaw - (yaw - current.getYaw()) % gcd);
+            pitch = (float) (pitch - (pitch - current.getPitch()) % gcd);
         }
 
-        return new Rotate(finalYaw, finalPitch);
+        yaw = MathHelper.wrapDegrees(yaw);
+
+        returnLastYaw = clampedYaw;
+        returnLastPitch = clampedPitch;
+
+        return new Rotate(yaw, pitch);
     }
 
     private LivingEntity getTargetEntity() {
@@ -235,6 +248,7 @@ public class SpookytimeMode extends RotationMode {
         isReturning = false;
         lastTargetRotation = null;
         hadTarget = false;
-        lastTargetTime = 0;
+        returnLastYaw = 0.0f;
+        returnLastPitch = 0.0f;
     }
 }
