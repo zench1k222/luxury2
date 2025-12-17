@@ -152,10 +152,10 @@ public class KillAura extends Module {
             return;
         }
 
+        if (!target.isUsingItem() || !target.getActiveItem().isOf(Items.SHIELD)) return;
+
         BooleanSetting breakShieldSetting = settings.getValueByName("Ломать щит");
         if (breakShieldSetting == null || !breakShieldSetting.get()) return;
-
-        if (!target.isUsingItem() || !target.getActiveItem().isOf(Items.SHIELD)) return;
 
         int axeSlot = -1;
         for (int i = 0; i < 36; i++) {
@@ -166,7 +166,13 @@ public class KillAura extends Module {
             }
         }
 
-        if (axeSlot == -1) return;
+        if (axeSlot == -1) {
+            BooleanSetting shieldPushSetting = settings.getValueByName("Отжимать щит");
+            if (shieldPushSetting == null || !shieldPushSetting.get()) return;
+
+            shieldBreakCooldown = 20;
+            return;
+        }
 
         Vec3d playerCenter = mc.player.getBoundingBox().getCenter();
         Vec3d targetEyes = target.getEyePos();
@@ -175,45 +181,72 @@ public class KillAura extends Module {
 
         if (angleDiff > 100) return;
 
-        if (!isCanAttack) return;
-
         int originalSlot = mc.player.getInventory().selectedSlot;
         net.minecraft.item.ItemStack originalItem = mc.player.getMainHandStack();
 
         try {
+            boolean swappedToHotbar = false;
+
             if (axeSlot < 9) {
                 mc.player.getInventory().selectedSlot = axeSlot;
                 mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(axeSlot));
-            } else {
-                InventoryUtil.swapSlotsUniversal(axeSlot, mc.player.getInventory().selectedSlot, false, true);
+                swappedToHotbar = true;
+            }
+            else {
+                int hotbarSlot = -1;
+                for (int i = 0; i < 9; i++) {
+                    if (mc.player.getInventory().getStack(i).isEmpty()) {
+                        hotbarSlot = i;
+                        break;
+                    }
+                }
+
+                if (hotbarSlot == -1) {
+                    hotbarSlot = originalSlot;
+                }
+
+                InventoryUtil.swapSlotsUniversal(axeSlot, hotbarSlot, false, true);
+                mc.player.getInventory().selectedSlot = hotbarSlot;
+                mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(hotbarSlot));
+                swappedToHotbar = true;
             }
 
-            shieldBreakCooldown = 2;
+            if (swappedToHotbar) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ignored) {}
 
-            if (mc.interactionManager != null) {
-                mc.interactionManager.attackEntity(mc.player, target);
-                mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
+                shieldBreakCooldown = 2;
 
-                if (target.isUsingItem() && target.getActiveItem().isOf(Items.SHIELD)) {
+                if (mc.interactionManager != null && target != null && target.isAlive()) {
+                    mc.interactionManager.attackEntity(mc.player, target);
+                    mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
+
                     new Thread(() -> {
                         try {
                             Thread.sleep(50);
-                            if (mc.interactionManager != null && target != null && target.isAlive()) {
+                            if (mc.interactionManager != null && target != null && target.isAlive() && target.isUsingItem()) {
                                 mc.interactionManager.attackEntity(mc.player, target);
                                 mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
                             }
                         } catch (InterruptedException ignored) {}
                     }).start();
                 }
-            }
 
-            if (axeSlot < 9) {
-                mc.player.getInventory().selectedSlot = originalSlot;
-                mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
-            } else {
-                InventoryUtil.swapSlotsUniversal(mc.player.getInventory().selectedSlot, axeSlot, false, true);
-            }
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ignored) {}
 
+                if (axeSlot < 9) {
+                    mc.player.getInventory().selectedSlot = originalSlot;
+                    mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
+                }
+                else {
+                    InventoryUtil.swapSlotsUniversal(mc.player.getInventory().selectedSlot, axeSlot, false, true);
+                    mc.player.getInventory().selectedSlot = originalSlot;
+                    mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
+                }
+            }
         } catch (Exception ex) {
             mc.player.getInventory().selectedSlot = originalSlot;
             mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));

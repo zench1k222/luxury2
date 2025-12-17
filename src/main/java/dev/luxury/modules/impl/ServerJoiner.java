@@ -20,6 +20,7 @@ import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.Hand;
 import org.lwjgl.glfw.GLFW;
 
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @ModuleAnnotation(
         name = "ServerJoiner",
         desc = "Авто заход на сервера",
@@ -30,10 +31,10 @@ public class ServerJoiner extends Module {
     SliderSetting griefSelection = new SliderSetting("Номер грифа", 1, 1, 54, 1);
 
     @NonFinal long lastActionTime;
-    @NonFinal boolean isToggling;
-    @NonFinal boolean retryDuels;
-    @NonFinal int clickDelay;
+    @NonFinal long lastCompassClick;
     @NonFinal boolean waitingForGui;
+    @NonFinal int state;
+    @NonFinal int tickCounter;
 
     public ServerJoiner() {
         addSettings(serverSelection, griefSelection);
@@ -41,6 +42,9 @@ public class ServerJoiner extends Module {
 
     @EventTarget
     public void onTick(EventTick event) {
+        if (mc.player == null || mc.world == null) return;
+
+        tickCounter++;
         griefSelection.setVisible(serverSelection.is("ReallyWorld"));
 
         if (GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_INSERT) == GLFW.GLFW_PRESS) {
@@ -48,72 +52,114 @@ public class ServerJoiner extends Module {
             return;
         }
 
-        // Если ждем открытия GUI
-        if (waitingForGui) {
-            clickDelay++;
-            if (clickDelay > 10) { // Ждем 10 тиков (0.5 секунд) для открытия GUI
-                waitingForGui = false;
-                clickDelay = 0;
+        if (tickCounter % 20 == 0) {
+            Network.tick();
+        }
+
+        long now = System.currentTimeMillis();
+
+        if (mc.currentScreen instanceof GenericContainerScreen container) {
+            handleContainerGUI(container, now);
+        }
+        else if (state == 0 && now - lastCompassClick >= 2000 && mc.player.age > 20) {
+            clickCompass();
+            state = 1;
+            lastCompassClick = now;
+        }
+        else if (state == 1 && now - lastCompassClick >= 500) {
+            state = 2;
+            lastActionTime = now - 1000;
+        }
+    }
+
+    private void clickCompass() {
+        int compassSlot = -1;
+        for (int i = 0; i < 9; i++) {
+            if (mc.player.getInventory().getStack(i).getItem() == net.minecraft.item.Items.COMPASS) {
+                compassSlot = i;
+                break;
             }
+        }
+
+        if (compassSlot == -1) {
+            for (int i = 9; i < 36; i++) {
+                if (mc.player.getInventory().getStack(i).getItem() == net.minecraft.item.Items.COMPASS) {
+                    InventoryUtil.swapSlots(i, 0);
+                    compassSlot = 0;
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException ignored) {}
+                    break;
+                }
+            }
+        }
+
+        if (compassSlot == -1) {
             return;
         }
 
-        // Если нет GUI и игрок молодой (только зашел)
-        if (mc.currentScreen == null && mc.player != null && mc.player.age < 100) {
-            InventoryUtil.selectCompass();
-            mc.player.networkHandler.sendPacket(new PlayerInteractItemC2SPacket(
-                    Hand.MAIN_HAND,
-                    mc.player.getInventory().selectedSlot,
-                    mc.player.getYaw(),
-                    mc.player.getPitch()
-            ));
-            waitingForGui = true;
-            clickDelay = 0;
-        }
-        // Если открыт GUI контейнера
-        else if (mc.currentScreen instanceof GenericContainerScreen container) {
-            processContainer(container);
+        mc.player.getInventory().selectedSlot = compassSlot;
+
+        if (mc.interactionManager != null) {
+            mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
         }
     }
 
-    private void processContainer(GenericContainerScreen container) {
+    private void handleContainerGUI(GenericContainerScreen container, long now) {
+        String title = container.getTitle().getString();
+
+        if (!title.toLowerCase().contains("сервер") && !title.toLowerCase().contains("server")) {
+            return;
+        }
+
+        if (now - lastActionTime < 100) return;
+
+        boolean clicked = false;
+
         for (int i = 0; i < container.getScreenHandler().slots.size(); i++) {
-            String itemName = container.getScreenHandler().slots.get(i).getStack().getName().getString().toLowerCase();
+            var stack = container.getScreenHandler().getSlot(i).getStack();
+            if (stack.isEmpty()) continue;
+
+            String itemName = stack.getName().getString();
+            String lowerName = itemName.toLowerCase();
+
 
             if (serverSelection.is("ReallyWorld") && Network.isReallyWorld()) {
-                processReallyWorld(itemName, i);
-            } else if (serverSelection.is("SpookyTime Duels") && Network.isSpookyTime()) {
-                processSpookyTime(itemName, i);
+                if ((lowerName.contains("гриферское") && lowerName.contains("выживание")) ||
+                        lowerName.contains("grief") || lowerName.contains("survival")) {
+                    InventoryUtil.clickSlot(i, 0, SlotActionType.PICKUP);
+                    clicked = true;
+                    break;
+                }
+
+                int numberGrief = (int) griefSelection.getValue();
+                if (lowerName.contains("гриф") && lowerName.contains("#" + numberGrief)) {
+                    InventoryUtil.clickSlot(i, 0, SlotActionType.PICKUP);
+                    clicked = true;
+                    break;
+                }
+            }
+            else if (serverSelection.is("SpookyTime Duels") && Network.isSpookyTime()) {
+                if (lowerName.contains("дуэли") || lowerName.contains("duels") ||
+                        lowerName.contains("» дуэли") || itemName.contains("» Дуэли")) {
+                    mc.player.getInventory().selectedSlot = 0;
+                    InventoryUtil.clickSlot(i, 0, SlotActionType.PICKUP);
+                    clicked = true;
+                    break;
+                }
+
+                if (lowerName.contains("липкий поршень") || lowerName.contains("sticky piston")) {
+                    InventoryUtil.clickSlot(i, 0, SlotActionType.PICKUP);
+                    clicked = true;
+                    break;
+                }
             }
         }
-    }
 
-    private void processReallyWorld(String itemName, int slot) {
-        if (System.currentTimeMillis() - lastActionTime < 50) return;
-
-        if (itemName.contains("гриферское выживание")) {
-            InventoryUtil.clickSlotLegit(slot, 0, SlotActionType.PICKUP, false);
-            lastActionTime = System.currentTimeMillis();
-        } else {
-            int numberGrief = (int) griefSelection.getValue();
-            if (itemName.contains("гриф #" + numberGrief)) {
-                InventoryUtil.clickSlotLegit(slot, 0, SlotActionType.PICKUP, false);
-                lastActionTime = System.currentTimeMillis();
-            }
-        }
-    }
-
-    private void processSpookyTime(String itemName, int slot) {
-        if (System.currentTimeMillis() - lastActionTime < 70) return;
-
-        if (itemName.contains("» дуэли")) {
-            mc.player.getInventory().selectedSlot = 0;
-            InventoryUtil.clickSlotLegit(slot, 0, SlotActionType.PICKUP, false);
-            lastActionTime = System.currentTimeMillis();
-            retryDuels = true;
-        } else if (itemName.contains("липкий поршень")) {
-            InventoryUtil.clickSlotLegit(slot, 0, SlotActionType.PICKUP, false);
-            lastActionTime = System.currentTimeMillis();
+        if (clicked) {
+            lastActionTime = now;
+            state = 0;
+            lastCompassClick = now;
         }
     }
 
@@ -123,6 +169,7 @@ public class ServerJoiner extends Module {
 
         if (event.getPacket() instanceof DisconnectS2CPacket packet) {
             String message = packet.reason().getString().toLowerCase();
+
             if (message.contains("к сожалению сервер переполнен") ||
                     message.contains("подождите 20 секунд!") ||
                     message.contains("вы уже подключены на этот сервер!") ||
@@ -131,15 +178,20 @@ public class ServerJoiner extends Module {
                     message.contains("вы были кикнуты") ||
                     message.contains("большой поток игроков") ||
                     message.contains("сервер заполнен!")) {
-                InventoryUtil.selectCompass();
-                mc.player.networkHandler.sendPacket(new PlayerInteractItemC2SPacket(
-                        Hand.MAIN_HAND,
-                        mc.player.getInventory().selectedSlot,
-                        mc.player.getYaw(),
-                        mc.player.getPitch()
-                ));
-                waitingForGui = true;
-                clickDelay = 0;
+
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    if (mc.player != null && mc.player.networkHandler != null) {
+                        clickCompass();
+                        state = 1;
+                        lastCompassClick = System.currentTimeMillis();
+                    }
+                }).start();
             }
         }
     }
@@ -147,40 +199,30 @@ public class ServerJoiner extends Module {
     @Override
     public void onEnable() {
         super.onEnable();
-        waitingForGui = false;
-        clickDelay = 0;
+        state = 0;
+        tickCounter = 0;
         lastActionTime = 0;
-        isToggling = false;
-        retryDuels = false;
+        lastCompassClick = 0;
+        waitingForGui = false;
 
-        // Даем небольшую задержку перед началом работы
         new Thread(() -> {
             try {
-                Thread.sleep(500); // 0.5 секунды задержки
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
-            if (mc.player != null && mc.player.networkHandler != null) {
-                InventoryUtil.selectCompass();
-                mc.player.networkHandler.sendPacket(new PlayerInteractItemC2SPacket(
-                        Hand.MAIN_HAND,
-                        mc.player.getInventory().selectedSlot,
-                        mc.player.getYaw(),
-                        mc.player.getPitch()
-                ));
-                waitingForGui = true;
-            }
+            state = 0;
+            lastCompassClick = System.currentTimeMillis() - 3000;
         }).start();
     }
 
     @Override
     public void onDisable() {
         super.onDisable();
-        waitingForGui = false;
-        clickDelay = 0;
+        state = 0;
         lastActionTime = 0;
-        isToggling = false;
-        retryDuels = false;
+        lastCompassClick = 0;
+        waitingForGui = false;
     }
 }

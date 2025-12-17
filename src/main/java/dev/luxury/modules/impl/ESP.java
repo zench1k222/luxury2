@@ -18,6 +18,7 @@ import dev.luxury.utils.player.ServerUtil;
 import dev.luxury.utils.render.ColorUtil;
 import dev.luxury.utils.render.RenderUtil;
 import net.minecraft.client.gl.ShaderProgramKeys;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.client.render.*;
@@ -30,6 +31,7 @@ import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -57,6 +59,15 @@ public class ESP extends Module {
             new BooleanSetting("Предметы", false)
     );
 
+    private final ModeListSetting itemMode = new ModeListSetting(
+            "Режим предметов",
+            new BooleanSetting("Текст", true),
+            new BooleanSetting("Иконка", false)
+    );
+
+    private final SliderSetting itemBackgroundAlpha = new SliderSetting("Прозрачность фона", 0.7f, 0.1f, 1.0f, 0.1f);
+    private final SliderSetting itemScale = new SliderSetting("Размер иконки", 0.8f, 0.5f, 1.5f, 0.1f);
+
     private final BooleanSetting showBox = new BooleanSetting("Показывать ESP Боксы", true);
     private final BooleanSetting corners = new BooleanSetting("Углы", false);
     private final SliderSetting cornerLength = new SliderSetting("Высота", 0.3f, 0.1f, 0.4f, 0.1f);
@@ -64,6 +75,8 @@ public class ESP extends Module {
     private final BooleanSetting showNameTags = new BooleanSetting("Неймтеги", true);
     private final BooleanSetting hideVanillaTags = new BooleanSetting("Скрыть ванильные", true);
     private final BooleanSetting showArmor = new BooleanSetting("Броня и предметы", true);
+
+
 
     private final Map<String, String> donateSymbols = new HashMap<String, String>() {{
         put("ꔀ", "§7&lPLAYER");
@@ -99,7 +112,7 @@ public class ESP extends Module {
     private static ESP instance;
 
     public ESP() {
-        addSettings(targets, showBox, corners, cornerLength, thickness, showNameTags, hideVanillaTags, showArmor);
+        addSettings(targets, itemMode, itemBackgroundAlpha, itemScale ,showBox, corners, cornerLength, thickness, showNameTags, hideVanillaTags, showArmor);
         instance = this;
     }
 
@@ -107,14 +120,14 @@ public class ESP extends Module {
         return instance;
     }
 
-    private float getDistanceScale(Entity entity) {
+    private float getPlayerScale(Entity entity) {
         if (mc.player == null) return 1.0f;
 
         double distance = mc.player.squaredDistanceTo(entity);
         distance = Math.sqrt(distance);
 
         float minDist = 2.0f;
-        float maxDist = 30.0f;
+        float maxDist = 30.0f; // Для игроков
 
         float maxScale = 1.25f;
         float minScale = 0.6f;
@@ -122,6 +135,26 @@ public class ESP extends Module {
         float t = (float) ((distance - minDist) / (maxDist - minDist));
         t = Math.max(0f, Math.min(1f, t));
 
+        return maxScale + (minScale - maxScale) * t;
+    }
+
+    private float getItemScale(ItemEntity itemEntity) {
+        if (mc.player == null) return 1.0f;
+
+        double distance = mc.player.squaredDistanceTo(itemEntity);
+        distance = Math.sqrt(distance);
+
+        float minDist = 2.0f;
+        float maxDist = 50.0f; // Для предметов больше дистанция
+
+        float maxScale = 1.0f;
+        float minScale = 0.8f; // Предметы не должны быть слишком мелкими
+
+        if (distance < minDist) return maxScale;
+        if (distance > maxDist) return minScale;
+
+        float t = (float) ((distance - minDist) / (maxDist - minDist));
+        // Менее агрессивное уменьшение
         return maxScale + (minScale - maxScale) * t;
     }
 
@@ -170,7 +203,7 @@ public class ESP extends Module {
 
     private boolean shouldHideItemNameTag(ItemEntityRenderState itemState) {
         if (!showNameTags.get()) return false;
-        return getTargetSetting("Предметы");
+        return getTargetSetting("Предметы") && getTargetSetting("Текст");
     }
 
     private Entity getEntityFromState(EntityRenderState state) {
@@ -214,11 +247,14 @@ public class ESP extends Module {
         return null;
     }
 
+    private ArrayList<ItemEntity> itemsToRender = new ArrayList<>();
+
     @EventTarget
     public void onGameTick(EventTick event) {
         if (!isEnabled()) return;
 
         toRender.clear();
+        itemsToRender.clear();
 
         if (mc.world == null) return;
 
@@ -231,7 +267,379 @@ public class ESP extends Module {
             if (shouldRenderEntity(entity)) {
                 toRender.add(entity);
             }
+            if (entity instanceof ItemEntity itemEntity && getTargetSetting("Предметы")) {
+                itemsToRender.add(itemEntity);
+            }
         }
+    }
+
+    private void renderItems(EventRender2D e) {
+        if (itemsToRender.isEmpty() || !getTargetSetting("Предметы")) return;
+
+        for (ItemEntity itemEntity : itemsToRender) {
+            if (itemEntity == null || itemEntity.isRemoved()) continue;
+
+            ItemStack stack = itemEntity.getStack();
+            if (stack.isEmpty() || stack.getItem() == Items.AIR) continue;
+
+            Vec3d interp = itemEntity.getLerpedPos(mc.getRenderTickCounter().getTickDelta(true));
+            Box box = itemEntity.getBoundingBox().offset(interp.subtract(itemEntity.getPos()));
+
+            Vec3d[] corners = new Vec3d[]{
+                    new Vec3d(box.minX, box.minY, box.minZ),
+                    new Vec3d(box.minX, box.minY, box.maxZ),
+                    new Vec3d(box.maxX, box.minY, box.minZ),
+                    new Vec3d(box.maxX, box.minY, box.maxZ),
+                    new Vec3d(box.minX, box.maxY, box.minZ),
+                    new Vec3d(box.minX, box.maxY, box.maxZ),
+                    new Vec3d(box.maxX, box.maxY, box.minZ),
+                    new Vec3d(box.maxX, box.maxY, box.maxZ)
+            };
+
+            float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE;
+            float maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+
+            boolean anyVisible = false;
+
+            for (Vec3d corner : corners) {
+                Vec3d projected = RenderUtil.render3D.worldSpaceToScreenSpace(corner);
+                if (projected.z <= 0 || projected.z >= 1) continue;
+
+                anyVisible = true;
+
+                minX = (float) Math.min(minX, projected.x);
+                minY = (float) Math.min(minY, projected.y);
+                maxX = (float) Math.max(maxX, projected.x);
+                maxY = (float) Math.max(maxY, projected.y);
+            }
+
+            if (!anyVisible) continue;
+
+            if (maxX < 0 || maxY < 0 || minX > mc.getWindow().getScaledWidth() || minY > mc.getWindow().getScaledHeight())
+                continue;
+
+            if (showBox.get()) {
+                renderItemBox(e.getMatrixStack(), minX, minY, maxX, maxY, itemEntity);
+            }
+
+            renderItemInfo(e, minX, minY, maxX, maxY, itemEntity, stack);
+        }
+    }
+
+    private void renderItemInfo(EventRender2D e,
+                                       float minX, float minY,
+                                       float maxX, float maxY,
+                                       ItemEntity itemEntity,
+                                       ItemStack stack) {
+
+        boolean showText = getTargetSetting("Текст");
+        boolean showIcon = getTargetSetting("Иконка");
+
+        if (!showText && !showIcon) return;
+
+        FontDraw font = FontHelper.sfprobold[15];
+        if (font == null) return;
+
+        float distanceScale = getItemScale(itemEntity);
+        float iconSize = 16f * itemScale.getFloatValue() * distanceScale;
+
+        String text = getItemDisplayText(stack);
+        String cleanText = text.replaceAll("§[0-9a-fk-or]", "");
+
+        float textWidth = showText ? font.getWidth(cleanText) * distanceScale : 0;
+        float textHeight = showText ? font.getHeight() * distanceScale : 0;
+        float iconWidth = showIcon ? iconSize : 0;
+
+        float paddingX = 4f * distanceScale;
+        float paddingY = 2f * distanceScale;
+        float spacing = 2f * distanceScale;
+
+        float totalWidth = textWidth + iconWidth;
+        if (showText && showIcon) {
+            totalWidth += spacing;
+        }
+
+        float bgWidth = totalWidth + paddingX * 2f;
+        float bgHeight = Math.max(textHeight, iconSize) + paddingY * 2f;
+
+        float centerX = (minX + maxX) / 2f;
+        float posX = centerX - bgWidth / 2f;
+        float posY = minY - bgHeight - (6f * distanceScale);
+
+        int bgAlpha = (int) (itemBackgroundAlpha.getFloatValue() * 255);
+        int bgColor = new Color(0, 0, 0, bgAlpha).getRGB();
+
+        MatrixStack ms = e.getMatrixStack();
+        ms.push();
+        ms.translate(posX, posY, 0);
+
+        if (bgAlpha > 0) {
+            RenderUtil.drawRoundedRect(
+                    ms,
+                    0,
+                    0,
+                    bgWidth,
+                    bgHeight,
+                    new Vector4f(3f * distanceScale, 3f * distanceScale, 3f * distanceScale, 3f * distanceScale),
+                    bgColor
+            );
+        }
+
+        float contentX = paddingX;
+        float contentY = (bgHeight - (showText ? textHeight : iconSize)) / 2f;
+
+        if (showIcon) {
+            RenderSystem.enableDepthTest();
+            RenderUtil.drawItemStack(
+                    e.getDrawContext(),
+                    stack,
+                    contentX,
+                    contentY,
+                    iconSize
+            );
+            RenderSystem.disableDepthTest();
+
+            contentX += iconSize + spacing;
+        }
+
+        if (showText) {
+            ms.push();
+            ms.translate(contentX, contentY, 0);
+            ms.scale(distanceScale, distanceScale, 1.0f);
+
+            float xOffset = 0;
+            String[] segments = text.split("(?=§)");
+
+            for (String segment : segments) {
+                if (segment.isEmpty()) continue;
+
+                int color = 0xFFFFFFFF;
+                String displayText;
+
+                if (segment.startsWith("§") && segment.length() > 1) {
+                    char colorChar = segment.charAt(1);
+                    color = getColorFromFormatCode(colorChar);
+                    displayText = segment.length() > 2 ? segment.substring(2) : "";
+                } else {
+                    displayText = segment;
+                }
+
+                if (!displayText.isEmpty()) {
+                    font.drawFontLeft(
+                            ms,
+                            displayText,
+                            xOffset,
+                            0,
+                            color
+                    );
+                    xOffset += font.getWidth(displayText);
+                }
+            }
+
+            ms.pop();
+        }
+
+        ms.pop();
+    }
+
+    private void renderItemBox(MatrixStack matrix, float minX, float minY, float maxX, float maxY, ItemEntity item) {
+        float width = thickness.getFloatValue();
+        float w = maxX - minX;
+        float h = maxY - minY;
+
+        int color1 = new Color(170, 0, 170).getRGB();
+        int color2 = new Color(255, 85, 255).getRGB();
+
+        Vector4f zero = new Vector4f(0, 0, 0, 0);
+
+        if (!corners.get()) {
+            RenderUtil.drawRoundedRect(matrix, minX, minY, w, width, zero, color1);
+            RenderUtil.drawRoundedRect(matrix, minX, maxY - width, w, width, zero, color2);
+            RenderUtil.drawRoundedRect(matrix, minX, minY, width, h, zero, color1);
+            RenderUtil.drawRoundedRect(matrix, maxX - width, minY, width, h, zero, color2);
+            return;
+        }
+
+        float cornerLen = cornerLength.getFloatValue();
+
+        RenderUtil.drawRoundedRect(matrix, minX, minY, w * cornerLen, width, zero, color1);
+        RenderUtil.drawRoundedRect(matrix, minX, minY, width, h * cornerLen, zero, color2);
+
+        RenderUtil.drawRoundedRect(matrix, maxX - w * cornerLen, minY, w * cornerLen, width, zero, color1);
+        RenderUtil.drawRoundedRect(matrix, maxX - width, minY, width, h * cornerLen, zero, color2);
+
+        RenderUtil.drawRoundedRect(matrix, minX, maxY - width, w * cornerLen, width, zero, color2);
+        RenderUtil.drawRoundedRect(matrix, minX, maxY - h * cornerLen, width, h * cornerLen, zero, color1);
+
+        RenderUtil.drawRoundedRect(matrix, maxX - w * cornerLen, maxY - width, w * cornerLen, width, zero, color2);
+        RenderUtil.drawRoundedRect(matrix, maxX - width, maxY - h * cornerLen, width, h * cornerLen, zero, color1);
+    }
+
+    private void renderItemNameTag(EventRender2D e,
+                                   float minX, float minY,
+                                   float maxX, float maxY,
+                                   ItemEntity itemEntity) {
+
+        FontDraw font = FontHelper.sfprobold[15];
+        if (font == null) return;
+
+        ItemStack stack = itemEntity.getStack();
+        if (stack.isEmpty()) return;
+
+        float scale = getPlayerScale(itemEntity);
+
+        String itemName = stack.getName().getString();
+        int count = stack.getCount();
+
+        String text = itemName;
+        if (count > 1) {
+            text = itemName + " §7[" + count + "x]";
+        }
+
+        String cleanText = text.replaceAll("§[0-9a-fk-or]", "");
+
+        float textWidth = font.getWidth(cleanText) * scale;
+        float textHeight = font.getHeight() * scale;
+
+        float paddingX = 4f * scale;
+        float paddingY = 2f * scale;
+
+        float bgWidth = textWidth + paddingX * 2f;
+        float bgHeight = textHeight + paddingY * 2f;
+
+        float centerX = (minX + maxX) / 2f;
+        float posX = centerX - bgWidth / 2f;
+        float posY = minY - bgHeight - (6f * scale);
+
+        int bgColor = new Color(0, 0, 0, 150).getRGB();
+
+        MatrixStack ms = e.getMatrixStack();
+        ms.push();
+        ms.translate(posX, posY, 0);
+        ms.scale(scale, scale, 1.0f);
+
+        RenderUtil.drawRoundedRect(
+                ms,
+                0,
+                0,
+                bgWidth / scale,
+                bgHeight / scale,
+                new Vector4f(3f, 3f, 3f, 3f),
+                bgColor
+        );
+
+        float xOffset = paddingX / scale;
+        String[] segments = text.split("(?=§)");
+
+        for (String segment : segments) {
+            if (segment.isEmpty()) continue;
+
+            int color = 0xFFFFFFFF;
+            String displayText;
+
+            if (segment.startsWith("§")) {
+                char colorChar = segment.charAt(1);
+                color = getColorFromFormatCode(colorChar);
+
+                if (segment.length() > 2) {
+                    displayText = segment.substring(2);
+                } else {
+                    displayText = "";
+                }
+            } else {
+                displayText = segment;
+            }
+
+            if (!displayText.isEmpty()) {
+                font.drawFontLeft(
+                        ms,
+                        displayText,
+                        xOffset,
+                        paddingY / scale - 0.5f,
+                        color
+                );
+                xOffset += font.getWidth(displayText);
+            }
+        }
+
+        ms.pop();
+    }
+
+    private void renderItemIcon(DrawContext context, ItemStack stack, float x, float y, float size) {
+        MatrixStack matrices = context.getMatrices();
+
+        matrices.push();
+        matrices.translate(x, y, 0);
+        matrices.scale(size / 16f, size / 16f, 1f);
+
+        RenderUtil.drawItemStack(context, stack, 0, 0, 16f);
+
+        if (stack.getCount() > 1) {
+            matrices.push();
+            matrices.translate(0, 0, 200);
+
+            String countText = String.valueOf(stack.getCount());
+            FontDraw font = FontHelper.sfprobold[12];
+            if (font != null) {
+                float textWidth = font.getWidth(countText);
+                float textX = 16 - textWidth - 1;
+                float textY = 16 - font.getHeight() - 1;
+
+                RenderUtil.drawRoundedRect(
+                        matrices,
+                        textX - 1,
+                        textY - 1,
+                        textWidth + 2,
+                        font.getHeight() + 2,
+                        new Vector4f(2f, 2f, 2f, 2f),
+                        new Color(0, 0, 0, 150).getRGB()
+                );
+
+                font.drawFontLeft(
+                        matrices,
+                        countText,
+                        textX,
+                        textY,
+                        0xFFFFFFFF
+                );
+            }
+
+            matrices.pop();
+        }
+
+        matrices.pop();
+    }
+
+    private String getItemDisplayText(ItemStack stack) {
+        String itemName = stack.getName().getString();
+        int count = stack.getCount();
+
+        if (stack.hasEnchantments()) {
+            itemName = "§b" + itemName;
+        }
+
+        if (isValuableItem(stack)) {
+            itemName = "§6" + itemName;
+        }
+
+        if (count > 1) {
+            return itemName + "§r §7[" + count + "x]";
+        }
+
+        return itemName + "§r";
+    }
+
+    private boolean isValuableItem(ItemStack stack) {
+        return stack.getItem() == Items.DIAMOND ||
+                stack.getItem() == Items.NETHERITE_INGOT ||
+                stack.getItem() == Items.ENDER_PEARL ||
+                stack.getItem() == Items.ENCHANTED_GOLDEN_APPLE ||
+                stack.getItem() == Items.NETHERITE_SCRAP ||
+                stack.getItem() == Items.ANCIENT_DEBRIS ||
+                stack.getItem() == Items.ECHO_SHARD ||
+                stack.getItem() == Items.TRIDENT ||
+                stack.getItem() == Items.TOTEM_OF_UNDYING ||
+                stack.getItem() == Items.NETHER_STAR;
     }
 
     private void renderArmorAndHands(EventRender2D e,
@@ -358,12 +766,16 @@ public class ESP extends Module {
             }
 
             if (showArmor.get() && entity instanceof PlayerEntity player) {
-                renderArmorAndHands(e, minX, minY, maxX, maxY, player, getDistanceScale(entity));
+                renderArmorAndHands(e, minX, minY, maxX, maxY, player, getPlayerScale(entity));
             }
 
             if (showBox.get()) {
                 renderBox(e.getMatrixStack(), minX, minY, maxX, maxY, entity);
             }
+        }
+
+        if (getTargetSetting("Предметы")) {
+            renderItems(e);
         }
 
         RenderUtil.render3D.endBuilding(buffer);
@@ -380,11 +792,6 @@ public class ESP extends Module {
             }
             return getTargetSetting("Игроков");
         }
-
-        if (entity instanceof ItemEntity) {
-            return getTargetSetting("Предметы");
-        }
-
         return false;
     }
 
@@ -423,7 +830,16 @@ public class ESP extends Module {
 
     private boolean getTargetSetting(String name) {
         BooleanSetting setting = targets.getValueByName(name);
-        return setting != null && setting.get();
+        if (setting != null) {
+            return setting.get();
+        }
+
+        if (name.equals("Текст") || name.equals("Иконка")) {
+            BooleanSetting modeSetting = itemMode.getValueByName(name);
+            return modeSetting != null && modeSetting.get();
+        }
+
+        return false;
     }
 
     private void renderNameTag(EventRender2D e,
@@ -436,7 +852,7 @@ public class ESP extends Module {
         FontDraw font = FontHelper.sfprobold[15];
         if (font == null) return;
 
-        float scale = getDistanceScale(entity);
+        float scale = getPlayerScale(entity);
 
         String name = entity.getCustomName() != null
                 ? entity.getCustomName().getString()
