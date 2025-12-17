@@ -29,6 +29,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -75,6 +76,7 @@ public class ESP extends Module {
     private final BooleanSetting showNameTags = new BooleanSetting("Неймтеги", true);
     private final BooleanSetting hideVanillaTags = new BooleanSetting("Скрыть ванильные", true);
     private final BooleanSetting showArmor = new BooleanSetting("Броня и предметы", true);
+    private final BooleanSetting effects = new BooleanSetting("Эффекты", true);
 
 
 
@@ -112,7 +114,7 @@ public class ESP extends Module {
     private static ESP instance;
 
     public ESP() {
-        addSettings(targets, itemMode, itemBackgroundAlpha, itemScale ,showBox, corners, cornerLength, thickness, showNameTags, hideVanillaTags, showArmor);
+        addSettings(targets, itemMode, effects, itemBackgroundAlpha, itemScale ,showBox, corners, cornerLength, thickness, showNameTags, hideVanillaTags, showArmor);
         instance = this;
     }
 
@@ -127,7 +129,7 @@ public class ESP extends Module {
         distance = Math.sqrt(distance);
 
         float minDist = 2.0f;
-        float maxDist = 30.0f; // Для игроков
+        float maxDist = 30.0f;
 
         float maxScale = 1.25f;
         float minScale = 0.6f;
@@ -145,16 +147,15 @@ public class ESP extends Module {
         distance = Math.sqrt(distance);
 
         float minDist = 2.0f;
-        float maxDist = 50.0f; // Для предметов больше дистанция
+        float maxDist = 50.0f;
 
         float maxScale = 1.0f;
-        float minScale = 0.8f; // Предметы не должны быть слишком мелкими
+        float minScale = 0.8f;
 
         if (distance < minDist) return maxScale;
         if (distance > maxDist) return minScale;
 
         float t = (float) ((distance - minDist) / (maxDist - minDist));
-        // Менее агрессивное уменьшение
         return maxScale + (minScale - maxScale) * t;
     }
 
@@ -769,6 +770,10 @@ public class ESP extends Module {
                 renderArmorAndHands(e, minX, minY, maxX, maxY, player, getPlayerScale(entity));
             }
 
+            if (effects.get() && entity instanceof LivingEntity living) {
+                renderEffects(e, minX, minY, maxX, maxY, living, getPlayerScale(entity));
+            }
+
             if (showBox.get()) {
                 renderBox(e.getMatrixStack(), minX, minY, maxX, maxY, entity);
             }
@@ -780,6 +785,181 @@ public class ESP extends Module {
 
         RenderUtil.render3D.endBuilding(buffer);
         RenderUtil.disableRender();
+    }
+
+
+    private String toRoman(int number) {
+        return switch (number) {
+            case 1 -> "I";
+            case 2 -> "II";
+            case 3 -> "III";
+            case 4 -> "IV";
+            case 5 -> "V";
+            case 6 -> "VI";
+            case 7 -> "VII";
+            case 8 -> "VIII";
+            case 9 -> "IX";
+            case 10 -> "X";
+            default -> String.valueOf(number);
+        };
+    }
+
+    private void renderEffects(EventRender2D e,
+                               float minX, float minY,
+                               float maxX, float maxY,
+                               LivingEntity entity,
+                               float scale) {
+
+        if (!effects.get()) return;
+
+        MatrixStack ms = e.getMatrixStack();
+        FontDraw font = FontHelper.sfprobold[10];
+        if (font == null) return;
+
+        ArrayList<String> effectsList = new ArrayList<>();
+
+        entity.getActiveStatusEffects().forEach((registryEntry, instance) -> {
+            if (instance != null && registryEntry != null) {
+                StatusEffect effect = registryEntry.value();
+                if (effect != null) {
+                    String effectName = getEffectDisplayName(effect, instance);
+                    if (effectName != null && !effectName.isEmpty()) {
+                        effectsList.add(effectName);
+                    }
+                }
+            }
+        });
+
+        if (effectsList.isEmpty()) return;
+
+        float maxWidth = 0;
+        float totalHeight = 0;
+        float spacing = 2f * scale;
+
+        for (String effect : effectsList) {
+            float width = font.getWidth(effect) * scale;
+            float height = font.getHeight() * scale;
+
+            maxWidth = Math.max(maxWidth, width);
+            totalHeight += height + spacing;
+        }
+
+        if (totalHeight > 0) totalHeight -= spacing;
+
+        float bgPaddingX = 4f * scale;
+        float bgPaddingY = 4f * scale;
+
+        float bgX = minX - maxWidth - bgPaddingX * 2f - (10f * scale);
+        float bgY = minY;
+        float bgW = maxWidth + bgPaddingX * 2f;
+        float bgH = totalHeight + bgPaddingY * 2f;
+
+        RenderUtil.drawRoundedRect(
+                ms,
+                bgX,
+                bgY,
+                bgW,
+                bgH,
+                new org.joml.Vector4f(3f * scale, 3f * scale, 3f * scale, 3f * scale),
+                new Color(0, 0, 0, 140).getRGB()
+        );
+
+        float currentY = bgY + bgPaddingY;
+
+        for (String effect : effectsList) {
+            ms.push();
+            ms.translate(bgX + bgPaddingX, currentY, 0);
+            ms.scale(scale, scale, 1.0f);
+
+            int color = getEffectColor(effect);
+            font.drawFontLeft(ms, effect, 0, 0, color);
+
+            ms.pop();
+
+            currentY += font.getHeight() * scale + spacing;
+        }
+    }
+
+    private String getEffectDisplayName(net.minecraft.entity.effect.StatusEffect effect,
+                                        net.minecraft.entity.effect.StatusEffectInstance instance) {
+        if (effect == null) return "";
+
+        try {
+            String name = effect.getName().getString();
+            int amplifier = instance.getAmplifier();
+            int duration = instance.getDuration() / 20;
+
+            name = name.replace("Effect.", "")
+                    .replace("minecraft:", "")
+                    .replace("speed", "Speed")
+                    .replace("slowness", "Slow")
+                    .replace("haste", "Haste")
+                    .replace("mining_fatigue", "Fatigue")
+                    .replace("strength", "Strength")
+                    .replace("instant_health", "Heal")
+                    .replace("instant_damage", "Damage")
+                    .replace("jump_boost", "Jump")
+                    .replace("nausea", "Nausea")
+                    .replace("regeneration", "Regen")
+                    .replace("resistance", "Resist")
+                    .replace("fire_resistance", "Fire Resist")
+                    .replace("water_breathing", "Water Breath")
+                    .replace("invisibility", "Invis")
+                    .replace("blindness", "Blind")
+                    .replace("night_vision", "Night Vision")
+                    .replace("hunger", "Hunger")
+                    .replace("weakness", "Weak")
+                    .replace("poison", "Poison")
+                    .replace("wither", "Wither")
+                    .replace("health_boost", "Health Boost")
+                    .replace("absorption", "Absorption")
+                    .replace("saturation", "Saturation")
+                    .replace("glowing", "Glowing")
+                    .replace("levitation", "Levitation")
+                    .replace("luck", "Luck")
+                    .replace("unluck", "Bad Luck")
+                    .replace("slow_falling", "Slow Fall")
+                    .replace("conduit_power", "Conduit")
+                    .replace("dolphins_grace", "Dolphin")
+                    .replace("bad_omen", "Bad Omen")
+                    .replace("hero_of_the_village", "Hero")
+                    .replace("darkness", "Darkness");
+
+            if (amplifier > 0) {
+                name += " " + (amplifier + 1);
+            }
+
+            if (duration < 60) {
+                name += " §7" + duration + "s";
+            } else if (duration < 3600) {
+                name += " §7" + (duration / 60) + "m";
+            }
+
+            return name;
+
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private int getEffectColor(String effectName) {
+        if (effectName.contains("Speed") || effectName.contains("Haste") ||
+                effectName.contains("Strength") || effectName.contains("Jump")) {
+            return 0xFF55FF55;
+        } else if (effectName.contains("Heal") || effectName.contains("Regen") ||
+                effectName.contains("Resist") || effectName.contains("Absorption")) {
+            return 0xFFFF5555;
+        } else if (effectName.contains("Slow") || effectName.contains("Weak") ||
+                effectName.contains("Poison") || effectName.contains("Wither")) {
+            return 0xFFFFAA00;
+        } else if (effectName.contains("Invis") || effectName.contains("Night Vision") ||
+                effectName.contains("Water Breath")) {
+            return 0xFF55FFFF;
+        } else if (effectName.contains("Fire Resist")) {
+            return 0xFFFFFF55;
+        }
+
+        return 0xFFFFFFFF;
     }
 
     private boolean shouldRenderEntity(Entity entity) {

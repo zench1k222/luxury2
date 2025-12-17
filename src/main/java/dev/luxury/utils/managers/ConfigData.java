@@ -1,5 +1,7 @@
 package dev.luxury.utils.managers;
 
+import dev.luxury.common.way.Way;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,9 +11,10 @@ public class ConfigData {
     private Map<String, Boolean> modules = new HashMap<>();
     private Map<String, Integer> keybinds = new HashMap<>();
     private List<String> friends = new ArrayList<>();
+    private List<Way> ways = new ArrayList<>(); // Добавьте это поле
     private Map<String, Map<String, Object>> moduleSettings = new HashMap<>();
+    private Map<String, HudElementData> hudPositions = new HashMap<>(); // Добавьте это поле
 
-    // Добавляем новые поля для расширенной сериализации настроек
     private Map<String, Map<String, SettingData>> advancedModuleSettings = new HashMap<>();
 
     public Map<String, Boolean> getModules() {
@@ -38,6 +41,14 @@ public class ConfigData {
         this.friends = friends;
     }
 
+    public List<Way> getWays() {
+        return ways;
+    }
+
+    public void setWays(List<Way> ways) {
+        this.ways = ways;
+    }
+
     public Map<String, Map<String, Object>> getModuleSettings() {
         return moduleSettings;
     }
@@ -46,12 +57,69 @@ public class ConfigData {
         this.moduleSettings = moduleSettings;
     }
 
+    public Map<String, HudElementData> getHudPositions() {
+        return hudPositions;
+    }
+
+    public void setHudPositions(Map<String, HudElementData> hudPositions) {
+        this.hudPositions = hudPositions;
+    }
+
     public Map<String, Map<String, SettingData>> getAdvancedModuleSettings() {
         return advancedModuleSettings;
     }
 
     public void setAdvancedModuleSettings(Map<String, Map<String, SettingData>> advancedModuleSettings) {
         this.advancedModuleSettings = advancedModuleSettings;
+    }
+
+    // Внутренний класс для хранения данных позиций HUD элементов
+    public static class HudElementData {
+        private float x;
+        private float y;
+        private float width;
+        private float height;
+
+        public HudElementData() {}
+
+        public HudElementData(float x, float y, float width, float height) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+        }
+
+        public float getX() {
+            return x;
+        }
+
+        public void setX(float x) {
+            this.x = x;
+        }
+
+        public float getY() {
+            return y;
+        }
+
+        public void setY(float y) {
+            this.y = y;
+        }
+
+        public float getWidth() {
+            return width;
+        }
+
+        public void setWidth(float width) {
+            this.width = width;
+        }
+
+        public float getHeight() {
+            return height;
+        }
+
+        public void setHeight(float height) {
+            this.height = height;
+        }
     }
 
     // Внутренний класс для хранения данных настроек с типом

@@ -188,28 +188,44 @@ public class KillAura extends Module {
         if (angleDiff > 100) return;
 
         int originalSlot = mc.player.getInventory().selectedSlot;
+        boolean shieldBroken = false;
 
         if (originalSlot == axeSlot) {
             shieldBreakCooldown = 2;
             if (mc.interactionManager != null && target != null && target.isAlive()) {
                 mc.interactionManager.attackEntity(mc.player, target);
                 mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
+                shieldBroken = true;
             }
-            return;
+        } else {
+            mc.player.getInventory().selectedSlot = axeSlot;
+            mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(axeSlot));
+
+            shieldBreakCooldown = 2;
+            if (mc.interactionManager != null && target != null && target.isAlive()) {
+                mc.interactionManager.attackEntity(mc.player, target);
+                mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
+                shieldBroken = true;
+            }
+            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
         }
 
-        mc.player.getInventory().selectedSlot = axeSlot;
-        mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(axeSlot));
+        if (shieldBroken) {
+            String targetName = target.getName().getString();
 
-        shieldBreakCooldown = 2;
-        if (mc.interactionManager != null && target != null && target.isAlive()) {
-            mc.interactionManager.attackEntity(mc.player, target);
-            mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
+            String cleanMessage = "Щит сломан у " + targetName;
+
+            try {
+                dev.luxury.utils.notifications.NotificationsManager.getInstance().success(
+                        cleanMessage,
+                        3000
+                );
+            } catch (Exception e) {
+                dev.luxury.utils.client.ChatUtil.sendChat("§aЩит был сломан у игрока §f" + targetName);
+            }
         }
-        mc.player.getInventory().selectedSlot = originalSlot;
-        mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
     }
-
 
     private void checkTargetKilled() {
 

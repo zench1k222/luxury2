@@ -7,6 +7,8 @@ import dev.luxury.common.way.Way;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.modules.api.settings.*;
+import dev.luxury.modules.impl.hud.api.DraggableHudElement;
+import dev.luxury.modules.impl.hud.api.HUD;
 import net.minecraft.client.MinecraftClient;
 
 import java.awt.*;
@@ -77,6 +79,21 @@ public class ConfigManager {
                 }
             }
             config.setModuleSettings(moduleSettings);
+
+            // Сохраняем позиции HUD элементов
+            Map<String, HudElementData> hudPositions = new HashMap<>();
+            if (HUD.getInstance() != null) {
+                for (DraggableHudElement element : HUD.getInstance().getElements()) {
+                    HudElementData elementData = new HudElementData(
+                            element.getX(),
+                            element.getY(),
+                            element.getWidth(),
+                            element.getHeight()
+                    );
+                    hudPositions.put(element.getName(), elementData);
+                }
+            }
+            config.setHudPositions(hudPositions);
 
             File configFile = new File(configsDir, name + ".lux");
             try (FileWriter writer = new FileWriter(configFile)) {
@@ -151,6 +168,18 @@ public class ConfigManager {
                     String moduleName = module.getName();
                     if (moduleSettings.containsKey(moduleName)) {
                         deserializeModuleSettings(module, moduleSettings.get(moduleName));
+                    }
+                }
+            }
+
+            // Загружаем позиции HUD элементов
+            Map<String, HudElementData> hudPositions = config.getHudPositions();
+            if (hudPositions != null && HUD.getInstance() != null) {
+                for (DraggableHudElement element : HUD.getInstance().getElements()) {
+                    String elementName = element.getName();
+                    if (hudPositions.containsKey(elementName)) {
+                        HudElementData data = hudPositions.get(elementName);
+                        element.setPosition(data.getX(), data.getY());
                     }
                 }
             }
@@ -317,6 +346,7 @@ public class ConfigManager {
         private List<String> friends;
         private List<Way> ways;
         private Map<String, Map<String, Object>> moduleSettings;
+        private Map<String, HudElementData> hudPositions;
 
         public Map<String, Boolean> getModules() {
             return modules;
@@ -356,6 +386,63 @@ public class ConfigManager {
 
         public void setModuleSettings(Map<String, Map<String, Object>> moduleSettings) {
             this.moduleSettings = moduleSettings;
+        }
+
+        public Map<String, HudElementData> getHudPositions() {
+            return hudPositions;
+        }
+
+        public void setHudPositions(Map<String, HudElementData> hudPositions) {
+            this.hudPositions = hudPositions;
+        }
+    }
+
+    // Класс для хранения данных позиций HUD элементов
+    private static class HudElementData {
+        private float x;
+        private float y;
+        private float width;
+        private float height;
+
+        public HudElementData() {}
+
+        public HudElementData(float x, float y, float width, float height) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+        }
+
+        public float getX() {
+            return x;
+        }
+
+        public void setX(float x) {
+            this.x = x;
+        }
+
+        public float getY() {
+            return y;
+        }
+
+        public void setY(float y) {
+            this.y = y;
+        }
+
+        public float getWidth() {
+            return width;
+        }
+
+        public void setWidth(float width) {
+            this.width = width;
+        }
+
+        public float getHeight() {
+            return height;
+        }
+
+        public void setHeight(float height) {
+            this.height = height;
         }
     }
 }

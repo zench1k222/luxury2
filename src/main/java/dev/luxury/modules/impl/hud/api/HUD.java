@@ -1,6 +1,5 @@
 package dev.luxury.modules.impl.hud.api;
 
-import com.google.gson.JsonObject;
 import dev.luxury.events.impl.client.EventMouse;
 import dev.luxury.events.impl.eventapi.EventTarget;
 import dev.luxury.events.impl.render.EventRender2D;
@@ -9,10 +8,8 @@ import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
 import dev.luxury.modules.api.settings.BooleanSetting;
 import dev.luxury.modules.api.settings.ModeListSetting;
-import dev.luxury.modules.impl.hud.impl.KeyBinds;
-import dev.luxury.modules.impl.hud.impl.Staffs;
-import dev.luxury.modules.impl.hud.impl.TargetHud;
-import dev.luxury.modules.impl.hud.impl.WaterMark;
+import dev.luxury.modules.impl.hud.impl.*;
+import dev.luxury.utils.notifications.NotificationsManager;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ChatScreen;
 import org.joml.Vector2f;
@@ -28,7 +25,6 @@ import java.util.List;
 )
 public class HUD extends Module {
 
-
     private final List<DraggableHudElement> draggableElements = new ArrayList<>();
     private DraggableHudElement draggingElement = null;
     private float dragOffsetX, dragOffsetY;
@@ -37,15 +33,28 @@ public class HUD extends Module {
     private TargetHud draggableTargetHud;
     private KeyBinds draggableKeyBinds;
     private Staffs draggableStaffs;
+    private Notifications draggableNotifications;
 
     private final ModeListSetting type = new ModeListSetting("Отображение",
             new BooleanSetting("WaterMark", true),
             new BooleanSetting("TargetHud", true),
             new BooleanSetting("Staffs", true),
-            new BooleanSetting("KeyBinds", true)
+            new BooleanSetting("KeyBinds", true),
+            new BooleanSetting("Notifications", true)
     );
 
+    public List<DraggableHudElement> getElements() {
+        return draggableElements;
+    }
+
+    private static HUD instance;
+
+    public static HUD getInstance() {
+        return instance;
+    }
+
     public HUD() {
+        instance = this;
         addSettings(type);
         initDraggables();
     }
@@ -55,18 +64,28 @@ public class HUD extends Module {
         draggableTargetHud = new TargetHud("TargetHud", 400, 250);
         draggableKeyBinds = new KeyBinds("KeyBinds", 600, 50);
         draggableStaffs = new Staffs("Staffs", 600, 200);
+        draggableNotifications = new Notifications("Notifications", 5, 150);
 
         draggableElements.add(draggableWaterMark);
         draggableElements.add(draggableTargetHud);
         draggableElements.add(draggableKeyBinds);
         draggableElements.add(draggableStaffs);
+        draggableElements.add(draggableNotifications);
     }
-
 
     @EventTarget
     public void onRender2D(EventRender2D e) {
         boolean editMode = mc.currentScreen instanceof ChatScreen;
         DrawContext dc = e.getDrawContext();
+
+        NotificationsManager.getInstance().tick();
+
+        if (draggableNotifications != null) {
+            NotificationsManager.getInstance().setPosition(
+                    (int)draggableNotifications.getX(),
+                    (int)draggableNotifications.getY()
+            );
+        }
 
         if (editMode) {
             if (draggingElement != null) {
@@ -92,6 +111,11 @@ public class HUD extends Module {
             if (draggingElement != null) {
                 draggingElement.release();
                 draggingElement = null;
+            }
+
+            BooleanSetting notificationsSetting = type.getValueByName("Notifications");
+            if (notificationsSetting != null && notificationsSetting.isValue()) {
+                NotificationsManager.getInstance().render(dc);
             }
 
             BooleanSetting waterMarkSetting = type.getValueByName("WaterMark");
@@ -202,5 +226,4 @@ public class HUD extends Module {
 
         return nearest;
     }
-
 }
