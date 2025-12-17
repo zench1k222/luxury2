@@ -130,4 +130,12 @@ MinecraftClient mc = MinecraftClient.getInstance();
     public PlayerInput getDirectionalInputForDegrees(PlayerInput input, double dgs) {
         return getDirectionalInputForDegrees(input, dgs, 20.0F);
     }
+
+    public static boolean isMoving() {
+        if (mc.player == null) return false;
+
+        return mc.player.input != null &&
+                (mc.player.input.movementForward != 0.0F
+                        || mc.player.input.movementSideways != 0.0F);
+    }
 }

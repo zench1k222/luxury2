@@ -96,16 +96,18 @@ public class Rotates {
     @EventTarget
     public void direction(EventDirection direction) {
         boolean isSlothAI = false;
+        boolean isSpookytime = false;
+
         try {
             KillAura killAura = (KillAura) Luxury.getInstance().getModuleManager().getModules().stream().filter(m -> m instanceof KillAura && m.isEnabled()).findFirst().orElse(null);
-
             if (killAura != null) {
                 isSlothAI = killAura.getRotationMode().is("SlothAI");
+                isSpookytime = killAura.getRotationMode().is("Spookytime");  // Добавьте это
             }
         } catch (Exception e) {
         }
 
-        if (isSlothAI) {
+        if (isSlothAI || isSpookytime) {
             direction.setYaw(mc.player.getYaw());
             direction.setPitch(currentRotate.getPitch());
         } else {
@@ -113,7 +115,6 @@ public class Rotates {
             direction.setPitch(currentRotate.getPitch());
         }
     }
-
     @EventTarget
     public void packet(PacketEvent eventPacket) {
         switch (eventPacket.getPacket()) {

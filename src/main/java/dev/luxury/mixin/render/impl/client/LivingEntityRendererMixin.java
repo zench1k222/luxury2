@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extends LivingEntityRenderState, M extends EntityModel<? super S>>  {
-MinecraftClient mc = MinecraftClient.getInstance();
+    MinecraftClient mc = MinecraftClient.getInstance();
     @ModifyExpressionValue(method = "updateRenderState(Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/client/render/entity/state/LivingEntityRenderState;F)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/LivingEntityRenderer;clampBodyYaw(Lnet/minecraft/entity/LivingEntity;FF)F"))
     public float changeYaw(float oldValue, LivingEntity entity) {
         if (entity.equals(mc.player) &&!Luxury.getInstance().getRotationManager().isSetRotation()) {
