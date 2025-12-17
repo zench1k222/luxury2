@@ -858,26 +858,18 @@ public class ESP extends Module {
                 ? entity.getCustomName().getString()
                 : entity.getDisplayName().getString();
 
-        for (Map.Entry<String, String> entry : donateSymbols.entrySet()) {
-            if (name.contains(entry.getKey())) {
-                name = name.replace(entry.getKey(), entry.getValue());
-
-                name = name.replace("§f", "");
-                break;
-            }
-        }
+        String formattedName = replaceDonateSymbols(name);
 
         float health = ServerUtil.getHealth(living);
 
         String text;
         if (entity instanceof PlayerEntity) {
-            text = name + " §c" + (int) health + "HP";
+            text = formattedName + " §c" + (int) health + "HP";
         } else {
-            text = name + " §c" + (int) health + "HP";
+            text = formattedName + " §c" + (int) health + "HP";
         }
 
         String cleanText = text.replaceAll("§[0-9a-fk-or]", "");
-
         float textWidth = font.getWidth(cleanText) * scale;
         float textHeight = font.getHeight() * scale;
 
@@ -915,40 +907,56 @@ public class ESP extends Module {
         );
 
         float xOffset = paddingX / scale;
+
         String[] segments = text.split("(?=§)");
+
+        if (!text.startsWith("§") && segments.length > 0 && !segments[0].isEmpty()) {
+            String firstSegment = segments[0];
+            font.drawFontLeft(
+                    ms,
+                    firstSegment,
+                    xOffset,
+                    paddingY / scale - 0.5f,
+                    0xFFFFFFFF
+            );
+            xOffset += font.getWidth(firstSegment);
+        }
 
         for (String segment : segments) {
             if (segment.isEmpty()) continue;
 
-            int color = 0xFFFFFFFF;
-            String displayText;
-
-            if (segment.startsWith("§")) {
+            if (segment.startsWith("§") && segment.length() >= 2) {
                 char colorChar = segment.charAt(1);
-                color = getColorFromFormatCode(colorChar);
+                int color = getColorFromFormatCode(colorChar);
 
-                if (segment.length() > 2) {
-                    displayText = segment.substring(2);
-                } else {
-                    displayText = "";
+                String displayText = segment.length() > 2 ? segment.substring(2) : "";
+
+                if (!displayText.isEmpty()) {
+                    font.drawFontLeft(
+                            ms,
+                            displayText,
+                            xOffset,
+                            paddingY / scale - 0.5f,
+                            color
+                    );
+                    xOffset += font.getWidth(displayText);
                 }
-            } else {
-                displayText = segment;
-            }
-
-            if (!displayText.isEmpty()) {
-                font.drawFontLeft(
-                        ms,
-                        displayText,
-                        xOffset,
-                        paddingY / scale - 0.5f,
-                        color
-                );
-                xOffset += font.getWidth(displayText);
             }
         }
 
         ms.pop();
+    }
+
+    private String replaceDonateSymbols(String name) {
+        String result = name;
+
+        for (Map.Entry<String, String> entry : donateSymbols.entrySet()) {
+            if (result.contains(entry.getKey())) {
+                result = result.replace(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return result;
     }
 
     private int getColorFromFormatCode(char code) {

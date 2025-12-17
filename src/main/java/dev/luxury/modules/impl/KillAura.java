@@ -90,6 +90,13 @@ public class KillAura extends Module {
         isCanAttack = false;
         if (target == null) return;
 
+        if (target.isUsingItem() && target.getActiveItem().isOf(Items.SHIELD)) {
+            BooleanSetting breakShieldSetting = settings.getValueByName("Ломать щит");
+            if (breakShieldSetting != null && breakShieldSetting.get()) {
+                breakShield();
+            }
+        }
+
         BooleanSetting attackIgnoreWals = settings.getValueByName("Бить через стены");
 
         float rotationRange = distance.getFloatValue() + distanceRotation.getFloatValue();
@@ -111,11 +118,6 @@ public class KillAura extends Module {
             if (sprintMode.is("HvH")) {
                 mc.player.setSprinting(false);
                 mc.player.sendSprintingPacket();
-            }
-
-            BooleanSetting breakShield = settings.getValueByName("Ломать щит");
-            if (breakShield != null && breakShield.get()) {
-                breakShield();
             }
 
             Criticals.attackEntity(target);
@@ -147,6 +149,7 @@ public class KillAura extends Module {
 
     private void breakShield() {
         if (target == null) return;
+
         if (shieldBreakCooldown > 0) {
             shieldBreakCooldown--;
             return;
@@ -158,7 +161,7 @@ public class KillAura extends Module {
         if (breakShieldSetting == null || !breakShieldSetting.get()) return;
 
         int axeSlot = -1;
-        for (int i = 0; i < 36; i++) {
+        for (int i = 0; i < 9; i++) {
             net.minecraft.item.ItemStack stack = mc.player.getInventory().getStack(i);
             if (stack.getItem() instanceof AxeItem) {
                 axeSlot = i;
@@ -168,9 +171,9 @@ public class KillAura extends Module {
 
         if (axeSlot == -1) {
             BooleanSetting shieldPushSetting = settings.getValueByName("Отжимать щит");
-            if (shieldPushSetting == null || !shieldPushSetting.get()) return;
-
-            shieldBreakCooldown = 20;
+            if (shieldPushSetting != null && shieldPushSetting.get()) {
+                shieldBreakCooldown = 20;
+            }
             return;
         }
 
@@ -182,75 +185,26 @@ public class KillAura extends Module {
         if (angleDiff > 100) return;
 
         int originalSlot = mc.player.getInventory().selectedSlot;
-        net.minecraft.item.ItemStack originalItem = mc.player.getMainHandStack();
 
-        try {
-            boolean swappedToHotbar = false;
-
-            if (axeSlot < 9) {
-                mc.player.getInventory().selectedSlot = axeSlot;
-                mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(axeSlot));
-                swappedToHotbar = true;
+        if (originalSlot == axeSlot) {
+            shieldBreakCooldown = 2;
+            if (mc.interactionManager != null && target != null && target.isAlive()) {
+                mc.interactionManager.attackEntity(mc.player, target);
+                mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
             }
-            else {
-                int hotbarSlot = -1;
-                for (int i = 0; i < 9; i++) {
-                    if (mc.player.getInventory().getStack(i).isEmpty()) {
-                        hotbarSlot = i;
-                        break;
-                    }
-                }
-
-                if (hotbarSlot == -1) {
-                    hotbarSlot = originalSlot;
-                }
-
-                InventoryUtil.swapSlotsUniversal(axeSlot, hotbarSlot, false, true);
-                mc.player.getInventory().selectedSlot = hotbarSlot;
-                mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(hotbarSlot));
-                swappedToHotbar = true;
-            }
-
-            if (swappedToHotbar) {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException ignored) {}
-
-                shieldBreakCooldown = 2;
-
-                if (mc.interactionManager != null && target != null && target.isAlive()) {
-                    mc.interactionManager.attackEntity(mc.player, target);
-                    mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
-
-                    new Thread(() -> {
-                        try {
-                            Thread.sleep(50);
-                            if (mc.interactionManager != null && target != null && target.isAlive() && target.isUsingItem()) {
-                                mc.interactionManager.attackEntity(mc.player, target);
-                                mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
-                            }
-                        } catch (InterruptedException ignored) {}
-                    }).start();
-                }
-
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ignored) {}
-
-                if (axeSlot < 9) {
-                    mc.player.getInventory().selectedSlot = originalSlot;
-                    mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
-                }
-                else {
-                    InventoryUtil.swapSlotsUniversal(mc.player.getInventory().selectedSlot, axeSlot, false, true);
-                    mc.player.getInventory().selectedSlot = originalSlot;
-                    mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
-                }
-            }
-        } catch (Exception ex) {
-            mc.player.getInventory().selectedSlot = originalSlot;
-            mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
+            return;
         }
+
+        mc.player.getInventory().selectedSlot = axeSlot;
+        mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(axeSlot));
+
+        shieldBreakCooldown = 2;
+        if (mc.interactionManager != null && target != null && target.isAlive()) {
+            mc.interactionManager.attackEntity(mc.player, target);
+            mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
+        }
+        mc.player.getInventory().selectedSlot = originalSlot;
+        mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
     }
 
     private void checkTargetKilled() {
