@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
         category = Category.Combat
 )
 public class KillAura extends Module {
-    private final ModeSetting rotationMode = new ModeSetting("Ротация", "HvH", new String[]{"HvH", "SlothAI", "ReallyWorld"});
+    private final ModeSetting rotationMode = new ModeSetting("Ротация", "HvH", new String[]{"HvH", "SlothAI", "ReallyWorld","SpookyTime"});
     private final ModeSetting sprintMode = new ModeSetting("Бег", "Ordinary", new String[]{"HvH", "Ordinary", "Legit", "Без сброса"});
     private final ModeSetting correction = new ModeSetting("Коррекция Движения", "Свободная", new String[]{"Сфокусированная", "Свободная", "Без корекции"});
 
@@ -55,9 +55,10 @@ public class KillAura extends Module {
 
     private final BooleanSetting onlyCrit = new BooleanSetting("Только криты", true);
     private final BooleanSetting smartCrit = new BooleanSetting("Умные криты", "Бьет критами если зажата кнопка прыжка", true);
-
+ public static KillAura instance;
     public KillAura() {
         addSettings(rotationMode, sprintMode, correction, distance, attackMethod, distanceRotation, settings, targetTypeSetting, onlyCrit, smartCrit);
+        instance = this;
     }
 
     Aim aim = new Aim();
@@ -135,7 +136,9 @@ public class KillAura extends Module {
         if (rotationMode.is("SlothAI")) {
             Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getSlothAISetup(), angle), aim.getSlothAISetup()), 3, this);
         }
-
+        if (rotationMode.is("SpookyTime")) {
+            Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getSpookytimeSetup(), angle), aim.getSpookytimeSetup()), 3, this);
+        }
 
         if (preAttack || isCanAttack) {
             updateSprint();

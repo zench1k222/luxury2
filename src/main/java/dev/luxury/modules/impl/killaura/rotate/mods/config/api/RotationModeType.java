@@ -5,6 +5,6 @@ public enum RotationModeType {
     INTERPOLATION,
     AI,
     SLOTH_AI,
-    REALLY_WORLD
+    SPOOKYTIME, REALLY_WORLD
 }
 
