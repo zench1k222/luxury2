@@ -207,6 +207,7 @@ public class KillAura extends Module {
         mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
     }
 
+
     private void checkTargetKilled() {
 
         if (lastTarget == null) {
