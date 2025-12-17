@@ -63,7 +63,8 @@ public class ModuleManager {
                 new AutoPotion(),
                 new NoPush(),
                 new AutoAccept(),
-                new SeeInvisible()
+                new SeeInvisible(),
+                new ChestStealer()
 
         );
         DiscordRPC.getInstance().enable();
