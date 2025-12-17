@@ -1,16 +1,24 @@
 package dev.luxury.utils.player;
 
 import dev.luxury.utils.managers.SyncManager;
+import dev.luxury.utils.math.MathUtil;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.EnderChestInventory;
 import net.minecraft.item.EnderPearlItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.network.packet.c2s.play.ClickSlotC2SPacket;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
+import net.minecraft.registry.Registries;
+import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
@@ -19,9 +27,12 @@ import net.minecraft.util.math.MathHelper;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class InventoryUtil {
-    public static final  MinecraftClient mc = MinecraftClient.getInstance();
+    public static final MinecraftClient mc = MinecraftClient.getInstance();
+
     public static void moveItemTest(int from, int to, boolean air) {
         if (from == to)
             return;
@@ -30,6 +41,7 @@ public class InventoryUtil {
         if (air)
             testPick(from, 0);
     }
+
     public static void testPick(int slot, int button) {
         mc.interactionManager.clickSlot(0, slot, button, SlotActionType.PICKUP, mc.player);
     }
@@ -68,6 +80,7 @@ public class InventoryUtil {
 
         return -1;
     }
+
     public static int getPearls() {
         for (int i = 0; i < 9; i++) {
             if (mc.player.getInventory().getStack(i).getItem().asItem() instanceof EnderPearlItem) {
@@ -76,6 +89,7 @@ public class InventoryUtil {
         }
         return -1;
     }
+
     public static void swapSlotsUniversal(int slot1, int slot2, boolean cursor, boolean conversion) {
         if (cursor) {
             mc.interactionManager.clickSlot(mc.player.playerScreenHandler.syncId, slot1, 0, SlotActionType.PICKUP, mc.player);
@@ -90,6 +104,7 @@ public class InventoryUtil {
         }
 
     }
+
     public static void swapSlots(int slot1, int slot2) {
         if (slot1 < 9 && slot2 < 9) {
             mc.interactionManager.clickSlot(0, slot1 + 36, slot2, SlotActionType.SWAP, mc.player);
@@ -105,12 +120,12 @@ public class InventoryUtil {
     public static void pickupItem(int slot, int button) {
         mc.interactionManager.clickSlot(0, slot, button, SlotActionType.PICKUP, mc.player);
     }
+
     public static int getItemSlot(Item input) {
         for (ItemStack stack : SyncManager.getItems()) {
             if (stack.getItem() == input) {
                 return -2;
             }
-
         }
         int slot = -1;
         for (int i = 0; i < 36; i++) {
@@ -125,6 +140,7 @@ public class InventoryUtil {
         }
         return slot;
     }
+
     public static int getHotBarSlot(Item input) {
         for(int i = 0; i < 9; ++i) {
             if (mc.player.getInventory().getStack(i).getItem() == input) {
@@ -134,6 +150,7 @@ public class InventoryUtil {
 
         return -1;
     }
+
     public static boolean doesHotbarHaveItem(Item item) {
         for(int i = 0; i < 9; ++i) {
             mc.player.getInventory().getStack(i);
@@ -173,18 +190,67 @@ public class InventoryUtil {
     public static void windowClick(int conteinerId, int slot, int mouse, SlotActionType type, PlayerEntity player) {
         mc.interactionManager.clickSlot(conteinerId, slot, mouse, type, player);
     }
+
     public static void startFly() {
         mc.player.startGliding();
         mc.player.networkHandler.sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
+    }
+
+    public static void selectCompass() {
+        Slot slot = InventoryUtil.getSlot(Items.COMPASS);
+        if (slot != null) {
+            mc.player.getInventory().selectedSlot = slot.id < 9 ? slot.id : 0;
+            InventoryUtil.swapHand(slot, Hand.MAIN_HAND, false, true);
+        }
+    }
+
+    public static void swapHand(Slot slot, Hand hand, boolean task) {
+        swapHand(slot, hand, task, false);
+    }
+
+    public static void swapHand(Slot slot, Hand hand, boolean task, boolean updateInventory) {
+        if (slot == null || slot.id == -1 || (hand.equals(Hand.OFF_HAND) && !(slot.inventory instanceof PlayerInventory || slot.inventory instanceof EnderChestInventory))) return;
+        int button = hand.equals(Hand.MAIN_HAND) ? mc.player.getInventory().selectedSlot : 40;
+        if (task) ServerUtil.addTask(() -> swap(slot, button, updateInventory));
+        else swap(slot, button, updateInventory);
+    }
+
+    public static void swap(Slot slot, int button, boolean updateInventory) {
+        clickSlotLegit(slot.id, button, SlotActionType.SWAP, false);
+        if (updateInventory) InventoryUtil.updateSlots();
+    }
+
+    public static Stream<Slot> slots() {
+        return mc.player.currentScreenHandler.slots.stream();
+    }
+
+    public static Slot getSlot(Item item) {
+        return getSlot(item, s -> true);
+    }
+
+    public static Slot getSlot(Item item, Predicate<Slot> filter) {
+        return getSlot(item, Comparator.comparingInt(s -> 0), filter);
+    }
+
+    public static Slot getSlot(Item item, Comparator<Slot> comparator, Predicate<Slot> filter) {
+        return slots().filter(s -> s.getStack().getItem().equals(item)).filter(filter).max(comparator).orElse(null);
+    }
+
+    public static void updateSlots() {
+        ScreenHandler screenHandler = mc.player.currentScreenHandler;
+        ItemStack stack = Registries.ITEM.get(MathUtil.getRandom(0, 100)).getDefaultStack();
+        mc.player.networkHandler.sendPacket(new ClickSlotC2SPacket(screenHandler.syncId, screenHandler.getRevision(), 0, 0, SlotActionType.PICKUP_ALL, stack, Int2ObjectMaps.singleton(0, stack)));
     }
 
     public static class TotemUtil {
         public static BlockPos getBlock(float distance, Block block) {
             return getSphere(getPlayerPosLocal(), distance, 6, false, true, 0).stream().filter(position -> mc.world.getBlockState(position).getBlock() == block).min(Comparator.comparing(blockPos -> getDistanceOfEntityToBlock(mc.player, blockPos))).orElse(null);
         }
+
         public static BlockPos getBlock(float distance) {
             return getSphere(getPlayerPosLocal(), distance, 6, false, true, 0).stream().filter(position -> mc.world.getBlockState(position).getBlock() != Blocks.AIR).min(Comparator.comparing(blockPos -> getDistanceOfEntityToBlock(mc.player, blockPos))).orElse(null);
         }
+
         public static List<BlockPos> getSphere(final BlockPos blockPos, final float n, final int n2, final boolean b, final boolean b2, final int n3) {
             final ArrayList<BlockPos> list = new ArrayList<BlockPos>();
             final int x = blockPos.getX();
@@ -213,6 +279,7 @@ public class InventoryUtil {
         public static double getDistanceOfEntityToBlock(final Entity entity, final BlockPos blockPos) {
             return getDistance(entity.getX(), entity.getY(), entity.getZ(), blockPos.getX(), blockPos.getY(), blockPos.getZ());
         }
+
         public static double getDistance(final double n, final double n2, final double n3, final double n4, final double n5, final double n6) {
             final double n7 = n - n4;
             final double n8 = n2 - n5;

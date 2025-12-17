@@ -1,5 +1,6 @@
 package dev.luxury.utils.managers;
 
+import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.commands.Command;
 import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.utils.commands.ConfigCommand;
@@ -57,7 +58,7 @@ public class CommandManager {
                     command.execute(args);
                 } catch (Exception e) {
                     if (mc.player != null) {
-                        mc.player.sendMessage(Text.literal("§cОшибка выполнения команды: " + e.getMessage()), false);
+                        ChatUtil.sendError("Ошибка выполнения команды: " + e.getMessage());
                     }
                     e.printStackTrace();
                 }
@@ -66,7 +67,7 @@ public class CommandManager {
         }
 
         if (mc.player != null) {
-            mc.player.sendMessage(Text.literal("§cКоманда не найдена: " + commandName), false);
+            ChatUtil.sendError("Команда не найдена: " + commandName);
         }
         return true;
     }

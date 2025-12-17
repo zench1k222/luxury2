@@ -59,6 +59,14 @@ public class MathUtil {
         return bd.doubleValue();
     }
 
+    public int getRandom(int min, int max) {
+        return (int) getRandom((float) min, (float) max + 1);
+    }
+
+    public float getRandom(float min, float max) {
+        return (float) getRandom(min, (double) max);
+    }
+
     public static double getRandom(double min, double max) {
         if (min == max) {
             return min;
@@ -72,6 +80,7 @@ public class MathUtil {
             return ThreadLocalRandom.current().nextDouble(min, max);
         }
     }
+
     public Vec3d interpolate(Entity entity) {
         if (entity == null) return Vec3d.ZERO;
         return new Vec3d(interpolate(entity.prevX, entity.getX()), interpolate(entity.prevY, entity.getY()), interpolate(entity.prevZ, entity.getZ()));

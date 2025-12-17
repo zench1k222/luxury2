@@ -31,7 +31,7 @@ public class Arrows extends Module {
     public static final Arrows INSTANCE = new Arrows();
     public static Identifier TRIANGLE_TEXTURE = Identifier.of("luxury", "images/triangle.png");
 
-    private static final ColorRGBA FRIEND_COLOR = new ColorRGBA(45, 125, 255, 220);
+    private static final ColorRGBA FRIEND_COLOR = new ColorRGBA(20, 225, 20, 220);
     private static final ColorRGBA ENEMY_COLOR = new ColorRGBA(45, 125, 255, 200);
     private static final ColorRGBA DIST_COLOR = new ColorRGBA(150, 150, 160, 220);
 
