@@ -77,6 +77,7 @@ public class ChestStealer extends Module {
         }
     }
 
+
     private boolean isInWhiteList(Item item) {
         String itemName = item.toString().toLowerCase().replace("_", " ");
 
