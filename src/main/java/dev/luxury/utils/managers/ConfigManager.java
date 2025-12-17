@@ -3,6 +3,7 @@ package dev.luxury.utils.managers;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import dev.luxury.common.way.Way;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.modules.api.settings.*;
@@ -63,6 +64,9 @@ public class ConfigManager {
 
             // Сохраняем друзей
             config.setFriends(new ArrayList<>(FriendManager.getInstance().getFriends()));
+
+            // Сохраняем метки
+            config.setWays(new ArrayList<>(dev.luxury.common.way.WayRepository.getInstance().wayList));
 
             // Сохраняем настройки модулей
             Map<String, Map<String, Object>> moduleSettings = new HashMap<>();
@@ -132,6 +136,12 @@ public class ConfigManager {
             // Загружаем друзей
             if (config.getFriends() != null) {
                 FriendManager.getInstance().setFriends(config.getFriends());
+            }
+
+            // Загружаем метки
+            if (config.getWays() != null) {
+                dev.luxury.common.way.WayRepository.getInstance().wayList.clear();
+                dev.luxury.common.way.WayRepository.getInstance().wayList.addAll(config.getWays());
             }
 
             // Загружаем настройки модулей
@@ -305,6 +315,7 @@ public class ConfigManager {
         private Map<String, Boolean> modules;
         private Map<String, Integer> keybinds;
         private List<String> friends;
+        private List<Way> ways;
         private Map<String, Map<String, Object>> moduleSettings;
 
         public Map<String, Boolean> getModules() {
@@ -329,6 +340,14 @@ public class ConfigManager {
 
         public void setFriends(List<String> friends) {
             this.friends = friends;
+        }
+
+        public List<Way> getWays() {
+            return ways;
+        }
+
+        public void setWays(List<Way> ways) {
+            this.ways = ways;
         }
 
         public Map<String, Map<String, Object>> getModuleSettings() {

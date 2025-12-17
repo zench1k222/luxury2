@@ -13,6 +13,7 @@ import dev.luxury.utils.network.ServerHandler;
 import lombok.Getter;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
 import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.entity.EntityType;
@@ -49,6 +50,11 @@ public class Luxury implements ModInitializer {
             if (renderer instanceof PlayerEntityRenderer playerRenderer && entityType == EntityType.PLAYER) {
                 registrationHelper.register(new CustomModelFeature(playerRenderer));
             }
+        });
+        HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc.player == null) return;
+            dev.luxury.common.way.WayRepository.getInstance().render(drawContext.getMatrices());
         });
     }
 }

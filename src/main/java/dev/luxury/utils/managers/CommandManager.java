@@ -1,11 +1,8 @@
 package dev.luxury.utils.managers;
 
 import dev.luxury.utils.client.ChatUtil;
-import dev.luxury.utils.commands.Command;
+import dev.luxury.utils.commands.*;
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.utils.commands.ConfigCommand;
-import dev.luxury.utils.commands.FriendCommand;
-import dev.luxury.utils.commands.HelpCommand;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
@@ -25,6 +22,7 @@ public class CommandManager {
         registerCommand(new FriendCommand());
         registerCommand(new ConfigCommand());
         registerCommand(new HelpCommand());
+        registerCommand(new WayCommand());
 
         ConfigManager.init(moduleManager);
     }
@@ -137,6 +135,51 @@ public class CommandManager {
                             return Stream.empty();
                         }
                     }
+                }
+
+                return Stream.empty();
+            }
+
+            case "way" -> {
+                if (parts.length == 2) {
+                    return Stream.of("add", "remove", "delete", "del", "list", "clear")
+                            .filter(a -> a.startsWith(currentArg))
+                            .map(s -> prefix + cmdName + " " + s);
+                }
+
+                if (parts.length == 3) {
+                    String subCommand = parts[1].toLowerCase();
+                    switch (subCommand) {
+                        case "add" -> {
+                            if (currentArg.isEmpty()) {
+                                return Stream.of(prefix + cmdName + " " + subCommand + " ");
+                            }
+                        }
+                        case "remove", "delete", "del" -> {
+                            List<String> ways = dev.luxury.common.way.WayRepository.getInstance().wayList
+                                    .stream()
+                                    .map(way -> way.name())
+                                    .toList();
+                            return ways.stream()
+                                    .filter(w -> w.startsWith(currentArg))
+                                    .map(s -> prefix + cmdName + " " + subCommand + " " + s);
+                        }
+                    }
+                }
+
+                if (parts.length == 4 && "add".equals(parts[1].toLowerCase())) {
+                    return Stream.of(prefix + cmdName + " " + parts[1] + " " + parts[2] + " ")
+                            .filter(a -> a.startsWith(message));
+                }
+
+                if (parts.length == 5 && "add".equals(parts[1].toLowerCase())) {
+                    return Stream.of(prefix + cmdName + " " + parts[1] + " " + parts[2] + " " + parts[3] + " ")
+                            .filter(a -> a.startsWith(message));
+                }
+
+                if (parts.length == 6 && "add".equals(parts[1].toLowerCase())) {
+                    return Stream.of(prefix + cmdName + " " + parts[1] + " " + parts[2] + " " + parts[3] + " " + parts[4] + " ")
+                            .filter(a -> a.startsWith(message));
                 }
 
                 return Stream.empty();

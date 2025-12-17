@@ -1,11 +1,6 @@
 package dev.luxury.utils.commands;
 
 import dev.luxury.utils.client.ChatUtil;
-import dev.luxury.utils.render.ColorUtil;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
-
-import java.awt.*;
 
 public class HelpCommand extends Command {
     public HelpCommand() {
@@ -14,11 +9,12 @@ public class HelpCommand extends Command {
 
     @Override
     public void execute(String[] args) {
-        if (args.length == 0) {
-            ChatUtil.sendChat("§cДоступные команды:");
-            ChatUtil.sendChat("§c.cfg - Управление конфигами");
-            ChatUtil.sendChat("§c.friend - Управление списком друзей");
-        }
+        ChatUtil.sendChat("§aДоступные команды:");
+        ChatUtil.sendChat("§7.help - Показать это сообщение");
+        ChatUtil.sendChat("§7.cfg - Управление конфигами");
+        ChatUtil.sendChat("§7.friend - Управление списком друзей");
+        ChatUtil.sendChat("§7.way - Управление метками");
+        ChatUtil.sendChat("");
+        ChatUtil.sendChat("§eИспользуйте .<команда> без аргументов для справки");
     }
 }
-
