@@ -4,6 +4,8 @@ import dev.luxury.events.impl.eventapi.EventTarget;
 import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
+import dev.luxury.utils.client.ChatUtil;
+import dev.luxury.utils.player.ServerUtil;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.Hand;
@@ -52,6 +54,11 @@ public class AutoFarm extends Module {
         reversing = false;
 
         System.out.println("[AutoFarm] Запущен. Деревьев: " + TREES.size());
+
+        if (!ServerUtil.isConnected("aresmine")) {
+            disable();
+            ChatUtil.sendError("Работает только на АресМайне");
+        }
     }
 
     @Override
