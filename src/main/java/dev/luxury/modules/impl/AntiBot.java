@@ -71,8 +71,8 @@ public class AntiBot extends Module {
         super.onEnable();
         if (!bots.isEmpty()) bots.clear();
         if (ServerUtil.isConnected("aresmine")) {
-            disable();
             ChatUtil.sendError("На АресМайне нет ботов, нужно выключить АнтиБот");
+            disable();
         }
     }
 
