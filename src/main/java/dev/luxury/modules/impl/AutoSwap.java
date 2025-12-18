@@ -83,24 +83,11 @@ public class AutoSwap extends Module {
     }
 
     private void swapToOffhand(Item item) {
-        int itemSlot = -1;
-        for (int i = 0; i < 36; i++) {
-            if (mc.player.getInventory().getStack(i).getItem() == item) {
-                itemSlot = i;
-                break;
-            }
-        }
-
+        int itemSlot = findItemSlot(item);
         if (itemSlot == -1) return;
 
-        int guiSlot = itemSlot;
-        if (itemSlot < 9) {
-            guiSlot = itemSlot + 36;
-        }
-
-        mc.interactionManager.clickSlot(0, guiSlot, 0, SlotActionType.PICKUP, mc.player);
-        mc.interactionManager.clickSlot(0, 45, 0, SlotActionType.PICKUP, mc.player);
-        mc.interactionManager.clickSlot(0, guiSlot, 0, SlotActionType.PICKUP, mc.player);
+        mc.interactionManager.clickSlot(0, itemSlot < 9 ? itemSlot + 36 : itemSlot, 0, SlotActionType.SWAP, mc.player);
+        mc.interactionManager.clickSlot(0, 45, 0, SlotActionType.SWAP, mc.player);
     }
 
     private void removeFromOffhand() {
