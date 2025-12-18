@@ -65,13 +65,13 @@ public class ClickPearl extends Module {
         if (mc.player == null || mc.interactionManager == null) return;
         if (mc.currentScreen != null) return;
 
-        if (mode.is("Legit")) {
+        String currentMode = mode.get();
+
+        if (currentMode.equals("Legit")) {
             throwPearlLegit();
-        }
-        if (mode.is("Hotbar")) {
+        } else if (currentMode.equals("Hotbar")) {
             throwPearlHotbar();
-        }
-        if (mode.is("All")) {
+        } else if (currentMode.equals("All")) {
             throwPearlAll();
         }
     }
@@ -90,7 +90,9 @@ public class ClickPearl extends Module {
         isThrowing = true;
         throwCooldown = 2;
 
-        if (throwPearlSimple()) {
+        boolean thrown = throwPearlWithSearch();
+
+        if (thrown) {
             if (delaySetting.get()) {
                 new Thread(() -> {
                     try {
@@ -119,10 +121,10 @@ public class ClickPearl extends Module {
     }
 
     private void throwPearlAll() {
-        throwPearlSimple();
+        throwPearlWithSearch();
     }
 
-    private boolean throwPearlSimple() {
+    private boolean throwPearlWithSearch() {
         if (mc.player.getMainHandStack().getItem() == Items.ENDER_PEARL) {
             mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
             return true;
@@ -131,6 +133,47 @@ public class ClickPearl extends Module {
         if (mc.player.getOffHandStack().getItem() == Items.ENDER_PEARL) {
             mc.interactionManager.interactItem(mc.player, Hand.OFF_HAND);
             return true;
+        }
+
+        int pearlSlot = -1;
+        for (int i = 0; i < 9; i++) {
+            if (mc.player.getInventory().getStack(i).getItem() == Items.ENDER_PEARL) {
+                pearlSlot = i;
+                break;
+            }
+        }
+
+        if (pearlSlot != -1) {
+            int currentSlot = mc.player.getInventory().selectedSlot;
+            mc.player.getInventory().selectedSlot = pearlSlot;
+            mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+            mc.player.getInventory().selectedSlot = currentSlot;
+            return true;
+        }
+
+        for (int i = 9; i < 36; i++) {
+            if (mc.player.getInventory().getStack(i).getItem() == Items.ENDER_PEARL) {
+                int currentSlot = mc.player.getInventory().selectedSlot;
+
+                mc.interactionManager.clickSlot(
+                        mc.player.currentScreenHandler.syncId,
+                        i,
+                        currentSlot,
+                        SlotActionType.SWAP,
+                        mc.player
+                );
+
+                mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+
+                mc.interactionManager.clickSlot(
+                        mc.player.currentScreenHandler.syncId,
+                        i,
+                        currentSlot,
+                        SlotActionType.SWAP,
+                        mc.player
+                );
+                return true;
+            }
         }
 
         return false;
@@ -159,7 +202,6 @@ public class ClickPearl extends Module {
             int currentSlot = mc.player.getInventory().selectedSlot;
             mc.player.getInventory().selectedSlot = pearlSlot;
             mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
-
             mc.player.getInventory().selectedSlot = currentSlot;
             return true;
         }
@@ -173,59 +215,6 @@ public class ClickPearl extends Module {
         mc.player.setVelocity(lastMotionX, mc.player.getVelocity().y, lastMotionZ);
     }
 
-    private void throwPearl() {
-        if (mc.player.getMainHandStack().getItem() == Items.ENDER_PEARL) {
-            mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
-            return;
-        }
-
-        if (mc.player.getOffHandStack().getItem() == Items.ENDER_PEARL) {
-            mc.interactionManager.interactItem(mc.player, Hand.OFF_HAND);
-            return;
-        }
-
-        int pearlSlot = -1;
-        for (int i = 0; i < 9; i++) {
-            if (mc.player.getInventory().getStack(i).getItem() == Items.ENDER_PEARL) {
-                pearlSlot = i;
-                break;
-            }
-        }
-
-        if (pearlSlot != -1) {
-            int currentSlot = mc.player.getInventory().selectedSlot;
-            mc.player.getInventory().selectedSlot = pearlSlot;
-            mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
-            mc.player.getInventory().selectedSlot = currentSlot;
-            return;
-        }
-
-        for (int i = 9; i < 36; i++) {
-            if (mc.player.getInventory().getStack(i).getItem() == Items.ENDER_PEARL) {
-                int currentSlot = mc.player.getInventory().selectedSlot;
-
-                mc.interactionManager.clickSlot(
-                        mc.player.currentScreenHandler.syncId,
-                        i,
-                        currentSlot,
-                        SlotActionType.SWAP,
-                        mc.player
-                );
-
-                mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
-
-                mc.interactionManager.clickSlot(
-                        mc.player.currentScreenHandler.syncId,
-                        i,
-                        currentSlot,
-                        SlotActionType.SWAP,
-                        mc.player
-                );
-                return;
-            }
-        }
-    }
-
     @Override
     public void onEnable() {
         super.onEnable();
@@ -237,6 +226,9 @@ public class ClickPearl extends Module {
     @Override
     public void onDisable() {
         super.onDisable();
+        if (isThrowing) {
+            resumeMovement();
+        }
         shouldThrow = false;
         isThrowing = false;
     }
