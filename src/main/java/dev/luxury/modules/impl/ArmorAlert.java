@@ -7,6 +7,7 @@ import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
 import dev.luxury.modules.api.settings.SliderSetting;
+import dev.luxury.utils.notifications.NotificationsManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.ItemStack;
 
@@ -62,19 +63,17 @@ public class ArmorAlert extends Module {
             float durabilityPercent = 1.0f - ((float) damage / (float) maxDamage);
             float thresholdPercent = durabilityThreshold.getFloatValue() / 100f;
 
-            // Если прочность ниже порога
             if (durabilityPercent <= thresholdPercent) {
                 long currentTime = System.currentTimeMillis();
                 long lastAlert = lastAlertTime.getOrDefault(slot, 0L);
                 long cooldownMs = (long) (cooldown.getFloatValue() * 1000);
 
-                // Проверяем прошел ли cooldown
                 if (currentTime - lastAlert >= cooldownMs) {
                     ClientSounds.getInstance().playArmorAlertSound();
+                    NotificationsManager.getInstance().warning("Скоро сломается броня", 3000);
                     lastAlertTime.put(slot, currentTime);
                 }
             } else {
-                // Если прочность восстановилась выше порога, сбрасываем таймер
                 lastAlertTime.remove(slot);
             }
         }
