@@ -4,6 +4,7 @@ import dev.luxury.events.impl.client.EventKeyInput;
 import dev.luxury.events.impl.client.EventMouseInput;
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.events.impl.eventapi.EventTarget;
+import dev.luxury.modules.AutoFarm;
 import dev.luxury.modules.ElytraHelper;
 import dev.luxury.modules.impl.NoDelay;
 import dev.luxury.modules.impl.*;
@@ -67,7 +68,8 @@ public class ModuleManager {
                 new ChestStealer(),
                 new ServerJoiner(),
                 new HPAlert(),
-                new AutoSwap()
+                new AutoSwap(),
+                new AutoFarm()
 
         );
         DiscordRPC.getInstance().enable();
