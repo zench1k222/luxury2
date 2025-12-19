@@ -66,7 +66,8 @@ public class ModuleManager {
                 new SeeInvisible(),
                 new ChestStealer(),
                 new ServerJoiner(),
-                new ProjectileHelper()
+                new ProjectileHelper(),
+                new HPAlert()
 
         );
         DiscordRPC.getInstance().enable();
