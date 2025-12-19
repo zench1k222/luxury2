@@ -45,7 +45,8 @@ public class Staffs extends DraggableHudElement {
         FontDraw prefixFont = FontHelper.sfprobold[10];
         FontDraw iconsFont = FontHelper.icons[20];
 
-        int colorstandart = new Color(25, 25, 30, 255).getRGB();
+        int colorstandart = new Color(115, 115, 120, 255).getRGB();
+
         int colorfonts1 = Color.WHITE.getRGB();
         int colorfonts2 = new Color(150, 150, 160).getRGB();
 
@@ -74,10 +75,10 @@ public class Staffs extends DraggableHudElement {
         this.width = width;
         this.height = totalHeight;
 
-        RenderUtil.drawRoundedRect(matrices, startX, startY, width, totalHeight, new Vector4f(8, 8, 8, 8), colorstandart);
+        RenderUtil.drawBlur(matrices, startX, startY, width, totalHeight, new Vector4f(8, 8, 8, 8),18f, colorstandart);
         sfpro.drawGradientText(matrices, "Staffs", startX + PADDING + 13, startY + PADDING - 3, colorfonts1, colorfonts2);
         iconsFont.drawFontLeft(matrices, icons[8], startX + 5, startY + 3, new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices, startX, startY + 14, width, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
+        RenderUtil.drawBlur(matrices, startX, startY + 14, width, 0.9f, new Vector4f(0f, 0f, 0f, 0f),18f, new Color(60, 60, 70).getRGB());
 
         int currentY = (int) (startY + PADDING + titleHeight);
         for (StaffInfo staff : staffList) {
@@ -103,7 +104,7 @@ public class Staffs extends DraggableHudElement {
 
         float squareX = headX + headSize + 3f;
         float squareY = currentY + 1.5f;
-        RenderUtil.drawRoundedRect(matrices, squareX, squareY, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
+        RenderUtil.drawBlur(matrices, squareX, squareY, 4, 4, new Vector4f(1, 1, 1, 1),18f, new Color(45, 125, 255).getRGB());
 
         float nameX = squareX + 4 + 3f;
 

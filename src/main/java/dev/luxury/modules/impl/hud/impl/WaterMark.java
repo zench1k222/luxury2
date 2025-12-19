@@ -37,7 +37,7 @@ public class WaterMark extends DraggableHudElement {
         FontDraw icons2 = FontHelper.icons[18];
 
         String tpsText = getTPSString() + "tps";
-        int colorstandart = new Color(25, 25, 30, 255).getRGB();
+        int colorstandart = new Color(115, 115, 120, 255).getRGB();
         int colorfonts1 = Color.WHITE.getRGB();
         int colorfonts2 = new Color(150, 150, 160).getRGB();
         int iconscolor = new Color(45, 125, 255).getRGB();
@@ -78,16 +78,16 @@ public class WaterMark extends DraggableHudElement {
         this.width = totalwidth2 + 82;
         this.height = 41;
 
-        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX, startY, totalwidth2 + 82, 20, new Vector4f(8, 8, 8, 8), colorstandart);
-        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX, startY + 21, totalwidth5 + 60, 20, new Vector4f(8, 8, 8, 8), colorstandart);
+        RenderUtil.drawBlur(matrices.getMatrices(), startX, startY, totalwidth2 + 82, 20, new Vector4f(8, 8, 8, 8),18, colorstandart);
+        RenderUtil.drawBlur(matrices.getMatrices(), startX, startY + 21, totalwidth5 + 60, 20, new Vector4f(8, 8, 8, 8),18, colorstandart);
         RenderUtil.drawRoundedRectGradient(matrices.getMatrices(), startX + 36, startY + 6, 20.5f, 6.5f, new Vector4f(2.5f, 2.5f, 2.5f, 2.5f), new Color(45, 125, 255).getRGB(), new Color(80, 160, 255).getRGB());
 
         RenderUtil.drawBorder(matrices.getMatrices(), startX + 35.5f, startY + 5.5f, 21.5f, 7.5f, new Vector4f(2.5f, 2.5f, 2.5f, 2.5f), new Color(45, 125, 255).getRGB(), 0.1f, 1, 1, false);
-        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX + 60, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX + width + 83, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX + totalwidth3 + 59, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX + totalwidth4 + 69, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX + totalwidth8 + 47, startY + 28.5f, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
+        RenderUtil.drawBlur(matrices.getMatrices(), startX + 60, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1),18, new Color(45, 125, 255).getRGB());
+        RenderUtil.drawBlur(matrices.getMatrices(), startX + width + 83, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1),18, new Color(45, 125, 255).getRGB());
+        RenderUtil.drawBlur(matrices.getMatrices(), startX + totalwidth3 + 59, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1),18, new Color(45, 125, 255).getRGB());
+        RenderUtil.drawBlur(matrices.getMatrices(), startX + totalwidth4 + 69, startY + 8, 4, 4, new Vector4f(1, 1, 1, 1),18, new Color(45, 125, 255).getRGB());
+        RenderUtil.drawBlur(matrices.getMatrices(), startX + totalwidth8 + 47, startY + 28.5f, 4, 4, new Vector4f(1, 1, 1, 1),18, new Color(45, 125, 255).getRGB());
 
         sfpro1.drawGradientText(matrices, "Luxury", startX + 5, startY + 4, colorfonts1, colorfonts2);
         sfpro1.drawGradientText(matrices, user, startX + 79, startY + 4, colorfonts1, colorfonts2);

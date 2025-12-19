@@ -90,7 +90,7 @@ public class TargetHud extends DraggableHudElement {
 
         FontDraw sfpro1 = FontHelper.sfprobold[18];
         FontDraw sfpro2 = FontHelper.sfprobold[15];
-        int colorStandard = new Color(25, 25, 30, 255).getRGB();
+        int colorStandard = new Color(115, 115, 120, 255).getRGB();
 
         String name = target.getName().getString();
         float health = ServerUtil.getHealth(target);
@@ -108,8 +108,8 @@ public class TargetHud extends DraggableHudElement {
         this.width = 117.5f;
         this.height = 41.5f;
 
-        // Основной фон
-        RenderUtil.drawRoundedRect(matrices, startX, startY, 117.5f, 41.5f, new Vector4f(8, 8, 8, 8), colorStandard);
+        RenderUtil.drawBlur(matrices, startX, startY, 117.5f, 41.5f, new Vector4f(8, 8, 8, 8),18f, colorStandard);
+
 
         float barX = startX + 43.5f;
         float barY = startY + 30f;
@@ -122,8 +122,8 @@ public class TargetHud extends DraggableHudElement {
         int colorFonts2 = new Color(150, 150, 160).getRGB();
 
         if (currentBarWidth > 0) {
-            RenderUtil.drawRoundedRect(matrices, barX, barY, barWidth, barHeight, new Vector4f(1f, 1f, 1f, 1f), new Color(45, 45, 50, 120).getRGB());
-            RenderUtil.drawRoundedRect(matrices, startX + 40, startY, 0.9f, 42, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
+            RenderUtil.drawBlur(matrices, barX, barY, barWidth, barHeight, new Vector4f(1f, 1f, 1f, 1f),18f, new Color(45, 45, 50, 120).getRGB());
+            RenderUtil.drawBlur(matrices, startX + 40, startY, 0.9f, 42, new Vector4f(0f, 0f, 0f, 0f),18f, new Color(60, 60, 70).getRGB());
             RenderUtil.drawRoundedRectGradient(matrices, barX, barY, currentBarWidth, barHeight, new Vector4f(1f, 1f, 1, 1f), new Color(45, 125, 255).getRGB(), new Color(80, 160, 255).getRGB());
 
             if (absorption > 0) {
@@ -226,10 +226,10 @@ public class TargetHud extends DraggableHudElement {
                         float durabilityX = currentX + 1f;
                         float durabilityY = startY + slotSize - durabilityBarHeight - 4.5f;
 
-                        RenderUtil.drawRoundedRect(matrices, durabilityX, durabilityY, slotSize - 2f, durabilityBarHeight, new Vector4f(0.1f, 0.1f, 0.1f, 0.1f), new Color(40, 40, 40, 200).getRGB());
+                        RenderUtil.drawBlur(matrices, durabilityX, durabilityY, slotSize - 2f, durabilityBarHeight, new Vector4f(0.1f, 0.1f, 0.1f, 0.1f),18f, new Color(40, 40, 40, 200).getRGB());
 
                         int durabilityColor = getDurabilityColor(durabilityPercent);
-                        RenderUtil.drawRoundedRect(matrices, durabilityX, durabilityY, durabilityBarWidth, durabilityBarHeight, new Vector4f(0.1f, 0.1f, 0.1f, 0.1f), durabilityColor);
+                        RenderUtil.drawBlur(matrices, durabilityX, durabilityY, durabilityBarWidth, durabilityBarHeight, new Vector4f(0.1f, 0.1f, 0.1f, 0.1f),18f, durabilityColor);
                     }
                 }
 

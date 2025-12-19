@@ -40,7 +40,8 @@ public class KeyBinds extends DraggableHudElement {
 
         int colorfonts1 = Color.WHITE.getRGB();
         int colorfonts2 = new Color(150, 150, 160).getRGB();
-        int colorstandart = new Color(25, 25, 30, 255).getRGB();
+        int colorstandart = new Color(115, 115, 120, 255).getRGB();
+
 
         List<Module> boundModules = ModuleManager.getModules().stream().filter(Module::isEnabled).filter(m -> m.getKey() > 0).collect(Collectors.toList());
         float width = 97.5f;
@@ -53,10 +54,10 @@ public class KeyBinds extends DraggableHudElement {
         this.width = width;
         this.height = totalHeight;
 
-        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX, startY, width, totalHeight, new Vector4f(8, 8, 8, 8), colorstandart);
+        RenderUtil.drawBlur(matrices.getMatrices(), startX, startY, width, totalHeight, new Vector4f(8, 8, 8, 8),18f, colorstandart);
         sfpro.drawGradientText(matrices, "KeyBinds", startX + PADDING + 13, startY + PADDING - 3, colorfonts1, colorfonts2);
         iconsFont.drawFontLeft(matrices, icons[7], startX + 5, startY + 3, new Color(45, 125, 255).getRGB());
-        RenderUtil.drawRoundedRect(matrices.getMatrices(), startX, startY + 14, 97.5f, 0.9f, new Vector4f(0f, 0f, 0f, 0f), new Color(60, 60, 70).getRGB());
+        RenderUtil.drawBlur(matrices.getMatrices(), startX, startY + 14, 97.5f, 0.9f, new Vector4f(0f, 0f, 0f, 0f),18f ,new Color(60, 60, 70).getRGB());
 
         int currentY = (int) (startY + PADDING + titleHeight);
         for (Module module : boundModules) {
@@ -69,7 +70,7 @@ public class KeyBinds extends DraggableHudElement {
             float iconX = startX + PADDING + 1;
 
             categoryIconFont.drawFontLeft(matrices, categoryIcon, iconX, currentY, new Color(45, 125, 255).getRGB());
-            RenderUtil.drawRoundedRect(matrices.getMatrices(), iconX + 10, currentY + 1.5f, 4, 4, new Vector4f(1, 1, 1, 1), new Color(45, 125, 255).getRGB());
+            RenderUtil.drawBlur(matrices.getMatrices(), iconX + 10, currentY + 1.5f, 4, 4, new Vector4f(1, 1, 1, 1),18f, new Color(45, 125, 255).getRGB());
 
             sfpro1.drawGradientText(matrices, moduleName, startX + PADDING + 18, currentY - 1.5f, colorfonts1, colorfonts2);
 

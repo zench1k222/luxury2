@@ -2,14 +2,8 @@ package dev.luxury.modules.impl.killaura.rotate;
 
 
 import dev.luxury.Luxury;
-import dev.luxury.modules.impl.killaura.rotate.mods.OrdinaryMode;
-import dev.luxury.modules.impl.killaura.rotate.mods.Interpolation;
-import dev.luxury.modules.impl.killaura.rotate.mods.SlothAIMode;
-import dev.luxury.modules.impl.killaura.rotate.mods.SpookytimeMode;
-import dev.luxury.modules.impl.killaura.rotate.mods.config.OrdinaryConfig;
-import dev.luxury.modules.impl.killaura.rotate.mods.config.InterpolationConfig;
-import dev.luxury.modules.impl.killaura.rotate.mods.config.SlothAIConfig;
-import dev.luxury.modules.impl.killaura.rotate.mods.config.SpookytimeConfig;
+import dev.luxury.modules.impl.killaura.rotate.mods.*;
+import dev.luxury.modules.impl.killaura.rotate.mods.config.*;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.api.RotationConfig;
 import dev.luxury.modules.impl.killaura.rotate.mods.config.api.RotationModeType;
 import lombok.Getter;
@@ -36,7 +30,17 @@ public class Aim {
 
     private final SpookytimeMode spookytimeMod = new SpookytimeMode();
     private final SpookytimeConfig spookytimeSetup = new SpookytimeConfig();
+    private final FuntimeMode funtimeMod = new FuntimeMode();
+    private final FuntimeConfig funtimeSetup = new FuntimeConfig();
 
+
+    public FuntimeConfig getFuntimeSetup() {
+        return funtimeSetup;
+    }
+
+    public FuntimeMode getFuntimeMod() {
+        return funtimeMod;
+    }
     public SpookytimeConfig getSpookytimeSetup() {
         return spookytimeSetup;
     }
@@ -45,7 +49,7 @@ public class Aim {
         return spookytimeMod;
     }
     public Rotate rotate(RotationConfig config, Rotate targetRotate) {
-        if (config.getType() != RotationModeType.INSTANT && config.getType() != RotationModeType.SLOTH_AI && config.getType() != RotationModeType.REALLY_WORLD   && config.getType() != RotationModeType.SPOOKYTIME) {
+        if (config.getType() != RotationModeType.INSTANT && config.getType() != RotationModeType.SLOTH_AI && config.getType() != RotationModeType.REALLY_WORLD   && config.getType() != RotationModeType.SPOOKYTIME  && config.getType() != RotationModeType.FUNTIME) {
             DeltaRotate deltaToTarget = Luxury.getInstance().getRotationManager().getCurrentRotate().rotationDeltaTo(targetRotate);
             float maxInitialDiff = 270f; // 180 + 90
             float progress = MathHelper.clamp(1f - (Math.abs(deltaToTarget.getDeltaYaw()) + Math.abs(deltaToTarget.getDeltaPitch())) / maxInitialDiff, 0, 1);
@@ -62,6 +66,7 @@ public class Aim {
             case INTERPOLATION -> newRotate = interpolationMod.process((InterpolationConfig) config, Luxury.getInstance().getRotationManager().getCurrentRotate(), targetRotate);
             case SLOTH_AI -> newRotate = slothAIMod.process(targetRotate);
             case SPOOKYTIME -> newRotate = spookytimeMod.process(targetRotate);
+            case FUNTIME -> newRotate = funtimeMod.process(targetRotate);
             default -> newRotate = Luxury.getInstance().getRotationManager().getCurrentRotate();
         }
 

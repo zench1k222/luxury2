@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
         category = Category.Combat
 )
 public class KillAura extends Module {
-    private final ModeSetting rotationMode = new ModeSetting("Ротация", "HvH", new String[]{"HvH", "SlothAI", "ReallyWorld","SpookyTime"});
+    private final ModeSetting rotationMode = new ModeSetting("Ротация", "HvH", new String[]{"HvH", "SlothAI", "TriggerBot","SpookyTime","FunTime"});
     private final ModeSetting sprintMode = new ModeSetting("Бег", "Ordinary", new String[]{"HvH", "Ordinary", "Legit", "Без сброса"});
     private final ModeSetting correction = new ModeSetting("Коррекция Движения", "Свободная", new String[]{"Сфокусированная", "Свободная", "Без корекции"});
 
@@ -55,9 +55,11 @@ public class KillAura extends Module {
 
     private final BooleanSetting onlyCrit = new BooleanSetting("Только криты", true);
     private final BooleanSetting smartCrit = new BooleanSetting("Умные криты", "Бьет критами если зажата кнопка прыжка", true);
+    private final BooleanSetting grimDistance = new BooleanSetting("Grim дистанция", "Автоматически подстраивает дистанцию под Grim античит", true);
+    private final BooleanSetting removeInterpolation = new BooleanSetting("Убрать интерполяцию у игроков", "Использует серверные позиции для точных попаданий", true);
  public static KillAura instance;
     public KillAura() {
-        addSettings(rotationMode, sprintMode, correction, distance, attackMethod, distanceRotation, settings, targetTypeSetting, onlyCrit, smartCrit);
+        addSettings(rotationMode, sprintMode, correction, distance, attackMethod, distanceRotation, settings, targetTypeSetting, onlyCrit, smartCrit, grimDistance, removeInterpolation);
         instance = this;
     }
 
@@ -85,6 +87,10 @@ public class KillAura extends Module {
 
         target = updateTarget();
 
+        if (grimDistance.get()) {
+            GrimDistance.updateTargetHistory(target);
+        }
+
         checkTargetKilled();
 
         preAttack = false;
@@ -100,10 +106,14 @@ public class KillAura extends Module {
 
         BooleanSetting attackIgnoreWals = settings.getValueByName("Бить через стены");
 
+        float attackDistance = distance.getFloatValue();
         float rotationRange = distance.getFloatValue() + distanceRotation.getFloatValue();
 
-        Pair<Vec3d, Box> point = validPoint.computeVector(target, rotationRange, Luxury.getInstance().getRotationManager().getCurrentRotate(), new Vec3d(0, 0, 0), attackIgnoreWals != null && attackIgnoreWals.get()
-        );
+        if (grimDistance.get()) {
+            attackDistance = GrimDistance.calculateSafeReach(target, distance.getFloatValue());
+        }
+
+        Pair<Vec3d, Box> point = validPoint.computeVector(target, rotationRange, Luxury.getInstance().getRotationManager().getCurrentRotate(), new Vec3d(0, 0, 0), attackIgnoreWals != null && attackIgnoreWals.get());
 
         Vec3d eyes = Simulation.simulateLocalPlayer(1).pos.add(0, mc.player.getDimensions(mc.player.getPose()).eyeHeight(), 0);
         Rotate angle = RotateUtils.fromVec3d(point.getLeft().subtract(eyes));
@@ -112,9 +122,12 @@ public class KillAura extends Module {
         preAttack = updatePreAttack();
         isCanAttack = isAttack();
 
-        if (RayTrace.rayTrace(Luxury.getInstance().getRotationManager().getCurrentRotate().toVector(), distance.getFloatValue(), box)
-                && isCanAttack
-                && (!Luxury.getInstance().getServerHandler().isServerSprint() || mc.player.isGliding() || Criticals.hasMovementRestrictions() || sprintMode.is("HvH") || sprintMode.is("Без сброса"))) {
+        boolean canHit = RayTrace.rayTrace(Luxury.getInstance().getRotationManager().getCurrentRotate().toVector(), attackDistance, box);
+
+        if (grimDistance.get()) {
+            canHit = canHit && GrimDistance.canSafelyAttack(target, distance.getFloatValue());
+        }
+        if (canHit && isCanAttack && (!Luxury.getInstance().getServerHandler().isServerSprint() || mc.player.isGliding() || Criticals.hasMovementRestrictions() || sprintMode.is("HvH") || sprintMode.is("Без сброса"))) {
 
             if (sprintMode.is("HvH")) {
                 mc.player.setSprinting(false);
@@ -136,8 +149,13 @@ public class KillAura extends Module {
         if (rotationMode.is("SlothAI")) {
             Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getSlothAISetup(), angle), aim.getSlothAISetup()), 3, this);
         }
+
         if (rotationMode.is("SpookyTime")) {
             Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getSpookytimeSetup(), angle), aim.getSpookytimeSetup()), 3, this);
+        }
+
+        if (rotationMode.is("FunTime")) {
+            Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getFuntimeSetup(), angle), aim.getFuntimeSetup()), 3, this);
         }
 
         if (preAttack || isCanAttack) {
@@ -344,7 +362,9 @@ public class KillAura extends Module {
     public boolean hasTarget() {
         return this.isEnabled() && target != null;
     }
-
+    public boolean shouldRemoveInterpolation() {
+        return removeInterpolation.get();
+    }
     @Override
     public void onEnable() {
         super.onEnable();
@@ -359,5 +379,6 @@ public class KillAura extends Module {
         lastTarget = null;
         lastTargetHealth = 0f;
         shieldBreakCooldown = 0;
+        GrimDistance.reset();
     }
 }

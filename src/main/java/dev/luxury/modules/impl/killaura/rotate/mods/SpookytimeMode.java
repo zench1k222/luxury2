@@ -2,6 +2,7 @@ package dev.luxury.modules.impl.killaura.rotate.mods;
 
 import dev.luxury.Luxury;
 import dev.luxury.modules.impl.KillAura;
+import dev.luxury.modules.impl.killaura.InterpolationUtil;
 import dev.luxury.modules.impl.killaura.rotate.DeltaRotate;
 import dev.luxury.modules.impl.killaura.rotate.Rotate;
 import dev.luxury.modules.impl.killaura.rotate.mods.api.RotationMode;
@@ -56,8 +57,6 @@ public class SpookytimeMode extends RotationMode {
         }
 
         hadTarget = hasTarget;
-
-        // Обработка возвращения
         if (isReturning) {
             long timeSinceReturn = System.currentTimeMillis() - returnStartTime;
 
@@ -71,9 +70,9 @@ public class SpookytimeMode extends RotationMode {
         if (entity == null) {
             return current;
         }
-
+        Vec3d basePos = KillAura.instance != null && KillAura.instance.shouldRemoveInterpolation() ? InterpolationUtil.getPosition(entity) : entity.getPos();
         float neckHeight = (float) (entity.getEyeY() - entity.getY() - 0.3f);
-        Vec3d targetPos = entity.getPos().add(0, neckHeight, 0);
+        Vec3d targetPos = basePos.add(0, neckHeight, 0);
 
         if (lastTarget == entity) {
             float randomOffsetX = (random.nextFloat() - 0.5f) * 0.1f;

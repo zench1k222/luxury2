@@ -196,7 +196,7 @@ public class ServerUtil  {
 
         if (serverAddress.contains("reallyworld") || serverAddress.contains("playrw") ||
                 serverAddress.contains("saturn-x") || serverAddress.contains("skytime") ||
-                serverAddress.contains("space-times")) {
+                serverAddress.contains("space-times") || serverAddress.contains("funtime")) {
             Scoreboard scoreboard = target.getWorld().getScoreboard();
             ScoreboardObjective scoreObjective = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.BELOW_NAME);
 

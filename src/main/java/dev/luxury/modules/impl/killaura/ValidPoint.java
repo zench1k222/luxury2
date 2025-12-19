@@ -1,5 +1,6 @@
 package dev.luxury.modules.impl.killaura;
 
+import dev.luxury.modules.impl.KillAura;
 import dev.luxury.modules.impl.killaura.rotate.Rotate;
 import dev.luxury.modules.impl.killaura.rotate.DeltaRotate;
 import dev.luxury.modules.impl.killaura.rotate.RotateUtils;
@@ -21,7 +22,7 @@ import java.util.Random;
 @Getter
 public class ValidPoint {
     MinecraftClient mc = MinecraftClient.getInstance();
-    // Чем меньше — тем меньше фпс потому что виноват Большой
+
     private static final double MIN_GRID_SPACING = 0.15;
     private static final int MAX_STEPS_XZ = 14;
     private static final int STEPS_Y = 10;
@@ -36,9 +37,7 @@ public class ValidPoint {
                                           boolean ignoreWalls) {
         Pair<List<Vec3d>, Box> candidatePoints = generateCandidatePoints(entity, maxDistance, ignoreWalls);
 
-
         List<Vec3d> suitable = filterSuitable(candidatePoints.getLeft(), maxDistance);
-
 
         Vec3d bestPoint = findValidCenterOrNearest(suitable, maxDistance, ignoreWalls);
         if (bestPoint == null) {
@@ -50,14 +49,18 @@ public class ValidPoint {
         }
 
         updateOffset(velocity);
-        Vec3d result = (bestPoint == null ? entity.getEyePos() : bestPoint).add(offset);
+
+        Vec3d fallbackPos = KillAura.instance != null && KillAura.instance.shouldRemoveInterpolation() ? InterpolationUtil.getEyePosition(entity) : entity.getEyePos();
+
+        Vec3d result = (bestPoint == null ? fallbackPos : bestPoint).add(offset);
         return new Pair<>(result, candidatePoints.getRight());
     }
 
     public Pair<List<Vec3d>, Box> generateCandidatePoints(LivingEntity entity,
                                                           float maxDistance,
                                                           boolean ignoreWalls) {
-        Box box = entity.getBoundingBox();
+        Box box = KillAura.instance != null && KillAura.instance.shouldRemoveInterpolation() ? InterpolationUtil.getBoundingBox(entity) : entity.getBoundingBox();
+
         Vec3d eye = mc.player.getEyePos();
 
         double lenX = box.getLengthX();
@@ -102,7 +105,10 @@ public class ValidPoint {
     public boolean hasValidPoint(LivingEntity entity,
                                  float maxDistance,
                                  boolean ignoreWalls) {
-        Box box = entity.getBoundingBox();
+        Box box = KillAura.instance != null && KillAura.instance.shouldRemoveInterpolation()
+                ? InterpolationUtil.getBoundingBox(entity)
+                : entity.getBoundingBox();
+
         Vec3d eye = mc.player.getEyePos();
 
         double lenX = box.getLengthX();
@@ -154,7 +160,6 @@ public class ValidPoint {
         return hit.getType() != HitResult.Type.BLOCK;
     }
 
-
     private Vec3d findValidCenterOrNearest(List<Vec3d> points,
                                            float maxDistance,
                                            boolean ignoreWalls) {
@@ -162,21 +167,19 @@ public class ValidPoint {
 
         Vec3d eye = mc.player.getEyePos();
 
-
         Vec3d centroid = computeCentroid(points);
-
 
         if (isValidPoint(eye, centroid, maxDistance, ignoreWalls)) {
             return centroid;
         }
 
-       return points.stream()
+        return points.stream()
                 .filter(p -> isValidPoint(eye, p, maxDistance, ignoreWalls))
                 .min(Comparator.comparingDouble(p -> p.squaredDistanceTo(centroid)))
                 .orElse(null);
     }
 
-      private List<Vec3d> filterSuitable(List<Vec3d> points, float maxDistance) {
+    private List<Vec3d> filterSuitable(List<Vec3d> points, float maxDistance) {
         if (points == null || points.isEmpty()) return List.of();
         Vec3d eye = mc.player.getEyePos();
         double tight = Math.max(0.0, maxDistance - 0.3);

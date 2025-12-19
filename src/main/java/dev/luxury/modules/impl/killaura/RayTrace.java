@@ -7,6 +7,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ProjectileUtil;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
@@ -19,8 +20,9 @@ import java.util.function.Predicate;
 @UtilityClass
 public class RayTrace {
     MinecraftClient mc = MinecraftClient.getInstance();
+
     public BlockHitResult raycast(double range, Rotate angle, boolean includeFluids) {
-       return raycast(Objects.requireNonNull(mc.player).getCameraPosVec(1.0F),range,angle,includeFluids);
+        return raycast(Objects.requireNonNull(mc.player).getCameraPosVec(1.0F), range, angle, includeFluids);
     }
 
     public BlockHitResult raycast(Vec3d vec, double range, Rotate angle, boolean includeFluids) {
@@ -66,9 +68,8 @@ public class RayTrace {
     }
 
 
-
     public boolean rayTrace(Vec3d clientVec, double range, Box box) {
         Vec3d cameraVec = Objects.requireNonNull(mc.player).getEyePos();
-        return box.contains(cameraVec) || box.raycast(cameraVec,cameraVec.add(clientVec.multiply(range))).isPresent();
+        return box.contains(cameraVec) || box.raycast(cameraVec, cameraVec.add(clientVec.multiply(range))).isPresent();
     }
 }
