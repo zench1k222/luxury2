@@ -93,9 +93,17 @@ public class PacketCriticals extends Module {
         sendPositionPacket(x, y, z);
     }
 
+    public void handleTestCrit(){
+
+    }
+
     private void sendPositionPacket(double x, double y, double z) {
         PlayerMoveC2SPacket packet = new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, false, mc.player.horizontalCollision);
         mc.player.networkHandler.sendPacket(packet);
+    }
+
+    private void sendTestPacket() {
+
     }
 
     @Override

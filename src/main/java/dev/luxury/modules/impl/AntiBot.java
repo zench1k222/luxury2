@@ -6,7 +6,9 @@ import dev.luxury.events.impl.eventapi.EventTarget;
 import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
+import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.math.TimerUtils;
+import dev.luxury.utils.player.ServerUtil;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -63,10 +65,15 @@ public class AntiBot extends Module {
     public boolean isBot(PlayerEntity player) {
         return bots.contains(player);
     }
+
     @Override
     public void onEnable() {
         super.onEnable();
         if (!bots.isEmpty()) bots.clear();
+        if (ServerUtil.isConnected("aresmine")) {
+            ChatUtil.sendError("На АресМайне нет ботов, нужно выключить АнтиБот");
+            disable();
+        }
     }
 
     @Override
