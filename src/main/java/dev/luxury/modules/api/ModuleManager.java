@@ -67,7 +67,8 @@ public class ModuleManager {
                 new ChestStealer(),
                 new ServerJoiner(),
                 new ProjectileHelper(),
-                new HPAlert()
+                new HPAlert(),
+                new NameProtect()
 
         );
         DiscordRPC.getInstance().enable();

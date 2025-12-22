@@ -171,20 +171,19 @@ public class KillAura extends Module {
     private void breakShield() {
         if (target == null) return;
 
-        if (shieldBreakCooldown > 0) {
-            shieldBreakCooldown--;
-            return;
-        }
-
         if (!target.isUsingItem() || !target.getActiveItem().isOf(Items.SHIELD)) return;
 
         BooleanSetting breakShieldSetting = settings.getValueByName("Ломать щит");
         if (breakShieldSetting == null || !breakShieldSetting.get()) return;
 
+        if (shieldBreakCooldown > 0) {
+            shieldBreakCooldown--;
+            return;
+        }
+
         int axeSlot = -1;
         for (int i = 0; i < 9; i++) {
-            net.minecraft.item.ItemStack stack = mc.player.getInventory().getStack(i);
-            if (stack.getItem() instanceof AxeItem) {
+            if (mc.player.getInventory().getStack(i).getItem() instanceof AxeItem) {
                 axeSlot = i;
                 break;
             }
@@ -192,57 +191,35 @@ public class KillAura extends Module {
 
         if (axeSlot == -1) {
             BooleanSetting shieldPushSetting = settings.getValueByName("Отжимать щит");
-            if (shieldPushSetting != null && shieldPushSetting.get()) {
-                shieldBreakCooldown = 20;
+            if (shieldPushSetting != null && shieldPushSetting.get() && mc.interactionManager != null && target.isAlive()) {
+                mc.interactionManager.attackEntity(mc.player, target);
+                mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
+                shieldBreakCooldown = 10;
             }
             return;
         }
 
-        Vec3d playerCenter = mc.player.getBoundingBox().getCenter();
-        Vec3d targetEyes = target.getEyePos();
-        Rotate angleToPlayer = RotateUtils.fromVec3d(playerCenter.subtract(targetEyes));
-        float angleDiff = Math.abs(RotateUtils.computeAngleDifference(target.getYaw(), angleToPlayer.getYaw()));
-
-        if (angleDiff > 100) return;
-
         int originalSlot = mc.player.getInventory().selectedSlot;
-        boolean shieldBroken = false;
 
-        if (originalSlot == axeSlot) {
-            shieldBreakCooldown = 2;
-            if (mc.interactionManager != null && target != null && target.isAlive()) {
-                mc.interactionManager.attackEntity(mc.player, target);
-                mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
-                shieldBroken = true;
-            }
-        } else {
+        if (originalSlot != axeSlot) {
             mc.player.getInventory().selectedSlot = axeSlot;
             mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(axeSlot));
+        }
 
-            shieldBreakCooldown = 2;
-            if (mc.interactionManager != null && target != null && target.isAlive()) {
-                mc.interactionManager.attackEntity(mc.player, target);
-                mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
-                shieldBroken = true;
-            }
+        if (mc.interactionManager != null && target.isAlive()) {
+            mc.interactionManager.attackEntity(mc.player, target);
+            mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
+        }
+
+        if (originalSlot != axeSlot) {
             mc.player.getInventory().selectedSlot = originalSlot;
             mc.player.networkHandler.sendPacket(new net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket(originalSlot));
         }
 
-        if (shieldBroken) {
-            String targetName = target.getName().getString();
+        shieldBreakCooldown = 3;
 
-            String cleanMessage = "Щит сломан у " + targetName;
-
-            try {
-                dev.luxury.utils.notifications.NotificationsManager.getInstance().success(
-                        cleanMessage,
-                        3000
-                );
-            } catch (Exception e) {
-                dev.luxury.utils.client.ChatUtil.sendChat("§aЩит был сломан у игрока §f" + targetName);
-            }
-        }
+        String targetName = target.getName().getString();
+        dev.luxury.utils.client.ChatUtil.sendChat("§aЩит сломан у §f" + targetName);
     }
 
     private void checkTargetKilled() {

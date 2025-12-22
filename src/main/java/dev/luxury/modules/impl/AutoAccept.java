@@ -9,15 +9,12 @@ import dev.luxury.modules.api.ModuleAnnotation;
 import dev.luxury.modules.api.settings.BooleanSetting;
 import dev.luxury.utils.managers.FriendManager;
 import dev.luxury.utils.math.TimerUtils;
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @ModuleAnnotation(
         name = "AutoAccept",
         desc = "Автоматически принимает запросы на телепортацию",
@@ -53,7 +50,7 @@ public class AutoAccept extends Module {
     private boolean canAccept = false;
     private String pendingPlayer = null;
     private long lastAcceptTime = 0;
-    private final long acceptCooldown = 1000; // 1 секунда кулдаун
+    private final long acceptCooldown = 1000;
 
     private final BooleanSetting friendSetting = new BooleanSetting("Только друзья", true);
 
@@ -73,11 +70,17 @@ public class AutoAccept extends Module {
                 String playerName = extractPlayerName(message);
 
                 if (playerName != null && !playerName.equalsIgnoreCase(mc.player.getName().getString())) {
-                    boolean isFriend = FriendManager.getInstance().isFriend(playerName);
+                    FriendManager friendManager = FriendManager.getInstance();
+                    boolean isFriend = friendManager != null && friendManager.isFriend(playerName);
 
-                    if (!friendSetting.isValue() || isFriend) {
+                    if (!friendSetting.get() || isFriend) {
                         pendingPlayer = playerName;
                         canAccept = true;
+                        System.out.println("[AutoAccept] Запрос от " + playerName +
+                                " (Друг: " + isFriend + ")");
+                    } else {
+                        System.out.println("[AutoAccept] Игнорируем запрос от " + playerName +
+                                " (не друг)");
                     }
                 }
             }
@@ -86,18 +89,21 @@ public class AutoAccept extends Module {
 
     @EventTarget
     public void onTick(EventTick e) {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.world == null || !canAccept) return;
 
         long currentTime = System.currentTimeMillis();
 
-        if (!isInPvp() && canAccept && (currentTime - lastAcceptTime) >= acceptCooldown) {
+        if (!isInPvp() && (currentTime - lastAcceptTime) >= acceptCooldown) {
             try {
                 mc.player.networkHandler.sendChatCommand("tpaccept");
+                System.out.println("[AutoAccept] Принят запрос от " + pendingPlayer);
 
             } catch (Exception ex) {
                 try {
+                    // Альтернативный метод
                     mc.player.networkHandler.sendChatMessage("/tpaccept");
                 } catch (Exception ex2) {
+                    System.err.println("[AutoAccept] Ошибка отправки команды: " + ex2.getMessage());
                 }
             }
 
@@ -146,19 +152,28 @@ public class AutoAccept extends Module {
         for (String word : words) {
             if (word.matches("[a-zA-Zа-яА-Я0-9_]{3,16}")) {
                 String lowerWord = word.toLowerCase();
-                if (!lowerWord.contains("запрос") && !lowerWord.contains("телепорта") &&
-                        !lowerWord.contains("просит") && !lowerWord.contains("хочет") &&
-                        !lowerWord.contains("игрок") && !lowerWord.contains("от") &&
-                        !lowerWord.contains("has") && !lowerWord.contains("request") &&
-                        !lowerWord.contains("teleport") && !lowerWord.contains("to") &&
-                        !lowerWord.contains("you") && !lowerWord.contains("tpa") &&
-                        !lowerWord.contains("вам") && !lowerWord.contains("к")) {
+                if (!isIgnoredWord(lowerWord)) {
                     return word;
                 }
             }
         }
 
         return null;
+    }
+
+    private boolean isIgnoredWord(String word) {
+        String[] ignoredWords = {
+                "запрос", "телепорта", "просит", "хочет", "игрок", "от",
+                "has", "request", "teleport", "to", "you", "tpa",
+                "вам", "к", "в", "на", "из", "и", "не", "no"
+        };
+
+        for (String ignored : ignoredWords) {
+            if (word.contains(ignored)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
