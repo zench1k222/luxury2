@@ -13,7 +13,6 @@ import dev.luxury.modules.api.settings.ModeListSetting;
 import dev.luxury.modules.api.settings.SliderSetting;
 import dev.luxury.modules.impl.killaura.*;
 import dev.luxury.modules.impl.killaura.rotate.*;
-import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.managers.FriendManager;
 import dev.luxury.utils.player.InventoryUtil;
 import lombok.Getter;
@@ -219,7 +218,6 @@ public class KillAura extends Module {
         shieldBreakCooldown = 3;
 
         String targetName = target.getName().getString();
-        dev.luxury.utils.client.ChatUtil.sendChat("§aЩит сломан у §f" + targetName);
     }
 
     private void checkTargetKilled() {

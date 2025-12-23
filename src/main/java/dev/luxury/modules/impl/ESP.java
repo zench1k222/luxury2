@@ -13,7 +13,6 @@ import dev.luxury.modules.api.settings.SliderSetting;
 import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.managers.FriendManager;
-import dev.luxury.utils.player.PlayerIntersectionUtil;
 import dev.luxury.utils.player.ServerUtil;
 import dev.luxury.utils.render.ColorUtil;
 import dev.luxury.utils.render.RenderUtil;
@@ -26,6 +25,10 @@ import net.minecraft.client.render.entity.state.EntityRenderState;
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.client.render.entity.state.ItemEntityRenderState;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.EnchantableComponent;
+import net.minecraft.component.type.ItemEnchantmentsComponent;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
@@ -33,6 +36,8 @@ import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -40,10 +45,9 @@ import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ModuleAnnotation(
         name = "EntityEsp",
@@ -78,7 +82,10 @@ public class ESP extends Module {
     private final BooleanSetting showArmor = new BooleanSetting("Броня и предметы", true);
     private final BooleanSetting effects = new BooleanSetting("Эффекты", true);
 
-
+    // НОВЫЕ НАСТРОЙКИ
+    private final BooleanSetting showEnchant = new BooleanSetting("Показывать зачарования", true);
+    private final BooleanSetting shortName = new BooleanSetting("Сокращенные названия", true);
+    private final SliderSetting enchantScale = new SliderSetting("Масштаб текста", 0.8f, 0.5f, 1.2f, 0.1f);
 
     private final Map<String, String> donateSymbols = new HashMap<String, String>() {{
         put("ꔀ", "§7&lPLAYER");
@@ -110,11 +117,57 @@ public class ESP extends Module {
         put("ꔷ", "§c&lADMIN");
     }};
 
+    // Карта сокращений для зачарований
+    private final Map<String, String> enchantShortNames = new HashMap<String, String>() {{
+        put("protection", "З");
+        put("fire_protection", "Ог");
+        put("feather_falling", "ПП");
+        put("blast_protection", "Вз");
+        put("projectile_protection", "Ст");
+        put("respiration", "Дых");
+        put("aqua_affinity", "Вод");
+        put("thorns", "Шип");
+        put("depth_strider", "Глуб");
+        put("frost_walker", "Лед");
+        put("soul_speed", "Душ");
+        put("sharpness", "О");
+        put("smite", "Неж");
+        put("bane_of_arthropods", "Чл");
+        put("knockback", "Отб");
+        put("fire_aspect", "Огн");
+        put("looting", "Доб");
+        put("sweeping", "Шир");
+        put("efficiency", "Эф");
+        put("silk_touch", "Шелк");
+        put("unbreaking", "Прч");
+        put("fortune", "Уд");
+        put("power", "Мщ");
+        put("punch", "Отт");
+        put("flame", "Плм");
+        put("infinity", "Бск");
+        put("luck_of_the_sea", "УдР");
+        put("lure", "Прим");
+        put("loyalty", "Врн");
+        put("impaling", "Прб");
+        put("riptide", "Взв");
+        put("channeling", "Мол");
+        put("multishot", "Мнж");
+        put("quick_charge", "Бзз");
+        put("piercing", "Прк");
+        put("mending", "Рем");
+        put("vanishing_curse", "Прп");
+        put("binding_curse", "Связ");
+        put("swift_sneak", "Бстр");
+    }};
+
     private ArrayList<Entity> toRender = new ArrayList<>();
     private static ESP instance;
 
     public ESP() {
-        addSettings(targets, itemMode, effects, itemBackgroundAlpha, itemScale ,showBox, corners, cornerLength, thickness, showNameTags, hideVanillaTags, showArmor);
+        addSettings(targets, itemMode, effects, itemBackgroundAlpha, itemScale,
+                showBox, corners, cornerLength, thickness,
+                showNameTags, hideVanillaTags, showArmor,
+                showEnchant, shortName, enchantScale); // Добавлены новые настройки
         instance = this;
     }
 
@@ -328,10 +381,10 @@ public class ESP extends Module {
     }
 
     private void renderItemInfo(EventRender2D e,
-                                       float minX, float minY,
-                                       float maxX, float maxY,
-                                       ItemEntity itemEntity,
-                                       ItemStack stack) {
+                                float minX, float minY,
+                                float maxX, float maxY,
+                                ItemEntity itemEntity,
+                                ItemStack stack) {
 
         boolean showText = getTargetSetting("Текст");
         boolean showIcon = getTargetSetting("Иконка");
@@ -708,6 +761,325 @@ public class ESP extends Module {
         }
 
         RenderSystem.disableDepthTest();
+
+        // Рендерим зачарования, если включено
+        if (showEnchant.get()) {
+            renderEnchantments(e, minX, minY, maxX, maxY, player, scale);
+        }
+    }
+
+    // НОВЫЙ МЕТОД: Отображение зачарований
+    private void renderEnchantments(EventRender2D e,
+                                    float minX, float minY,
+                                    float maxX, float maxY,
+                                    PlayerEntity player,
+                                    float scale) {
+
+        if (!showEnchant.get()) return;
+
+        MatrixStack ms = e.getMatrixStack();
+        FontDraw font = FontHelper.sfprobold[10];
+        if (font == null) return;
+
+        // Собираем все зачарования с брони и оружия
+        List<String> enchantmentsList = new ArrayList<>();
+
+        // Проверяем броню
+        for (ItemStack armorStack : player.getArmorItems()) {
+            if (!armorStack.isEmpty()) {
+                ItemEnchantmentsComponent enchantments = armorStack.get(DataComponentTypes.ENCHANTMENTS);
+                if (enchantments != null) {
+                    for (var entry : enchantments.getEnchantmentEntries()) {
+                        String enchantName = getEnchantDisplayName(entry.getKey(), entry.getIntValue());
+                        if (enchantName != null && !enchantName.isEmpty()) {
+                            enchantmentsList.add(enchantName);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Проверяем оружие в руках
+        ItemStack mainHand = player.getMainHandStack();
+        if (!mainHand.isEmpty()) {
+            ItemEnchantmentsComponent enchantments = mainHand.get(DataComponentTypes.ENCHANTMENTS);
+            if (enchantments != null) {
+                for (var entry : enchantments.getEnchantmentEntries()) {
+                    String enchantName = getEnchantDisplayName(entry.getKey(), entry.getIntValue());
+                    if (enchantName != null && !enchantName.isEmpty()) {
+                        enchantmentsList.add(enchantName);
+                    }
+                }
+            }
+        }
+
+        // Проверяем вторую руку
+        ItemStack offHand = player.getOffHandStack();
+        if (!offHand.isEmpty()) {
+            ItemEnchantmentsComponent enchantments = offHand.get(DataComponentTypes.ENCHANTMENTS);
+            if (enchantments != null) {
+                for (var entry : enchantments.getEnchantmentEntries()) {
+                    String enchantName = getEnchantDisplayName(entry.getKey(), entry.getIntValue());
+                    if (enchantName != null && !enchantName.isEmpty()) {
+                        enchantmentsList.add(enchantName);
+                    }
+                }
+            }
+        }
+
+        if (enchantmentsList.isEmpty()) return;
+
+        // Убираем дубликаты
+        enchantmentsList = enchantmentsList.stream().distinct().collect(Collectors.toList());
+
+        float maxWidth = 0;
+        float totalHeight = 0;
+        float spacing = 2f * scale * enchantScale.getFloatValue();
+
+        for (String enchant : enchantmentsList) {
+            float width = font.getWidth(enchant) * scale * enchantScale.getFloatValue();
+            float height = font.getHeight() * scale * enchantScale.getFloatValue();
+
+            maxWidth = Math.max(maxWidth, width);
+            totalHeight += height + spacing;
+        }
+
+        if (totalHeight > 0) totalHeight -= spacing;
+
+        float bgPaddingX = 4f * scale * enchantScale.getFloatValue();
+        float bgPaddingY = 4f * scale * enchantScale.getFloatValue();
+
+        // Позиция справа от ESP бокса
+        float bgX = maxX + (10f * scale);
+        float bgY = minY;
+        float bgW = maxWidth + bgPaddingX * 2f;
+        float bgH = totalHeight + bgPaddingY * 2f;
+
+        // Фон для зачарований
+        RenderUtil.drawRoundedRect(
+                ms,
+                bgX,
+                bgY,
+                bgW,
+                bgH,
+                new Vector4f(3f * scale, 3f * scale, 3f * scale, 3f * scale),
+                new Color(30, 30, 40, 180).getRGB()
+        );
+
+        // Рамка для акцента
+        RenderUtil.drawBorder(
+                ms,
+                bgX,
+                bgY,
+                bgW,
+                bgH,
+                new Vector4f(3f * scale, 3f * scale, 3f * scale, 3f * scale),
+                new Color(100, 70, 200, 150).getRGB(),
+                1.0f,
+                1.0f,
+                1.0f,
+                false
+        );
+
+        float currentY = bgY + bgPaddingY;
+
+        // Заголовок "Enchants"
+        ms.push();
+        ms.translate(bgX + bgPaddingX, currentY, 0);
+        ms.scale(scale * enchantScale.getFloatValue(), scale * enchantScale.getFloatValue(), 1.0f);
+
+        font.drawFontLeft(ms, "Зачарования:", 0, 0, new Color(170, 150, 255).getRGB());
+
+        ms.pop();
+
+        currentY += font.getHeight() * scale * enchantScale.getFloatValue() + (2f * scale);
+
+        // Разделительная линия
+        RenderUtil.drawRoundedRect(
+                ms,
+                bgX + bgPaddingX,
+                currentY - (1f * scale),
+                maxWidth,
+                1,
+                new Vector4f(0, 0, 0, 0),
+                new Color(100, 70, 200, 100).getRGB()
+        );
+
+        currentY += (2f * scale);
+
+        // Отображаем зачарования
+        for (String enchant : enchantmentsList) {
+            ms.push();
+            ms.translate(bgX + bgPaddingX, currentY, 0);
+            ms.scale(scale * enchantScale.getFloatValue(), scale * enchantScale.getFloatValue(), 1.0f);
+
+            // Определяем цвет в зависимости от типа зачарования
+            int color = getEnchantmentColor(enchant);
+            font.drawFontLeft(ms, enchant, 0, 0, color);
+
+            ms.pop();
+
+            currentY += font.getHeight() * scale * enchantScale.getFloatValue() + spacing;
+        }
+    }
+
+    // НОВЫЙ МЕТОД: Получение отображаемого имени зачарования (исправленная версия для 1.21.4)
+    // УПРОЩЕННАЯ ВЕРСИЯ: Получение отображаемого имени зачарования
+    private String getEnchantDisplayName(RegistryEntry<Enchantment> enchantmentEntry, int level) {
+        if (enchantmentEntry == null) return "";
+
+        try {
+            // Пытаемся получить ключ зачарования
+            String enchantId = "unknown";
+            String displayName = "Enchantment";
+
+            // Пробуем получить ключ из RegistryEntry
+            if (enchantmentEntry.getKey().isPresent()) {
+                var key = enchantmentEntry.getKey().get();
+                enchantId = key.getValue().getPath();
+            }
+
+            // Пытаемся получить переведенное имя
+            try {
+                // Этот метод может не работать в 1.21.4, используем fallback
+                displayName = Text.translatable("enchantment.minecraft." + enchantId).getString();
+            } catch (Exception e) {
+                // Используем ID как fallback
+                displayName = enchantId;
+            }
+
+            // Переводим на русский (основные зачарования)
+            displayName = translateEnchantmentName(displayName, enchantId);
+
+            // Если включено сокращение названий
+            if (shortName.get()) {
+                String shortNameText = enchantShortNames.get(enchantId);
+                if (shortNameText != null) {
+                    return shortNameText + level;
+                }
+
+                // Берем первую букву
+                if (!displayName.isEmpty()) {
+                    return displayName.charAt(0) + String.valueOf(level);
+                }
+
+                return "E" + level;
+            }
+
+            // Полное название с уровнем
+            return displayName + " " + toRoman(level);
+
+        } catch (Exception e) {
+            // Fallback: просто показываем уровень
+            return "Зачарование " + toRoman(level);
+        }
+    }
+
+    // Вспомогательный метод для перевода названий зачарований
+    private String translateEnchantmentName(String name, String id) {
+        Map<String, String> translations = new HashMap<String, String>() {{
+            put("protection", "Защита");
+            put("fire_protection", "Защита от огня");
+            put("feather_falling", "Невесомость");
+            put("blast_protection", "Взрывоустойчивость");
+            put("projectile_protection", "Защита от снарядов");
+            put("respiration", "Подводное дыхание");
+            put("aqua_affinity", "Подводник");
+            put("thorns", "Шипы");
+            put("depth_strider", "Глубинный шаг");
+            put("frost_walker", "Ледяная поступь");
+            put("soul_speed", "Скорость души");
+            put("sharpness", "Острота");
+            put("smite", "Небесная кара");
+            put("bane_of_arthropods", "Бич членистоногих");
+            put("knockback", "Отдача");
+            put("fire_aspect", "Огненный аспект");
+            put("looting", "Добыча");
+            put("sweeping", "Широкий взмах");
+            put("efficiency", "Эффективность");
+            put("silk_touch", "Шелковое касание");
+            put("unbreaking", "Прочность");
+            put("fortune", "Удача");
+            put("power", "Мощность");
+            put("punch", "Отталкивание");
+            put("flame", "Пламя");
+            put("infinity", "Бесконечность");
+            put("luck_of_the_sea", "Удача моряка");
+            put("lure", "Приманка");
+            put("loyalty", "Верность");
+            put("impaling", "Пронзание");
+            put("riptide", "Отлив");
+            put("channeling", "Громовержец");
+            put("multishot", "Множественный выстрел");
+            put("quick_charge", "Быстрая перезарядка");
+            put("piercing", "Пронзание");
+            put("mending", "Починка");
+            put("vanishing_curse", "Проклятие исчезновения");
+            put("binding_curse", "Проклятие связывания");
+            put("swift_sneak", "Быстрый шаг");
+        }};
+
+        return translations.getOrDefault(id, name);
+    }
+
+    // НОВЫЙ МЕТОД: Определение цвета зачарования
+    private int getEnchantmentColor(String enchantName) {
+        // Защитные зачарования - синие оттенки
+        if (enchantName.contains("Защита") || enchantName.contains("Прочность") ||
+                enchantName.contains("Невесомость") || enchantName.contains("Подвод") ||
+                enchantName.contains("Взрыв") || enchantName.contains("Снаряд") ||
+                enchantName.contains("Шип") || enchantName.contains("Глубин") ||
+                enchantName.contains("Ледя") || enchantName.contains("Скорость") ||
+                enchantName.contains("З") || enchantName.contains("Ог") ||
+                enchantName.contains("ПП") || enchantName.contains("Вз") ||
+                enchantName.contains("Ст") || enchantName.contains("Дых") ||
+                enchantName.contains("Вод") || enchantName.contains("Шип") ||
+                enchantName.contains("Глуб") || enchantName.contains("Лед") ||
+                enchantName.contains("Душ") || enchantName.contains("Прч")) {
+            return new Color(100, 180, 255).getRGB(); // Голубой
+        }
+
+        // Боевые зачарования - красные оттенки
+        if (enchantName.contains("Острота") || enchantName.contains("Небесная") ||
+                enchantName.contains("Членистоногих") || enchantName.contains("Отдача") ||
+                enchantName.contains("Огненный") || enchantName.contains("Добыча") ||
+                enchantName.contains("Широкий") || enchantName.contains("Мощность") ||
+                enchantName.contains("Отталкивание") || enchantName.contains("Пламя") ||
+                enchantName.contains("Верность") || enchantName.contains("Пронзание") ||
+                enchantName.contains("Отлив") || enchantName.contains("Громовержец") ||
+                enchantName.contains("Множественный") || enchantName.contains("Быстрая") ||
+                enchantName.contains("О") || enchantName.contains("Неж") ||
+                enchantName.contains("Чл") || enchantName.contains("Отб") ||
+                enchantName.contains("Огн") || enchantName.contains("Доб") ||
+                enchantName.contains("Шир") || enchantName.contains("Мщ") ||
+                enchantName.contains("Отт") || enchantName.contains("Плм") ||
+                enchantName.contains("Врн") || enchantName.contains("Прб") ||
+                enchantName.contains("Взв") || enchantName.contains("Мол") ||
+                enchantName.contains("Мнж") || enchantName.contains("Бзз") ||
+                enchantName.contains("Прк")) {
+            return new Color(255, 100, 100).getRGB(); // Красный
+        }
+
+        // Инструментальные зачарования - зеленые оттенки
+        if (enchantName.contains("Эффективность") || enchantName.contains("Шелковое") ||
+                enchantName.contains("Удача") || enchantName.contains("Бесконечность") ||
+                enchantName.contains("Удача моряка") || enchantName.contains("Приманка") ||
+                enchantName.contains("Починка") || enchantName.contains("Эф") ||
+                enchantName.contains("Шелк") || enchantName.contains("Уд") ||
+                enchantName.contains("Бск") || enchantName.contains("УдР") ||
+                enchantName.contains("Прим") || enchantName.contains("Рем")) {
+            return new Color(100, 255, 100).getRGB(); // Зеленый
+        }
+
+        // Проклятия - фиолетовые оттенки
+        if (enchantName.contains("Проклятие") || enchantName.contains("Исчезновения") ||
+                enchantName.contains("Связывания") || enchantName.contains("Прп") ||
+                enchantName.contains("Связ")) {
+            return new Color(180, 100, 255).getRGB(); // Фиолетовый
+        }
+
+        // Остальное - желтый
+        return new Color(255, 255, 100).getRGB(); // Желтый
     }
 
 

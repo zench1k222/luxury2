@@ -1,12 +1,10 @@
 package dev.luxury.mixin.render.impl.render;
 
-
-
 import com.mojang.blaze3d.systems.RenderSystem;
+import dev.luxury.Luxury;
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.events.impl.render.EventRender2D;
-import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.NoPush;
+import dev.luxury.utils.render.TextRenderUtil;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.render.RenderTickCounter;
@@ -16,18 +14,18 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import java.util.List;
 
 @Mixin(InGameHud.class)
 public class MixinInGameHud {
 
     @Inject(at = @At(value = "HEAD"), method = "render")
     public void renderHook(DrawContext drawContext, RenderTickCounter tickCounter, CallbackInfo ci) {
-
         RenderSystem.enableDepthTest();
         MatrixStack matrices = drawContext.getMatrices();
-        EventManager.call(new EventRender2D(drawContext,matrices,tickCounter));
-
+        EventManager.call(new EventRender2D(drawContext, matrices, tickCounter));
         RenderSystem.disableDepthTest();
     }
 
@@ -38,6 +36,16 @@ public class MixinInGameHud {
 
     @Inject(at = @At("HEAD"), method = "renderStatusEffectOverlay", cancellable = true)
     public void renderStatusEffectOverlay(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+    }
 
+    @Inject(
+            method = "renderScoreboardSidebar(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/scoreboard/ScoreboardObjective;)V",
+            at = @At("HEAD")
+    )
+    private void onRenderScoreboardHead(DrawContext context,
+                                        net.minecraft.scoreboard.ScoreboardObjective objective,
+                                        CallbackInfo ci) {
+        if (objective != null) {
+        }
     }
 }

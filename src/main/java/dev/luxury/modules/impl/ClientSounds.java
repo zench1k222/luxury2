@@ -98,7 +98,7 @@ public class ClientSounds extends Module {
             mc.getSoundManager().play(
                     PositionedSoundInstance.master(
                             sound,
-                            1f  // pitch 0.5 = в 2 раза медленнее и ниже
+                            1f
                     )
             );
         }

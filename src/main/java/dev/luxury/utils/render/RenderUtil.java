@@ -18,6 +18,7 @@ import org.joml.Vector4f;
 import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
 import java.util.function.Supplier;
 
 public class RenderUtil {
@@ -341,6 +342,239 @@ public class RenderUtil {
         RenderSystem.enableDepthTest();
         matrices.pop();
 
+    }
+
+    public static void drawGradientHorizontalRect(MatrixStack matrices, float x, float y, float width, float height,
+                                                  int colorLeft, int colorRight) {
+        enableRender();
+
+        ShaderProgram shader = RenderSystem.setShader(ResourceProvider.RECTANGLE_SHADER_KEY);
+        shader.getUniform("Size").set(width, height);
+        shader.getUniform("Radius").set(0f, 0f, 0f, 0f);
+        shader.getUniform("Smoothness").set(1.0f);
+
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+        BufferBuilder bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        float[] leftRGBA = ColorUtil.toRGBAf(colorLeft);
+        float[] rightRGBA = ColorUtil.toRGBAf(colorRight);
+
+        bufferBuilder.vertex(matrix, x, y, 0.0F).color(leftRGBA[0], leftRGBA[1], leftRGBA[2], leftRGBA[3]);
+        bufferBuilder.vertex(matrix, x, y + height, 0.0F).color(leftRGBA[0], leftRGBA[1], leftRGBA[2], leftRGBA[3]);
+        bufferBuilder.vertex(matrix, x + width, y + height, 0.0F).color(rightRGBA[0], rightRGBA[1], rightRGBA[2], rightRGBA[3]);
+        bufferBuilder.vertex(matrix, x + width, y, 0.0F).color(rightRGBA[0], rightRGBA[1], rightRGBA[2], rightRGBA[3]);
+
+        endBuilding(bufferBuilder);
+        disableRender();
+    }
+
+    public static void drawGradientVerticalRect(MatrixStack matrices, float x, float y, float width, float height,
+                                                int colorTop, int colorBottom) {
+        enableRender();
+
+        ShaderProgram shader = RenderSystem.setShader(ResourceProvider.RECTANGLE_SHADER_KEY);
+        shader.getUniform("Size").set(width, height);
+        shader.getUniform("Radius").set(0f, 0f, 0f, 0f);
+        shader.getUniform("Smoothness").set(1.0f);
+
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+        BufferBuilder bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        float[] topRGBA = ColorUtil.toRGBAf(colorTop);
+        float[] bottomRGBA = ColorUtil.toRGBAf(colorBottom);
+
+        bufferBuilder.vertex(matrix, x, y, 0.0F).color(topRGBA[0], topRGBA[1], topRGBA[2], topRGBA[3]);
+        bufferBuilder.vertex(matrix, x, y + height, 0.0F).color(bottomRGBA[0], bottomRGBA[1], bottomRGBA[2], bottomRGBA[3]);
+        bufferBuilder.vertex(matrix, x + width, y + height, 0.0F).color(bottomRGBA[0], bottomRGBA[1], bottomRGBA[2], bottomRGBA[3]);
+        bufferBuilder.vertex(matrix, x + width, y, 0.0F).color(topRGBA[0], topRGBA[1], topRGBA[2], topRGBA[3]);
+
+        endBuilding(bufferBuilder);
+        disableRender();
+    }
+
+    public static void drawGradientRect(MatrixStack matrices, float x, float y, float width, float height,
+                                        Vector4f rounding,
+                                        int colorTopLeft, int colorTopRight,
+                                        int colorBottomRight, int colorBottomLeft) {
+        enableRender();
+
+        ShaderProgram shader = RenderSystem.setShader(ResourceProvider.RECTANGLE_SHADER_KEY);
+        shader.getUniform("Size").set(width, height);
+        shader.getUniform("Radius").set(rounding.x, rounding.y, rounding.z, rounding.w);
+        shader.getUniform("Smoothness").set(1.0f);
+
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+        BufferBuilder bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        float[] tl = ColorUtil.toRGBAf(colorTopLeft);
+        float[] tr = ColorUtil.toRGBAf(colorTopRight);
+        float[] br = ColorUtil.toRGBAf(colorBottomRight);
+        float[] bl = ColorUtil.toRGBAf(colorBottomLeft);
+
+        bufferBuilder.vertex(matrix, x, y, 0.0F).color(tl[0], tl[1], tl[2], tl[3]);
+        bufferBuilder.vertex(matrix, x, y + height, 0.0F).color(bl[0], bl[1], bl[2], bl[3]);
+        bufferBuilder.vertex(matrix, x + width, y + height, 0.0F).color(br[0], br[1], br[2], br[3]);
+        bufferBuilder.vertex(matrix, x + width, y, 0.0F).color(tr[0], tr[1], tr[2], tr[3]);
+
+        endBuilding(bufferBuilder);
+        disableRender();
+    }
+
+    public static void drawGradientHorizontalLine(MatrixStack matrices, float x, float y, float length, float thickness,
+                                                  int colorLeft, int colorRight) {
+        drawGradientHorizontalRect(matrices, x, y - thickness/2, length, thickness, colorLeft, colorRight);
+    }
+
+    public static void drawGradientVerticalLine(MatrixStack matrices, float x, float y, float length, float thickness,
+                                                int colorTop, int colorBottom) {
+        drawGradientVerticalRect(matrices, x - thickness/2, y, thickness, length, colorTop, colorBottom);
+    }
+
+    public static void drawGradientRoundedRect(MatrixStack matrices, float x, float y, float width, float height,
+                                               float radius, int colorLeft, int colorRight) {
+        drawGradientRoundedRect(matrices, x, y, width, height,
+                new Vector4f(radius, radius, radius, radius), colorLeft, colorRight);
+    }
+
+    public static void drawGradientRoundedRect(MatrixStack matrices, float x, float y, float width, float height,
+                                               Vector4f rounding, int colorLeft, int colorRight) {
+        enableRender();
+
+        ShaderProgram shader = RenderSystem.setShader(ResourceProvider.RECTANGLE_SHADER_KEY);
+        shader.getUniform("Size").set(width, height);
+        shader.getUniform("Radius").set(rounding.x, rounding.y, rounding.z, rounding.w);
+        shader.getUniform("Smoothness").set(1.0f);
+
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+        BufferBuilder bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        float[] leftRGBA = ColorUtil.toRGBAf(colorLeft);
+        float[] rightRGBA = ColorUtil.toRGBAf(colorRight);
+
+        bufferBuilder.vertex(matrix, x, y, 0.0F).color(leftRGBA[0], leftRGBA[1], leftRGBA[2], leftRGBA[3]);
+        bufferBuilder.vertex(matrix, x, y + height, 0.0F).color(leftRGBA[0], leftRGBA[1], leftRGBA[2], leftRGBA[3]);
+        bufferBuilder.vertex(matrix, x + width, y + height, 0.0F).color(rightRGBA[0], rightRGBA[1], rightRGBA[2], rightRGBA[3]);
+        bufferBuilder.vertex(matrix, x + width, y, 0.0F).color(rightRGBA[0], rightRGBA[1], rightRGBA[2], rightRGBA[3]);
+
+        endBuilding(bufferBuilder);
+        disableRender();
+    }
+
+    public static void drawGradientCircle(MatrixStack matrices, float x, float y, float radius,
+                                          int colorCenter, int colorEdge) {
+        enableRender();
+
+        ShaderProgram shader = RenderSystem.setShader(ResourceProvider.RECTANGLE_SHADER_KEY);
+        shader.getUniform("Size").set(radius * 2, radius * 2);
+        shader.getUniform("Radius").set(radius, radius, radius, radius);
+        shader.getUniform("Smoothness").set(1.0f);
+
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+        BufferBuilder bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR);
+
+        float[] centerRGBA = ColorUtil.toRGBAf(colorCenter);
+        float[] edgeRGBA = ColorUtil.toRGBAf(colorEdge);
+
+        bufferBuilder.vertex(matrix, x + radius, y + radius, 0.0F)
+                .color(centerRGBA[0], centerRGBA[1], centerRGBA[2], centerRGBA[3]);
+
+        int segments = 32;
+        for (int i = 0; i <= segments; i++) {
+            float angle = (float) (2.0f * Math.PI * i / segments);
+            float cos = MathHelper.cos(angle);
+            float sin = MathHelper.sin(angle);
+
+            bufferBuilder.vertex(matrix,
+                            x + radius + cos * radius,
+                            y + radius + sin * radius,
+                            0.0F)
+                    .color(edgeRGBA[0], edgeRGBA[1], edgeRGBA[2], edgeRGBA[3]);
+        }
+
+        endBuilding(bufferBuilder);
+        disableRender();
+    }
+
+    public static void drawAnimatedGradientRect(MatrixStack matrices, float x, float y, float width, float height,
+                                                Vector4f rounding,
+                                                int[] colors, float speed, boolean horizontal) {
+        enableRender();
+
+        ShaderProgram shader = RenderSystem.setShader(ResourceProvider.RECTANGLE_SHADER_KEY);
+        shader.getUniform("Size").set(width, height);
+        shader.getUniform("Radius").set(rounding.x, rounding.y, rounding.z, rounding.w);
+        shader.getUniform("Smoothness").set(1.0f);
+
+        long time = System.currentTimeMillis();
+        float progress = (time % (long)(speed * colors.length)) / speed;
+        int currentIndex = (int) progress % colors.length;
+        int nextIndex = (currentIndex + 1) % colors.length;
+        float localProgress = progress % 1.0f;
+
+        int currentColor = colors[currentIndex];
+        int nextColor = colors[nextIndex];
+
+        int interpolatedColor = ColorUtil.overCol(currentColor, nextColor, localProgress);
+
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+        BufferBuilder bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        float[] rgba = ColorUtil.toRGBAf(interpolatedColor);
+
+        if (horizontal) {
+            bufferBuilder.vertex(matrix, x, y, 0.0F).color(rgba[0], rgba[1], rgba[2], rgba[3]);
+            bufferBuilder.vertex(matrix, x, y + height, 0.0F).color(rgba[0], rgba[1], rgba[2], rgba[3]);
+            bufferBuilder.vertex(matrix, x + width, y + height, 0.0F).color(rgba[0], rgba[1], rgba[2], rgba[3]);
+            bufferBuilder.vertex(matrix, x + width, y, 0.0F).color(rgba[0], rgba[1], rgba[2], rgba[3]);
+        } else {
+            bufferBuilder.vertex(matrix, x, y, 0.0F).color(rgba[0], rgba[1], rgba[2], rgba[3]);
+            bufferBuilder.vertex(matrix, x, y + height, 0.0F).color(rgba[0], rgba[1], rgba[2], rgba[3]);
+            bufferBuilder.vertex(matrix, x + width, y + height, 0.0F).color(rgba[0], rgba[1], rgba[2], rgba[3]);
+            bufferBuilder.vertex(matrix, x + width, y, 0.0F).color(rgba[0], rgba[1], rgba[2], rgba[3]);
+        }
+
+        endBuilding(bufferBuilder);
+        disableRender();
+    }
+
+    public static void drawRainbowGradientRect(MatrixStack matrices, float x, float y, float width, float height,
+                                               Vector4f rounding, float speed, float saturation, float brightness) {
+        enableRender();
+
+        ShaderProgram shader = RenderSystem.setShader(ResourceProvider.RECTANGLE_SHADER_KEY);
+        shader.getUniform("Size").set(width, height);
+        shader.getUniform("Radius").set(rounding.x, rounding.y, rounding.z, rounding.w);
+        shader.getUniform("Smoothness").set(1.0f);
+
+        long time = System.currentTimeMillis();
+        float hue = (time % (long)(speed * 1000)) / (speed * 1000);
+
+        // Создаем цвета радуги
+        int[] rainbowColors = new int[7];
+        for (int i = 0; i < 7; i++) {
+            float rainbowHue = (hue + i * 0.142857f) % 1.0f;
+            rainbowColors[i] = Color.HSBtoRGB(rainbowHue, saturation, brightness);
+        }
+
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+        BufferBuilder bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        // Градиент радуги
+        for (int i = 0; i < 6; i++) {
+            float segmentX = x + (width / 6) * i;
+            float segmentWidth = width / 6;
+
+            float[] color1 = ColorUtil.toRGBAf(rainbowColors[i]);
+            float[] color2 = ColorUtil.toRGBAf(rainbowColors[i + 1]);
+
+            bufferBuilder.vertex(matrix, segmentX, y, 0.0F).color(color1[0], color1[1], color1[2], color1[3]);
+            bufferBuilder.vertex(matrix, segmentX, y + height, 0.0F).color(color1[0], color1[1], color1[2], color1[3]);
+            bufferBuilder.vertex(matrix, segmentX + segmentWidth, y + height, 0.0F).color(color2[0], color2[1], color2[2], color2[3]);
+            bufferBuilder.vertex(matrix, segmentX + segmentWidth, y, 0.0F).color(color2[0], color2[1], color2[2], color2[3]);
+        }
+
+        endBuilding(bufferBuilder);
+        disableRender();
     }
 
 
