@@ -1,6 +1,7 @@
 package dev.luxury.ui;
 
 import dev.luxury.Luxury;
+import dev.luxury.modules.impl.DiscordRPC;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -44,6 +45,7 @@ public class MainMenu extends Screen {
 
         changeLog.add(new ChangeLogEntry("v0.4", "16.12.2024",
                 List.of("Создание проекта", "Базовые миксины", "Структура кода")));
+
     }
 
     @Override
@@ -240,9 +242,20 @@ public class MainMenu extends Screen {
 
         String ver = "v0.6";
         String fps = "FPS: " + MinecraftClient.getInstance().getCurrentFps();
+
+        String userName = DiscordRPC.instance.info.userName();
+        boolean isDev = userName != null &&
+                ("krasivih".equals(userName) || "_znchkx_".equals(userName) || "webimmortal".equals(userName));
+
+        String debug = isDev ? "§7DEBUG: §aON" : "§7DEBUG: §cOFF";
+
         int fpsWidth = textRenderer.getWidth(fps);
-        context.drawTextWithShadow(textRenderer, fps, width - fpsWidth - 5, height, 0xAAAAAA);
-        context.drawTextWithShadow(textRenderer, ver, width - fpsWidth - 5, height - 10, 0xAAAAAA);
+        int debugWidth = textRenderer.getWidth(debug);
+
+        context.drawTextWithShadow(textRenderer, ver, width - fpsWidth - 5, height - 20, 0xAAAAAA);
+        context.drawTextWithShadow(textRenderer, fps, width - fpsWidth - 5, height - 10, 0xAAAAAA);
+
+        context.drawTextWithShadow(textRenderer, debug, 5, height - 10, 0xAAAAAA);
     }
 
     @Override

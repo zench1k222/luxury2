@@ -10,7 +10,6 @@ base {
     archivesName = project.archives_base_name
 }
 
-
 repositories {
     mavenCentral()
     maven { url "https://jitpack.io" }
@@ -38,6 +37,7 @@ dependencies {
 loom {
     accessWidenerPath = file("src/main/resources/luxury.acesswidener")
 }
+
 processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", project.minecraft_version
@@ -50,24 +50,6 @@ processResources {
                 "loader_version": project.loader_version
     }
 }
-tasks.register("obfuscateJar") {
-    group = "build"
-    description = "Copy remapJar to obf jar placeholder"
-
-    dependsOn tasks.remapJar
-
-    doLast {
-        def inputJar = tasks.remapJar.archiveFile.get().asFile
-        def outputJar = file("${buildDir}/libs/${archivesBaseName}-obf.jar")
-        copy {
-            from inputJar
-            into outputJar.parent
-            rename { outputJar.name }
-        }
-        println "✔ Obf placeholder jar created at: ${outputJar}"
-    }
-}
-
 
 def targetJavaVersion = 21
 tasks.withType(JavaCompile).configureEach {
@@ -91,6 +73,192 @@ jar {
     }
 }
 
+// ========== PROGUARD ОБФУСКАЦИЯ ==========
+
+task obfuscateJar {
+    dependsOn remapJar
+    group = 'build'
+    description = 'Obfuscates the mod JAR using ProGuard'
+
+    doLast {
+        println "=== Starting ProGuard Obfuscation (Java 21) ==="
+
+        def proguardJar = file("libs/proguard.jar")
+        if (!proguardJar.exists()) {
+            throw new GradleException("ProGuard JAR not found at: ${proguardJar.path}")
+        }
+
+        def inputJar = remapJar.archiveFile.get().asFile
+        def outputJar = file("${buildDir}/libs/${archivesBaseName}-${version}-obf.jar")
+
+        // Создаем директорию если не существует
+        outputJar.parentFile.mkdirs()
+
+        println "Input JAR: ${inputJar}"
+        println "Output JAR: ${outputJar}"
+
+        // Получаем все зависимости для libraryjars
+        def classpathFiles = []
+        configurations.runtimeClasspath.each { file ->
+            if (file.exists() && file.isFile() && !file.name.contains("minecraft")) {
+                classpathFiles.add(file.absolutePath)
+            }
+        }
+
+        // Создаем временный файл с конфигурацией
+        def tempConfig = file("${buildDir}/temp-proguard.pro")
+        tempConfig.text = """
+# ========== НАСТРОЙКА ДЛЯ FABRIC/MINECRAFT ==========
+
+# Основные настройки
+-dontoptimize
+-dontshrink
+-dontpreverify
+-dontnote
+-dontwarn
+
+# КРИТИЧЕСКИ ВАЖНО: сохраняем StackMapTable
+-keepattributes Signature,InnerClasses,EnclosingMethod,Exceptions,Deprecated,SourceFile,LineNumberTable,LocalVariable*Table,*Annotation*,RuntimeVisible*Annotations,RuntimeInvisible*Annotations,RuntimeVisibleParameterAnnotations,RuntimeInvisibleParameterAnnotations,StackMapTable
+
+# ========== СОХРАНЕНИЕ MIXIN ==========
+
+# ВСЕ классы в пакете mixin должны остаться нетронутыми
+-keep class dev.luxury.mixin.** { 
+    *; 
+}
+
+# Сохраняем все методы и поля в mixin классах
+-keepclassmembers class dev.luxury.mixin.** {
+    *;
+}
+
+# Сохраняем имена классов mixin
+-keepnames class dev.luxury.mixin.**
+
+# ========== MIXIN АННОТАЦИИ И СИСТЕМА ==========
+
+# Сохраняем все классы с аннотацией @Mixin
+-keep @org.spongepowered.asm.mixin.Mixin class * { *; }
+
+# Сохраняем все классы в пакетах mixin
+-keep class **.mixin.** { *; }
+
+# Сохраняем все аннотации Mixin
+-keep @org.spongepowered.asm.mixin.** class * { *; }
+
+# Сохраняем методы с аннотациями Mixin
+-keepclassmembers class * {
+    @org.spongepowered.asm.mixin.injection.* *;
+    @org.spongepowered.asm.mixin.gen.* *;
+}
+
+# ========== FABRIC И МОД СИСТЕМА ==========
+
+# Fabric API
+-keep class net.fabricmc.** { *; }
+-keep class net.fabricmc.api.** { *; }
+
+# Главные классы мода
+-keep @net.fabricmc.api.Mod class * { *; }
+
+# Сохраняем точку входа мода
+-keep class * implements net.fabricmc.api.ClientModInitializer { 
+    public void onInitializeClient(); 
+}
+
+# ========== ТВОИ КЛАССЫ ==========
+
+# Сохраняем все классы в твоем пакете
+-keep class dev.luxury.** { *; }
+
+# Сохраняем методы и поля
+-keepclassmembers class dev.luxury.** {
+    *;
+}
+
+# ========== ДРУГИЕ ВАЖНЫЕ НАСТРОЙКИ ==========
+
+# Сохраняем ресурсы
+-keepresources **.json
+-keepresources **.png
+-keepresources **.lang
+-keepresources **.mcmeta
+-keepresources **.accesswidener
+
+# Сохраняем имена классов
+-keepnames class **
+
+# Сохраняем enum
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+# Java 21
+-target 21
+
+# ========== ПУТИ ФАЙЛОВ ==========
+-injars '${inputJar.absolutePath}'
+-outjars '${outputJar.absolutePath}'
+
+# Java библиотеки
+-libraryjars '${System.getProperty("java.home")}/jmods/java.base.jmod'
+-libraryjars '${System.getProperty("java.home")}/jmods/java.desktop.jmod'
+
+# Зависимости
+${classpathFiles.collect { "-libraryjars '${it}'" }.join('\n')}
+"""
+
+        println "Running ProGuard with temporary config..."
+
+        try {
+            exec {
+                workingDir projectDir
+                commandLine 'java', '-jar', proguardJar.path, '@' + tempConfig.absolutePath
+                ignoreExitValue = false
+            }
+            println "=== Obfuscation Complete! ==="
+            println "Output: ${outputJar}"
+        } catch (Exception e) {
+            println "ProGuard failed: ${e.message}"
+            println "Creating fallback (copy) JAR..."
+
+            // Создаем резервную копию если ProGuard падает
+            copy {
+                from inputJar
+                into outputJar.parent
+                rename { outputJar.name }
+            }
+            println "Fallback JAR created at: ${outputJar}"
+        } finally {
+            // Удаляем временный файл
+            if (tempConfig.exists()) {
+                tempConfig.delete()
+            }
+        }
+    }
+}
+
+// Простая задача для тестирования
+task testObfuscation {
+    dependsOn remapJar
+    group = 'build'
+
+    doLast {
+        def inputJar = remapJar.archiveFile.get().asFile
+        def outputJar = file("${buildDir}/libs/${archivesBaseName}-${version}-test.jar")
+
+        println "Testing JAR structure..."
+
+        // Просто проверяем содержимое JAR
+        exec {
+            commandLine 'jar', 'tf', inputJar.path
+        }
+    }
+}
+
+// Не добавляем обфускацию к стандартной сборке
+// tasks.build.dependsOn tasks.obfuscateJar
 
 // configure the maven publication
 publishing {

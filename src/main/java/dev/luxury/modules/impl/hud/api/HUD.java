@@ -34,13 +34,15 @@ public class HUD extends Module {
     private KeyBinds draggableKeyBinds;
     private Staffs draggableStaffs;
     private Notifications draggableNotifications;
+    private EffectsList draggableEffectsList; // ДОБАВЛЯЕМ ЭТО
 
     private final ModeListSetting type = new ModeListSetting("Отображение",
             new BooleanSetting("WaterMark", true),
             new BooleanSetting("TargetHud", true),
             new BooleanSetting("Staffs", true),
             new BooleanSetting("KeyBinds", true),
-            new BooleanSetting("Notifications", true)
+            new BooleanSetting("Notifications", true),
+            new BooleanSetting("EffectsList", true) // ДОБАВЛЯЕМ ЭТО
     );
 
     public List<DraggableHudElement> getElements() {
@@ -65,12 +67,14 @@ public class HUD extends Module {
         draggableKeyBinds = new KeyBinds("KeyBinds", 600, 50);
         draggableStaffs = new Staffs("Staffs", 600, 200);
         draggableNotifications = new Notifications("Notifications", 5, 150);
+        draggableEffectsList = new EffectsList("EffectsList", 200, 100); // ДОБАВЛЯЕМ ЭТО
 
         draggableElements.add(draggableWaterMark);
         draggableElements.add(draggableTargetHud);
         draggableElements.add(draggableKeyBinds);
         draggableElements.add(draggableStaffs);
         draggableElements.add(draggableNotifications);
+        draggableElements.add(draggableEffectsList); // ДОБАВЛЯЕМ ЭТО
     }
 
     @EventTarget
@@ -136,6 +140,12 @@ public class HUD extends Module {
             BooleanSetting staffsSetting = type.getValueByName("Staffs");
             if (staffsSetting != null && staffsSetting.isValue()) {
                 draggableStaffs.render(dc);
+            }
+
+            // ДОБАВЛЯЕМ ЭТО
+            BooleanSetting effectsListSetting = type.getValueByName("EffectsList");
+            if (effectsListSetting != null && effectsListSetting.isValue()) {
+                draggableEffectsList.render(dc);
             }
         }
     }

@@ -16,7 +16,7 @@ import lombok.Getter;
 @Getter
 public class DiscordRPC extends Module {
     private DiscordDaemonThread discordDaemonThread;
-    private DiscordInfo info = new DiscordInfo("Unknown", "", "");
+    public DiscordInfo info = new DiscordInfo("Unknown", "", "");
     private boolean running = false;
 
     @Getter

@@ -15,7 +15,6 @@ import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
@@ -28,6 +27,130 @@ public class RenderUtil {
     private static Framebuffer getMainFbo() {
         return mc.getFramebuffer();
     }
+
+    // ========== НОВЫЕ МЕТОДЫ ДЛЯ ФОНА С ШЕЙДЕРОМ ==========
+
+    /**
+     * Отрисовывает анимированный фон с пурпурным шейдером
+     */
+    public static void drawNewBackGround(MatrixStack matrices, float x, float y, float width, float height,
+                                         Vector4f rounding, float animationSpeed, float colorIntensity) {
+        enableRender();
+
+        try {
+            // Используем PURPLE_SHADER_KEY
+            ShaderProgram shader = RenderSystem.setShader(ResourceProvider.PURPLE_SHADER_KEY);
+
+            // Устанавливаем базовые параметры
+            shader.getUniform("Size").set(width, height);
+            shader.getUniform("Radius").set(rounding.x, rounding.y, rounding.z, rounding.w);
+            shader.getUniform("Smoothness").set(1.0f);
+
+            // Устанавливаем кастомные параметры для анимированного фона
+            float time = System.currentTimeMillis() * 0.001f * animationSpeed;
+            shader.getUniform("u_time").set(time);
+
+            // Пробуем установить дополнительные uniform, если они есть в шейдере
+            try {
+                shader.getUniform("u_colorIntensity").set(colorIntensity);
+            } catch (Exception e) {
+                // Игнорируем если uniform не существует
+            }
+
+            try {
+                shader.getUniform("u_animationSpeed").set(animationSpeed);
+            } catch (Exception e) {
+                // Игнорируем если uniform не существует
+            }
+
+            try {
+                shader.getUniform("u_resolution").set(width, height);
+            } catch (Exception e) {
+                // Игнорируем если uniform не существует
+            }
+
+            // Рисуем прямоугольник
+            Matrix4f matrix = matrices.peek().getPositionMatrix();
+            BufferBuilder bufferBuilder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+
+            // Используем белый цвет с полной прозрачностью, шейдер задаст цвет
+            bufferBuilder.vertex(matrix, x, y, 0.0F).texture(0.0F, 0.0F).color(1.0F, 1.0F, 1.0F, 1.0F);
+            bufferBuilder.vertex(matrix, x, y + height, 0.0F).texture(0.0F, 1.0F).color(1.0F, 1.0F, 1.0F, 1.0F);
+            bufferBuilder.vertex(matrix, x + width, y + height, 0.0F).texture(1.0F, 1.0F).color(1.0F, 1.0F, 1.0F, 1.0F);
+            bufferBuilder.vertex(matrix, x + width, y, 0.0F).texture(1.0F, 0.0F).color(1.0F, 1.0F, 1.0F, 1.0F);
+
+            endBuilding(bufferBuilder);
+        } catch (Exception e) {
+            // Если шейдер не загрузился, используем простой цветной фон
+            System.err.println("Failed to use purple shader, falling back to gradient: " + e.getMessage());
+            drawGradientRect(matrices, x, y, width, height, rounding,
+                    0xFF2D1B69, 0xFF4A235A, 0xFF6F2DA8, 0xFF8E44AD);
+        } finally {
+            disableRender();
+        }
+    }
+
+    /**
+     * Упрощённая версия метода без дополнительных параметров
+     */
+    public static void drawNewBackGround(MatrixStack matrices, float x, float y, float width, float height) {
+        drawNewBackGround(matrices, x, y, width, height,
+                new Vector4f(10, 10, 10, 10), 1.0f, 1.0f);
+    }
+
+    /**
+     * Версия с радиусом скругления
+     */
+    public static void drawNewBackGround(MatrixStack matrices, float x, float y, float width, float height,
+                                         float radius) {
+        drawNewBackGround(matrices, x, y, width, height,
+                new Vector4f(radius, radius, radius, radius), 1.0f, 1.0f);
+    }
+
+    /**
+     * Версия с вектором скругления
+     */
+    public static void drawNewBackGround(MatrixStack matrices, float x, float y, float width, float height,
+                                         Vector4f rounding) {
+        drawNewBackGround(matrices, x, y, width, height, rounding, 1.0f, 1.0f);
+    }
+
+    /**
+     * Отрисовывает анимированный фон для панели GUI
+     */
+    public static void drawGuiBackGround(MatrixStack matrices, float x, float y, float width, float height) {
+        // Фон панели с более интенсивными цветами
+        drawNewBackGround(matrices, x, y, width, height,
+                new Vector4f(12, 12, 12, 12),
+                0.8f,  // Средняя скорость анимации
+                1.2f   // Высокая интенсивность цвета
+        );
+
+        // Добавляем тёмную границу для контраста
+        drawBorder(matrices, x, y, width, height,
+                new Vector4f(12, 12, 12, 12),
+                0x80000000,  // Полупрозрачная чёрная граница
+                1.5f,        // Толщина границы
+                1.0f,        // Внутренняя сглаженность
+                1.0f,        // Внешняя сглаженность
+                false        // Без тени
+        );
+    }
+
+    /**
+     * Отрисовывает фоновый элемент с пульсацией
+     */
+    public static void drawPulsingBackGround(MatrixStack matrices, float x, float y, float width, float height,
+                                             Vector4f rounding) {
+        float pulse = (float) (Math.sin(System.currentTimeMillis() * 0.002) * 0.1 + 0.9);
+
+        drawNewBackGround(matrices, x, y, width, height, rounding,
+                1.2f,          // Быстрая анимация
+                1.0f * pulse   // Пульсирующая интенсивность
+        );
+    }
+
+    // ========== СУЩЕСТВУЮЩИЕ МЕТОДЫ (без изменений) ==========
 
     public static void drawImage(MatrixStack matrices, Identifier texture, float x, float y, float width, float height, int color) {
         drawImage(matrices, texture, x, y, width, height, new Vector4f(0, 0, 0, 0), 1.0f, color);
@@ -42,7 +165,6 @@ public class RenderUtil {
                                  Vector4f rounding, float smoothness, int color) {
         drawImage(matrices, texture, x, y, width, height, 0.0f, 0.0f, 1.0f, 1.0f, rounding, smoothness, color);
     }
-
 
     public static void drawImage(MatrixStack matrices, Identifier texture, float x, float y, float width, float height,
                                  float u1, float v1, float u2, float v2, Vector4f rounding, float smoothness, int color) {
@@ -74,6 +196,7 @@ public class RenderUtil {
         RenderSystem.setShaderTexture(0, 0);
         disableRender();
     }
+
     public static void drawCircle(MatrixStack matrices, float x, float y, float start, float end,
                                   float radius, float width, boolean filled, int color) {
         if (start > end) {
@@ -123,6 +246,7 @@ public class RenderUtil {
 
         disableRender();
     }
+
     public static void drawImageAlpha(MatrixStack matrices, Identifier identifier, float x, float y, float width, float height, ColorRGBA color1, ColorRGBA color2, ColorRGBA color3, ColorRGBA color4) {
         matrices.push();
 
@@ -149,6 +273,7 @@ public class RenderUtil {
         RenderSystem.setShaderTexture(0, 0);
         matrices.pop();
     }
+
     public static void drawRoundedRectGradient(MatrixStack matrices, float x, float y, float width, float height,
                                                Vector4f rounding, int colorLeft, int colorRight) {
         enableRender();
@@ -177,6 +302,7 @@ public class RenderUtil {
         endBuilding(bufferBuilder);
         disableRender();
     }
+
     public static void drawRoundedRectGradient(MatrixStack matrices, float x, float y, float width, float height,
                                                Vector4f rounding,
                                                int colorTopLeft, int colorTopRight,
@@ -217,6 +343,7 @@ public class RenderUtil {
         endBuilding(bufferBuilder);
         disableRender();
     }
+
     public static void drawRoundedRectGradientAnimated(MatrixStack matrices, float x, float y, float width, float height,
                                                        Vector4f rounding,
                                                        int colorTopLeft, int colorTopRight,
@@ -255,7 +382,6 @@ public class RenderUtil {
         drawImage(matrices, texture, x, y, width, height, 0xFFFFFFFF);
     }
 
-
     public static void drawRoundedImage(MatrixStack matrices, Identifier texture, float x, float y, float width, float height, float radius, int color) {
         drawImage(matrices, texture, x, y, width, height, new Vector4f(radius, radius, radius, radius), 1.0f, color);
     }
@@ -280,7 +406,6 @@ public class RenderUtil {
     }
 
     public static void drawLiquidRect(MatrixStack matrices, float x, float y, float width, float height, Vector4f rounding, ColorRGBA color, float cornerSmoothness, float fresnelPower, float fresnelAlpha, float baseAlpha, boolean fresnelInvert, float fresnelMix, float distortStrength) {
-
         matrices.push();
         Matrix4f matrix4f = matrices.peek().getPositionMatrix();
 
@@ -338,10 +463,9 @@ public class RenderUtil {
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
 
-       disableRender();
+        disableRender();
         RenderSystem.enableDepthTest();
         matrices.pop();
-
     }
 
     public static void drawGradientHorizontalRect(MatrixStack matrices, float x, float y, float width, float height,
@@ -577,7 +701,6 @@ public class RenderUtil {
         disableRender();
     }
 
-
     public static void drawBlur(MatrixStack matrices, float x, float y, float width, float height, Vector4f rounding, float blurRadius, int color) {
         final SimpleFramebuffer fbo = TEMP_FBO_SUPPLIER.get();
         final Framebuffer mainFbo = getMainFbo();
@@ -682,7 +805,6 @@ public class RenderUtil {
         context.drawItem(stack, 0, 0);
         context.getMatrices().pop();
     }
-
 
     private static void setRoundedRectShaderUniforms(ShaderProgram shader, float width, float height, Vector4f radius, float smoothness) {
         shader.getUniform("Size").set(width, height);

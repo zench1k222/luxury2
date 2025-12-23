@@ -9,8 +9,10 @@ public final class ResourceProvider {
     public static final ShaderProgramKey RECTANGLE_SHADER_KEY;;
     public static final ShaderProgramKey RECTANGLE_BLUR_SHADER_KEY;
     public static final ShaderProgramKey BORDER_SHADER_KEY;
-     public static final ShaderProgramKey TEXTURE_SHADER_KEY;
+    public static final ShaderProgramKey TEXTURE_SHADER_KEY;
     public static final ShaderProgramKey LIQUID_GLASS_SHADER_KEY;
+    public static ShaderProgramKey PURPLE_SHADER_KEY;
+
     static {
         try {
             Identifier shaderId = getShaderIdentifier("rectangle");
@@ -18,12 +20,14 @@ public final class ResourceProvider {
             Identifier shaderId2 = getShaderIdentifier("border");
             Identifier shaderId4 = getShaderIdentifier("texture");
             Identifier shaderId5 = getShaderIdentifier("liquidglass");
+            Identifier shaderId6 = getShaderIdentifier("new_s");
             System.out.println("Trying to load shader: " + shaderId);
             RECTANGLE_SHADER_KEY = new ShaderProgramKey(shaderId, VertexFormats.POSITION_COLOR, Defines.EMPTY);
             RECTANGLE_BLUR_SHADER_KEY = new ShaderProgramKey(shaderId3, VertexFormats.POSITION_COLOR, Defines.EMPTY);
             BORDER_SHADER_KEY = new ShaderProgramKey(shaderId2,VertexFormats.POSITION_COLOR,Defines.EMPTY);
             TEXTURE_SHADER_KEY = new ShaderProgramKey(shaderId4,VertexFormats.POSITION_TEXTURE_COLOR,Defines.EMPTY);
             LIQUID_GLASS_SHADER_KEY = new ShaderProgramKey(shaderId5, VertexFormats.POSITION_TEXTURE_COLOR, Defines.EMPTY);
+            PURPLE_SHADER_KEY = new ShaderProgramKey(shaderId6, VertexFormats.POSITION_TEXTURE_COLOR, Defines.EMPTY);
             System.out.println("Shader key created successfully");
         } catch (Exception e) {
             System.err.println("Failed to create shader key: " + e.getMessage());

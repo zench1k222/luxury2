@@ -18,8 +18,9 @@ public abstract class SettingRenderer {
         return mouseX >= x && mouseX <= x + width && mouseY >= actualY && mouseY <= actualY + height;
     }
 
+    // Новый метод для проверки видимости
     protected boolean isVisible(float y, float height, float scrollOffset, float visibleAreaTop, float visibleAreaBottom) {
         float actualY = y - scrollOffset;
-        return actualY + height >= visibleAreaTop && actualY <= visibleAreaBottom;
+        return !(actualY + height < visibleAreaTop || actualY > visibleAreaBottom);
     }
 }

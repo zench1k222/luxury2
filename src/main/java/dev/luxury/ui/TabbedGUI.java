@@ -427,9 +427,20 @@ public class TabbedGUI extends Screen {
                 panelX + 10, panelY + 30, panelWidth - 20, 1,
                 new Vector4f(0, 0, 0, 0), new Color(60, 60, 70).getRGB());
 
+        // Включаем scissor
+        float scissorX = panelX + 10;
+        float scissorY = panelY + 35;
+        float scissorWidth = panelWidth - 20;
+        float scissorHeight = panelHeight - 45;
+
+        context.enableScissor((int)scissorX, (int)scissorY,
+                (int)(scissorX + scissorWidth), (int)(scissorY + scissorHeight));
+
         float settingsY = panelY + 35;
         float settingsHeight = panelHeight - 45;
         float settingsContentHeight = calculateSettingsHeight(selectedModuleForSettings);
+
+        // ОГРАНИЧЕНИЕ СКРОЛЛА: не даём скроллить больше чем нужно
         float maxScroll = Math.max(0, settingsContentHeight - settingsHeight);
         settingsScrollOffset = Math.max(0, Math.min(settingsScrollOffset, maxScroll));
 
@@ -440,31 +451,20 @@ public class TabbedGUI extends Screen {
             if (renderer != null) {
                 float settingHeight = getEstimatedHeight(setting);
 
-                if (currentY + settingHeight < settingsY) {
-                    currentY += settingHeight;
-                    continue;
-                }
-                if (currentY > settingsY + settingsHeight) {
-                    break;
-                }
-
-                RenderUtil.drawRoundedRect(context.getMatrices(),
-                        panelX + 10, currentY, panelWidth - 20, settingHeight - 5,
-                        new Vector4f(4f, 4f, 4f, 4f), new Color(35, 35, 40).getRGB());
-
-                RenderUtil.drawBorder(context.getMatrices(), panelX + 10, currentY,
-                        panelWidth - 20, settingHeight - 5, new Vector4f(4f, 4f, 4f, 4f),
-                        new Color(60, 60, 70).getRGB(), 0.5f, 1, 1, false);
-
-                currentY = renderer.render(context, setting, panelX + 15, currentY,
+                // Рендерим настройку
+                float newY = renderer.render(context, setting, panelX + 15, currentY,
                         panelWidth - 30, mouseX, mouseY, settingsScrollOffset);
+                currentY = newY;
             }
         }
 
+        context.disableScissor();
+
+        // Рисуем скроллбар только если есть что скроллить
         if (maxScroll > 0) {
             float scrollBarWidth = 4;
             float scrollBarX = panelX + panelWidth - 8;
-            float scrollBarHeight = settingsHeight * (settingsHeight / settingsContentHeight);
+            float scrollBarHeight = Math.max(10, settingsHeight * (settingsHeight / settingsContentHeight));
             float scrollBarY = settingsY + (settingsScrollOffset / maxScroll) * (settingsHeight - scrollBarHeight);
 
             RenderUtil.drawRoundedRect(context.getMatrices(), scrollBarX, scrollBarY,
@@ -523,6 +523,8 @@ public class TabbedGUI extends Screen {
         return totalHeight;
     }
 
+
+
     // иконки блять, твой рендер хуня бесит меня
     private String getCategoryIcon(Category category) {
         switch (category) {
@@ -567,6 +569,7 @@ public class TabbedGUI extends Screen {
         if (renderer instanceof dev.luxury.ui.settings.ModeSettingRenderer) {
             return ((dev.luxury.ui.settings.ModeSettingRenderer) renderer).getEstimatedHeight(setting);
         }
+        // Для остальных типов настроек используем стандартную высоту
         return SettingRenderer.SETTING_HEIGHT + SettingRenderer.SETTING_PADDING;
     }
 
@@ -636,7 +639,8 @@ public class TabbedGUI extends Screen {
 
             float settingsY = rightPanelY + 35;
             float settingsHeight = rightPanelHeight - 45;
-            float settingsContentHeight = calculateSettingsHeight(selectedModuleForSettings);
+            float settingsVisibleAreaTop = rightPanelY + 35;
+            float settingsVisibleAreaBottom = rightPanelY + rightPanelHeight - 10;
 
             float currentY = settingsY - settingsScrollOffset;
 
@@ -645,16 +649,28 @@ public class TabbedGUI extends Screen {
                 if (renderer != null) {
                     float settingHeight = getEstimatedHeight(setting);
 
-                    if (currentY + settingHeight < settingsY) {
+                    // ОСНОВНОЕ ИСПРАВЛЕНИЕ: правильный расчёт actualY
+                    // actualY - это где элемент рисуется на экране (с учётом скролла)
+                    // currentY - это где элемент находится в контенте (без учёта скролла)
+                    float actualY = currentY - settingsScrollOffset;
+
+                    // Проверяем видимость элемента
+                    if (actualY + settingHeight < settingsVisibleAreaTop) {
                         currentY += settingHeight;
                         continue;
                     }
-                    if (currentY > settingsY + settingsHeight) {
+                    if (actualY > settingsVisibleAreaBottom) {
                         break;
                     }
 
-                    if (isMouseOver((int)mouseX, (int)mouseY, rightPanelX + 10, currentY, rightPanelWidth - 20, settingHeight)) {
-                        if (renderer.mouseClicked(setting, mouseX, mouseY, button, rightPanelX + 15, currentY, rightPanelWidth - 30, settingsScrollOffset)) {
+                    // Проверяем клик по actualY (реальная позиция на экране)
+                    if (isMouseOver((int)mouseX, (int)mouseY,
+                            rightPanelX + 10, actualY,
+                            rightPanelWidth - 20, settingHeight)) {
+
+                        // Передаём currentY (позиция в контенте) в рендерер
+                        if (renderer.mouseClicked(setting, mouseX, mouseY, button,
+                                rightPanelX + 15, currentY, rightPanelWidth - 30, settingsScrollOffset)) {
                             return true;
                         }
                     }
@@ -716,7 +732,8 @@ public class TabbedGUI extends Screen {
             modulesScrollOffset -= verticalAmount * 15;
             List<Module> modules = getCategoryModules();
             float totalHeight = modules.size() * (moduleHeight + moduleSpacing);
-            float maxScroll = Math.max(0, totalHeight - (listHeight - 70));
+            float moduleContentHeight = listHeight - 70;
+            float maxScroll = Math.max(0, totalHeight - moduleContentHeight);
             modulesScrollOffset = Math.max(0, Math.min(modulesScrollOffset, maxScroll));
             return true;
         }
@@ -728,9 +745,13 @@ public class TabbedGUI extends Screen {
             float rightPanelHeight = panelHeight - 120;
 
             if (isMouseOver((int)mouseX, (int)mouseY, rightPanelX, rightPanelY, rightPanelWidth, rightPanelHeight)) {
-                settingsScrollOffset -= verticalAmount * 10;
+                float settingsHeight = rightPanelHeight - 45;
                 float settingsContentHeight = calculateSettingsHeight(selectedModuleForSettings);
-                float maxScroll = Math.max(0, settingsContentHeight - (rightPanelHeight - 45));
+
+                // ОГРАНИЧЕНИЕ СКРОЛЛА ПРИ ПРОКРУТКЕ
+                float maxScroll = Math.max(0, settingsContentHeight - settingsHeight);
+
+                settingsScrollOffset -= verticalAmount * 10;
                 settingsScrollOffset = Math.max(0, Math.min(settingsScrollOffset, maxScroll));
                 return true;
             }
@@ -750,6 +771,9 @@ public class TabbedGUI extends Screen {
             if (isMouseOver((int)mouseX, (int)mouseY, rightPanelX, rightPanelY, rightPanelWidth, rightPanelHeight)) {
                 float settingsY = rightPanelY + 35;
                 float settingsHeight = rightPanelHeight - 45;
+                float settingsVisibleAreaTop = rightPanelY + 35;
+                float settingsVisibleAreaBottom = rightPanelY + rightPanelHeight - 10;
+
                 float currentY = settingsY - settingsScrollOffset;
 
                 for (Setting setting : selectedModuleForSettings.getSettings()) {
@@ -757,16 +781,22 @@ public class TabbedGUI extends Screen {
                     if (renderer instanceof SliderSettingRenderer) {
                         float settingHeight = getEstimatedHeight(setting);
 
-                        if (currentY + settingHeight < settingsY) {
+                        // Проверяем видимость элемента
+                        float actualY = currentY - settingsScrollOffset;
+                        if (actualY + settingHeight < settingsVisibleAreaTop) {
                             currentY += settingHeight;
                             continue;
                         }
-                        if (currentY > settingsY + settingsHeight) {
+                        if (actualY > settingsVisibleAreaBottom) {
                             break;
                         }
 
-                        if (isMouseOver((int)mouseX, (int)mouseY, rightPanelX + 10, currentY, rightPanelWidth - 20, settingHeight)) {
-                            if (((SliderSettingRenderer) renderer).mouseDragged(setting, mouseX, mouseY, button, rightPanelX + 15, rightPanelWidth - 30)) {
+                        // Проверяем драг по слайдеру
+                        if (isMouseOver((int)mouseX, (int)mouseY,
+                                rightPanelX + 10, actualY,
+                                rightPanelWidth - 20, settingHeight)) {
+                            if (((SliderSettingRenderer) renderer).mouseDragged(setting, mouseX, mouseY, button,
+                                    rightPanelX + 15, rightPanelWidth - 30)) {
                                 return true;
                             }
                         }
@@ -776,6 +806,43 @@ public class TabbedGUI extends Screen {
                         currentY += getEstimatedHeight(setting);
                     }
                 }
+            }
+        }
+
+        // Дополнительно: реализация драг-скролла средней кнопкой мыши
+        if (button == 2) { // Средняя кнопка мыши для драг-скролла
+            float rightPanelX = panelX + panelWidth - 210;
+            float rightPanelY = panelY + 110;
+            float rightPanelWidth = 190;
+            float rightPanelHeight = panelHeight - 120;
+
+            if (isMouseOver((int)mouseX, (int)mouseY, rightPanelX, rightPanelY, rightPanelWidth, rightPanelHeight)) {
+                float settingsHeight = rightPanelHeight - 45;
+                float settingsContentHeight = calculateSettingsHeight(selectedModuleForSettings);
+                float maxScroll = Math.max(0, settingsContentHeight - settingsHeight);
+
+                // Обновляем скролл с ограничением
+                settingsScrollOffset += deltaY * 0.5f;
+                settingsScrollOffset = Math.max(0, Math.min(settingsScrollOffset, maxScroll));
+                return true;
+            }
+
+            // Также драг-скролл для списка модулей
+            float listX = panelX + 20;
+            float listY = panelY + 110;
+            float listWidth = panelWidth - 250;
+            float listHeight = panelHeight - 120;
+
+            if (isMouseOver((int)mouseX, (int)mouseY, listX, listY, listWidth, listHeight)) {
+                float moduleContentHeight = listHeight - 70;
+                List<Module> modules = getCategoryModules();
+                float totalHeight = modules.size() * (moduleHeight + moduleSpacing);
+                float maxScroll = Math.max(0, totalHeight - moduleContentHeight);
+
+                // Обновляем скролл с ограничением
+                modulesScrollOffset += deltaY * 0.5f;
+                modulesScrollOffset = Math.max(0, Math.min(modulesScrollOffset, maxScroll));
+                return true;
             }
         }
 
