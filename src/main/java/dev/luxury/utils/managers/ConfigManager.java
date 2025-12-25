@@ -7,8 +7,11 @@ import dev.luxury.common.way.Way;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.modules.api.settings.*;
+import dev.luxury.modules.impl.AutoBuy;
 import dev.luxury.modules.impl.hud.api.DraggableHudElement;
 import dev.luxury.modules.impl.hud.api.HUD;
+import dev.luxury.ui.AutoBuyUI;
+import dev.luxury.utils.client.ChatUtil;
 import net.minecraft.client.MinecraftClient;
 
 import java.awt.*;
@@ -26,11 +29,16 @@ public class ConfigManager {
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final File configsDir;
     private final ModuleManager moduleManager;
+    private static final String AUTO_BUY_ITEMS_FILE = "autobuy_items.json";
+    private final File autoBuyItemsFile;
+    private final File luxuryDir;
 
     private ConfigManager(ModuleManager moduleManager) {
         this.moduleManager = moduleManager;
-        File luxuryDir = new File(MinecraftClient.getInstance().runDirectory, "luxury");
+        luxuryDir = new File(MinecraftClient.getInstance().runDirectory, "luxury");
         if (!luxuryDir.exists()) luxuryDir.mkdirs();
+
+        autoBuyItemsFile = new File(luxuryDir, AUTO_BUY_ITEMS_FILE);
 
         configsDir = new File(luxuryDir, "configs");
         if (!configsDir.exists()) configsDir.mkdirs();
@@ -50,27 +58,22 @@ public class ConfigManager {
         try {
             ConfigData config = new ConfigData();
 
-            // Сохраняем состояния модулей
             Map<String, Boolean> modules = new HashMap<>();
             for (Module module : ModuleManager.getModules()) {
                 modules.put(module.getName(), module.isEnabled());
             }
             config.setModules(modules);
 
-            // Сохраняем ключи
             Map<String, Integer> keybinds = new HashMap<>();
             for (Module module : ModuleManager.getModules()) {
                 keybinds.put(module.getName(), module.getKey());
             }
             config.setKeybinds(keybinds);
 
-            // Сохраняем друзей
             config.setFriends(new ArrayList<>(FriendManager.getInstance().getFriends()));
 
-            // Сохраняем метки
             config.setWays(new ArrayList<>(dev.luxury.common.way.WayRepository.getInstance().wayList));
 
-            // Сохраняем настройки модулей
             Map<String, Map<String, Object>> moduleSettings = new HashMap<>();
             for (Module module : ModuleManager.getModules()) {
                 Map<String, Object> settings = serializeModuleSettings(module);
@@ -80,7 +83,6 @@ public class ConfigManager {
             }
             config.setModuleSettings(moduleSettings);
 
-            // Сохраняем позиции HUD элементов
             Map<String, HudElementData> hudPositions = new HashMap<>();
             if (HUD.getInstance() != null) {
                 for (DraggableHudElement element : HUD.getInstance().getElements()) {
@@ -99,6 +101,8 @@ public class ConfigManager {
             try (FileWriter writer = new FileWriter(configFile)) {
                 gson.toJson(config, writer);
             }
+
+            saveAutoBuyItems();
 
             return true;
         } catch (Exception e) {
@@ -121,7 +125,6 @@ public class ConfigManager {
 
             if (config == null) return false;
 
-            // Загружаем состояния модулей
             Map<String, Boolean> modulesState = config.getModules();
             if (modulesState != null) {
                 for (Module module : ModuleManager.getModules()) {
@@ -139,7 +142,6 @@ public class ConfigManager {
                 }
             }
 
-            // Загружаем ключи
             Map<String, Integer> keybinds = config.getKeybinds();
             if (keybinds != null) {
                 for (Module module : ModuleManager.getModules()) {
@@ -150,18 +152,15 @@ public class ConfigManager {
                 }
             }
 
-            // Загружаем друзей
             if (config.getFriends() != null) {
                 FriendManager.getInstance().setFriends(config.getFriends());
             }
 
-            // Загружаем метки
             if (config.getWays() != null) {
                 dev.luxury.common.way.WayRepository.getInstance().wayList.clear();
                 dev.luxury.common.way.WayRepository.getInstance().wayList.addAll(config.getWays());
             }
 
-            // Загружаем настройки модулей
             Map<String, Map<String, Object>> moduleSettings = config.getModuleSettings();
             if (moduleSettings != null) {
                 for (Module module : ModuleManager.getModules()) {
@@ -172,7 +171,6 @@ public class ConfigManager {
                 }
             }
 
-            // Загружаем позиции HUD элементов
             Map<String, HudElementData> hudPositions = config.getHudPositions();
             if (hudPositions != null && HUD.getInstance() != null) {
                 for (DraggableHudElement element : HUD.getInstance().getElements()) {
@@ -183,6 +181,8 @@ public class ConfigManager {
                     }
                 }
             }
+
+            loadAutoBuyItems();
 
             return true;
         } catch (Exception e) {
@@ -339,7 +339,126 @@ public class ConfigManager {
         return configsDir;
     }
 
-    // Внутренний класс для хранения данных конфига
+    public List<AutoBuyUI.BuyItem> getAutoBuyItemsList() {
+        List<AutoBuyUI.BuyItem> items = new ArrayList<>();
+
+        if (!autoBuyItemsFile.exists()) {
+            return items;
+        }
+
+        try (FileReader reader = new FileReader(autoBuyItemsFile)) {
+            Type listType = new TypeToken<List<AutoBuyItemData>>() {}.getType();
+            List<AutoBuyItemData> itemDataList = gson.fromJson(reader, listType);
+
+            if (itemDataList != null) {
+                for (AutoBuyItemData data : itemDataList) {
+                    items.add(new AutoBuyUI.BuyItem(data.id, data.maxPricePerUnit, data.quantity, data.enabled));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return items;
+    }
+
+    public boolean loadAutoBuyItems() {
+        try {
+            AutoBuy autoBuyModule = getAutoBuyModule();
+            if (autoBuyModule == null) {
+                return false;
+            }
+
+            List<AutoBuyUI.BuyItem> items = loadAutoBuyItemsFromFile();
+            if (!items.isEmpty()) {
+                List<AutoBuy.BuyItem> convertedItems = new ArrayList<>();
+                for (AutoBuyUI.BuyItem item : items) {
+                    convertedItems.add(new AutoBuy.BuyItem(item.id, item.maxPricePerUnit, item.quantity, item.enabled));
+                }
+
+                autoBuyModule.setBuyItems(convertedItems);
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private AutoBuy getAutoBuyModule() {
+        if (moduleManager != null) {
+            Module module = moduleManager.getModuleByName("AutoBuy");
+            if (module instanceof AutoBuy) {
+                return (AutoBuy) module;
+            }
+        }
+        return null;
+    }
+
+    private List<AutoBuyUI.BuyItem> loadAutoBuyItemsFromFile() {
+        List<AutoBuyUI.BuyItem> items = new ArrayList<>();
+
+        if (!autoBuyItemsFile.exists()) {
+            return items;
+        }
+
+        try (FileReader reader = new FileReader(autoBuyItemsFile)) {
+            Type listType = new TypeToken<List<AutoBuyItemData>>() {}.getType();
+            List<AutoBuyItemData> itemDataList = gson.fromJson(reader, listType);
+
+            if (itemDataList != null) {
+                for (AutoBuyItemData data : itemDataList) {
+                    items.add(new AutoBuyUI.BuyItem(data.id, data.maxPricePerUnit, data.quantity, data.enabled));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return items;
+    }
+
+    public boolean saveAutoBuyItems() {
+        try {
+            AutoBuy autoBuyModule = getAutoBuyModule();
+            if (autoBuyModule == null) {
+                return false;
+            }
+
+            List<AutoBuyUI.BuyItem> items = new ArrayList<>();
+            for (AutoBuy.BuyItem item : autoBuyModule.getBuyItems()) {
+                if (item.maxPricePerUnit > Integer.MAX_VALUE) {
+                    ChatUtil.sendError("Цена " + item.maxPricePerUnit + " для " + item.id +
+                            " слишком большая для сохранения!");
+                    continue;
+                }
+                items.add(new AutoBuyUI.BuyItem(item.id, (int) item.maxPricePerUnit, item.quantity, item.enabled));
+            }
+
+            return saveAutoBuyItems(items);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean saveAutoBuyItems(List<AutoBuyUI.BuyItem> items) {
+        try {
+            List<AutoBuyItemData> itemDataList = new ArrayList<>();
+            for (AutoBuyUI.BuyItem item : items) {
+                itemDataList.add(new AutoBuyItemData(item.id, item.maxPricePerUnit, item.quantity, item.enabled));
+            }
+
+            try (FileWriter writer = new FileWriter(autoBuyItemsFile)) {
+                gson.toJson(itemDataList, writer);
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private static class ConfigData {
         private Map<String, Boolean> modules;
         private Map<String, Integer> keybinds;
@@ -397,7 +516,6 @@ public class ConfigManager {
         }
     }
 
-    // Класс для хранения данных позиций HUD элементов
     private static class HudElementData {
         private float x;
         private float y;
@@ -443,6 +561,22 @@ public class ConfigManager {
 
         public void setHeight(float height) {
             this.height = height;
+        }
+    }
+
+    private static class AutoBuyItemData {
+        public String id;
+        public int maxPricePerUnit;
+        public int quantity;
+        public boolean enabled;
+
+        public AutoBuyItemData() {}
+
+        public AutoBuyItemData(String id, int maxPricePerUnit, int quantity, boolean enabled) {
+            this.id = id;
+            this.maxPricePerUnit = maxPricePerUnit;
+            this.quantity = quantity;
+            this.enabled = enabled;
         }
     }
 }

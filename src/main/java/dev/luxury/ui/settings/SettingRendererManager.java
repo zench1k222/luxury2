@@ -16,6 +16,7 @@ public class SettingRendererManager {
         registerRenderer(ColorSetting.class, new ColorSettingRenderer());
         registerRenderer(KeySetting.class, new KeySettingRenderer());
         registerRenderer(StringSetting.class, new StringSettingRenderer());
+        registerRenderer(ButtonSetting.class, new ButtonSettingRenderer());
     }
     
     public static void registerRenderer(Class<? extends Setting> settingClass, SettingRenderer renderer) {

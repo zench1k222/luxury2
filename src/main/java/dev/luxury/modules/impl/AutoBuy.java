@@ -1,0 +1,619 @@
+package dev.luxury.modules.impl;
+
+import dev.luxury.events.impl.client.EventTick;
+import dev.luxury.events.impl.eventapi.EventTarget;
+import dev.luxury.modules.api.Category;
+import dev.luxury.modules.api.Module;
+import dev.luxury.modules.api.ModuleAnnotation;
+import dev.luxury.modules.api.settings.*;
+import dev.luxury.ui.AutoBuyUI;
+import dev.luxury.ui.AutoBuyUI2;
+import dev.luxury.utils.client.ChatUtil;
+import dev.luxury.utils.font.FontHelper;
+import dev.luxury.utils.managers.ConfigManager;
+import dev.luxury.utils.notifications.NotificationsManager;
+import dev.luxury.utils.player.InventoryUtil;
+import dev.luxury.utils.player.ServerUtil;
+import dev.luxury.utils.render.RenderUtil;
+import net.minecraft.block.Blocks;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
+import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
+import org.joml.Vector4f;
+import org.lwjgl.glfw.GLFW;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@ModuleAnnotation(
+        name = "AutoBuy",
+        desc = "Автоматическая покупка предметов с аукциона",
+        category = Category.Player
+)
+public class AutoBuy extends Module {
+
+    private final SliderSetting delay = new SliderSetting("Задержка (мс)", 100, 50, 500, 50);
+    private final BooleanSetting debugMode = new BooleanSetting("Отладка", false);
+    private final KeySetting toggleKey = new KeySetting("Вкл/Выкл", GLFW.GLFW_KEY_N);
+    private final BooleanSetting autoStart = new BooleanSetting("Авто-старт", false);
+    private final BooleanSetting buyEnabled = new BooleanSetting("Покупка включена", true);
+    private final SliderSetting refreshDelay = new SliderSetting("Задержка обновления", 500, 100, 2000, 100);
+    private final ButtonSetting openUiButton = new ButtonSetting("Открыть Интерфейс", () -> {
+        if (mc.world != null && mc.player != null) {
+            mc.setScreen(new AutoBuyUI(this));
+        }
+    }, 100, 20);
+
+    private final ButtonSetting openUi2Button = new ButtonSetting("Открыть 2 Интерфейс", () -> {
+        if (mc.world != null && mc.player != null) {
+            mc.setScreen(new AutoBuyUI2(this));
+        }
+    }, 100, 20);
+
+    private boolean active = false;
+    private boolean inAuction = false;
+    private boolean waitingForRefresh = false;
+    private boolean justOpenedAuction = false;
+    private int refreshSlot = 4;
+    private long lastActionTime = 0;
+    private int currentPage = 1;
+    private long lastOpenTime = 0;
+
+    private final List<BuyItem> buyItems = new ArrayList<>();
+
+    private static final Pattern PRICE_PATTERN = Pattern.compile("Цена:\\s*([\\d,.]+)");
+    private static final Pattern PRICE_PATTERN_EN = Pattern.compile("Price:\\s*([\\d,.]+)");
+    private static final Pattern PRICE_PATTERN_SIMPLE = Pattern.compile("([\\d,.]+)\\s*монет");
+
+    public AutoBuy() {
+        addSettings(delay, debugMode, toggleKey, autoStart, buyEnabled, refreshDelay, openUiButton, openUi2Button);
+
+        if (ConfigManager.getInstance() != null) {
+            ConfigManager.getInstance().loadAutoBuyItems();
+        }
+    }
+
+    private void loadItemsFromConfig() {
+        if (ConfigManager.getInstance() != null) {
+            ConfigManager.getInstance().loadAutoBuyItems();
+        }
+    }
+
+    private void saveItemsToConfig() {
+        if (ConfigManager.getInstance() != null) {
+            List<AutoBuyUI.BuyItem> uiItems = new ArrayList<>();
+            for (BuyItem item : buyItems) {
+                if (item.maxPricePerUnit > Integer.MAX_VALUE) {
+                    ChatUtil.sendError("Цена " + item.maxPricePerUnit + " слишком большая для сохранения!");
+                    continue;
+                }
+                uiItems.add(new AutoBuyUI.BuyItem(item.id, (int) item.maxPricePerUnit, item.quantity, item.enabled));
+            }
+            ConfigManager.getInstance().saveAutoBuyItems(uiItems);
+        }
+    }
+
+
+    @EventTarget
+    public void onTick(EventTick event) {
+        if (mc.player == null || mc.world == null) return;
+
+        if (!ServerUtil.isConnected("reallyworld") && !ServerUtil.isConnected("playrw")) {
+            if (active) disableModule();
+            return;
+        }
+
+        if (GLFW.glfwGetKey(mc.getWindow().getHandle(), toggleKey.getValue()) == GLFW.GLFW_PRESS) {
+            if (!active) {
+                enableModule();
+            } else {
+                disableModule();
+                ChatUtil.sendError("АвтоБай выключен");
+            }
+            return;
+        }
+
+        if (GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_ESCAPE) == GLFW.GLFW_PRESS && active) {
+            disableModule();
+            return;
+        }
+
+        if (!active) return;
+
+        long now = System.currentTimeMillis();
+
+        if (justOpenedAuction) {
+            if (now - lastOpenTime > 1000) {
+                justOpenedAuction = false;
+            }
+            return;
+        }
+
+        if (waitingForRefresh) {
+            if (now - lastActionTime > refreshDelay.getIntValue()) {
+                waitingForRefresh = false;
+            }
+            return;
+        }
+
+        if (!inAuction) {
+            if (now - lastActionTime > 1500) {
+                openAuction();
+                lastActionTime = now;
+            }
+            return;
+        }
+
+        if (mc.currentScreen instanceof GenericContainerScreen) {
+            GenericContainerScreen screen = (GenericContainerScreen) mc.currentScreen;
+            handleAuctionGUI(screen);
+        } else {
+            inAuction = false;
+            currentPage = 1;
+        }
+    }
+
+    private void enableModule() {
+        active = true;
+        inAuction = false;
+        waitingForRefresh = false;
+        justOpenedAuction = false;
+        lastActionTime = 0;
+        currentPage = 1;
+        lastOpenTime = 0;
+        ChatUtil.sendChat("§aAutoBuy включен!");
+    }
+
+    private void disableModule() {
+        active = false;
+        inAuction = false;
+        waitingForRefresh = false;
+        justOpenedAuction = false;
+        currentPage = 1;
+        if (mc.currentScreen != null && mc.player != null) {
+            mc.player.closeHandledScreen();
+        }
+    }
+
+    private void openAuction() {
+        if (mc.player != null) {
+            mc.player.networkHandler.sendChatCommand("ah");
+            inAuction = true;
+            justOpenedAuction = true;
+            lastOpenTime = System.currentTimeMillis();
+            currentPage = 1;
+            if (debugMode.get()) {
+                ChatUtil.sendChat("§eОткрываю аукцион...");
+            }
+        }
+    }
+
+    private void handleAuctionGUI(GenericContainerScreen screen) {
+        if (screen.getScreenHandler().slots.size() < 53) {
+            if (debugMode.get()) {
+                ChatUtil.sendChat("§cНедостаточно слотов: " + screen.getScreenHandler().slots.size());
+            }
+            return;
+        }
+
+        boolean foundItem = false;
+
+        for (int i = 0; i < 53; i++) {
+            if (i == refreshSlot) continue;
+
+            ItemStack stack = screen.getScreenHandler().getSlot(i).getStack();
+            if (stack.isEmpty()) continue;
+
+            String itemName = stack.getName().getString();
+            if (itemName.trim().isEmpty()) continue;
+
+            if (shouldSkipItem(itemName)) continue;
+
+            int stackCount = stack.getCount();
+
+            boolean shouldBuy = false;
+            long targetPricePerUnit = 0;
+            int requiredQuantity = 0;
+
+            for (BuyItem buyItem : buyItems) {
+                if (buyItem.enabled && isItemIdMatch(itemName, stack, buyItem.id)) {
+                    if (stackCount >= buyItem.quantity) {
+                        shouldBuy = true;
+                        targetPricePerUnit = buyItem.maxPricePerUnit;
+                        requiredQuantity = buyItem.quantity;
+                        break;
+                    }
+                }
+            }
+
+            if (!shouldBuy) continue;
+
+            List<Text> tooltip = getItemTooltip(stack);
+            if (tooltip.isEmpty()) continue;
+
+            long lotPrice = findPriceInTooltip(tooltip);
+
+            if (lotPrice > 0) {
+                long pricePerUnitInLot = lotPrice / stackCount;
+
+                if (pricePerUnitInLot <= targetPricePerUnit) {
+                    long maxPriceForRequiredQuantity = (long) targetPricePerUnit * requiredQuantity;
+                    long actualPriceForRequiredQuantity = pricePerUnitInLot * requiredQuantity;
+
+                    if (actualPriceForRequiredQuantity <= maxPriceForRequiredQuantity) {
+                        InventoryUtil.clickSlot(i, 0, SlotActionType.PICKUP);
+// уведомления
+                        ChatUtil.sendChat(String.format("§aКуплено: %s x%d за %d монет (за штуку: %d)",
+                                    itemName, stackCount, lotPrice, pricePerUnitInLot));
+                        NotificationsManager.getInstance().addNotification(String.format("§aКуплено: %s x%d за %d монет (за штуку: %d)",
+                                itemName, stackCount, lotPrice, pricePerUnitInLot), 3000);
+                        ClientSounds.instance.playEnableSound();
+
+                        handlePurchaseConfirmation();
+                        foundItem = true;
+                        break;
+                    } else if (debugMode.get()) {
+                        ChatUtil.sendChat(String.format("§cЦена за %d шт %d > лимита %d для: %s",
+                                requiredQuantity, actualPriceForRequiredQuantity,
+                                maxPriceForRequiredQuantity, itemName));
+                    }
+                } else if (debugMode.get()) {
+                    ChatUtil.sendChat(String.format("§cЦена за штуку %d > лимита %d для: %s",
+                            pricePerUnitInLot, targetPricePerUnit, itemName));
+                }
+            } else if (debugMode.get()) {
+                ChatUtil.sendChat("§cНе найдена цена для: " + itemName);
+            }
+        }
+
+        if (!foundItem && !waitingForRefresh) {
+            refreshPage(screen);
+        }
+    }
+
+    private long findPriceInTooltip(List<Text> tooltip) {
+        for (Text text : tooltip) {
+            String line = text.getString();
+
+            if (line.contains("Цена:") || line.contains("Price:")) {
+                long price = extractPriceFromLine(line);
+                if (price > 0) {
+                    if (debugMode.get()) {
+                        ChatUtil.sendChat("§7  Найдена цена: " + price + " в строке: " + Formatting.strip(line));
+                    }
+                    return price;
+                }
+            }
+        }
+
+        for (Text text : tooltip) {
+            String line = text.getString();
+            long price = extractPriceFromLine(line);
+            if (price > 0) {
+                if (debugMode.get()) {
+                    ChatUtil.sendChat("§7  Найдена цена (общий поиск): " + price + " в строке: " + Formatting.strip(line));
+                }
+                return price;
+            }
+        }
+
+        return -1;
+    }
+
+    private void handlePurchaseConfirmation() {
+        if (debugMode.get()) {
+            ChatUtil.sendChat("§7Подтверждаю покупку...");
+        }
+
+        lastActionTime = System.currentTimeMillis();
+        final long actionStartTime = lastActionTime;
+
+        mc.execute(() -> {
+            try {
+                // Ждем указанную задержку в основном потоке игры
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(delay.getIntValue());
+
+                        mc.execute(() -> {
+                            // Проверяем, что мы все еще на том же экране и время не изменилось
+                            if (mc.world == null || mc.player == null ||
+                                    lastActionTime != actionStartTime) {
+                                return;
+                            }
+
+                            // Проверяем, что мы все еще в GUI аукциона
+                            if (!(mc.currentScreen instanceof GenericContainerScreen)) {
+                                if (debugMode.get()) {
+                                    ChatUtil.sendChat("§cGUI изменился, пропускаю клик");
+                                }
+                                return;
+                            }
+
+                            // Получаем текущий экран
+                            GenericContainerScreen screen = (GenericContainerScreen) mc.currentScreen;
+
+                            // Проверяем, что слот 20 существует
+                            if (screen.getScreenHandler().slots.size() <= 20) {
+                                if (debugMode.get()) {
+                                    ChatUtil.sendChat("§cСлот 20 не существует");
+                                }
+                                return;
+                            }
+
+                            // Проверяем, что в слоте есть предмет
+                            ItemStack slotItem = screen.getScreenHandler().getSlot(20).getStack();
+                            if (slotItem.isEmpty()) {
+                                if (debugMode.get()) {
+                                    ChatUtil.sendChat("§cСлот 20 пуст");
+                                }
+                                return;
+                            }
+
+                            // Выполняем клик
+                            InventoryUtil.clickSlot(20, 1, SlotActionType.PICKUP);
+
+                            if (debugMode.get()) {
+                                ChatUtil.sendChat("§aНажал на слот 20 через " + delay.getIntValue() + "мс");
+                            }
+
+                            // Добавляем небольшую паузу после клика
+                            new Thread(() -> {
+                                try {
+                                    Thread.sleep(200);
+                                    mc.execute(() -> {
+                                        // Проверяем, закрылся ли GUI покупки
+                                        if (mc.currentScreen instanceof GenericContainerScreen) {
+                                            GenericContainerScreen currentScreen = (GenericContainerScreen) mc.currentScreen;
+                                            String title = currentScreen.getTitle().getString().toLowerCase();
+
+                                            // Если это GUI подтверждения покупки, закрываем его
+                                            if (title.contains("покупка") || title.contains("purchase") ||
+                                                    title.contains("подтверждение") || title.contains("confirmation")) {
+                                                mc.player.closeHandledScreen();
+                                                if (debugMode.get()) {
+                                                    ChatUtil.sendChat("§7Закрываю GUI подтверждения покупки");
+                                                }
+                                            }
+                                        }
+                                    });
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                }
+                            }).start();
+                        });
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }).start();
+            } catch (Exception e) {
+                if (debugMode.get()) {
+                    ChatUtil.sendChat("§cОшибка при планировании клика: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    private void refreshPage(GenericContainerScreen screen) {
+        if (screen.getScreenHandler().slots.size() > refreshSlot) {
+            ItemStack refreshItem = screen.getScreenHandler().getSlot(refreshSlot).getStack();
+            if (!refreshItem.isEmpty()) {
+                InventoryUtil.clickSlot(refreshSlot, 0, SlotActionType.PICKUP);
+                waitingForRefresh = true;
+                lastActionTime = System.currentTimeMillis();
+                currentPage++;
+
+                if (debugMode.get()) {
+                    ChatUtil.sendChat("§eОбновляю страницу " + currentPage + "...");
+                }
+            } else if (debugMode.get()) {
+                ChatUtil.sendChat("§cСлот обновления пуст! Закрываю аукцион.");
+                inAuction = false;
+            }
+        }
+    }
+
+    private List<Text> getItemTooltip(ItemStack stack) {
+        try {
+            Item.TooltipContext context = Item.TooltipContext.create(mc.world.getRegistryManager());
+            net.minecraft.item.tooltip.TooltipType tooltipType = net.minecraft.item.tooltip.TooltipType.BASIC;
+            return stack.getTooltip(context, mc.player, tooltipType);
+        } catch (Exception e) {
+            List<Text> tooltip = new ArrayList<>();
+            tooltip.add(stack.getName());
+            return tooltip;
+        }
+    }
+
+    private boolean shouldSkipItem(String itemName) {
+        if (itemName.isEmpty()) return true;
+
+        String lower = itemName.toLowerCase();
+        return lower.contains("ваши товары") ||
+                lower.contains("завершенные товары") ||
+                lower.contains("следующая страница") ||
+                lower.contains("предыдущая страница") ||
+                lower.contains("помощь по аукциону") ||
+                lower.contains("как продать товар") ||
+                lower.contains("сортировка") ||
+                lower.contains("категории") ||
+                lower.contains("search") ||
+                lower.contains("next page") ||
+                lower.contains("previous page") ||
+                lower.contains("назад") ||
+                lower.contains("refresh") ||
+                lower.contains("обновить") ||
+                lower.contains("auction help") ||
+                lower.contains("как пользоваться") ||
+                lower.contains("sort") ||
+                lower.contains("category") ||
+                lower.contains("фильтр") ||
+                lower.contains("filter");
+    }
+
+    private long extractPriceFromLine(String line) {
+        try {
+            String cleanLine = Formatting.strip(line);
+            if (cleanLine == null) {
+                cleanLine = line.replaceAll("§[0-9a-fk-or]", "");
+            }
+
+            cleanLine = cleanLine.trim();
+
+            if (debugMode.get() && (cleanLine.contains("Цена:") || cleanLine.contains("Price:") || cleanLine.matches(".*\\d+.*"))) {
+                ChatUtil.sendChat("§7Проверяю строку: '" + cleanLine + "'");
+            }
+
+            long price = tryPattern(PRICE_PATTERN, cleanLine);
+            if (price > 0) return price;
+
+            price = tryPattern(PRICE_PATTERN_EN, cleanLine);
+            if (price > 0) return price;
+
+            price = tryPattern(PRICE_PATTERN_SIMPLE, cleanLine);
+            if (price > 0) return price;
+
+            if (cleanLine.contains("Цена:")) {
+                String afterPrice = cleanLine.substring(cleanLine.indexOf("Цена:") + 5).trim();
+                Matcher matcher = Pattern.compile("([\\d,.]+)").matcher(afterPrice);
+                if (matcher.find()) {
+                    String priceStr = matcher.group(1).replace(",", "").replace(".", "").trim();
+                    if (!priceStr.isEmpty()) {
+                        return Long.parseLong(priceStr);
+                    }
+                }
+            }
+
+            if (cleanLine.contains("Price:")) {
+                String afterPrice = cleanLine.substring(cleanLine.indexOf("Price:") + 6).trim();
+                Matcher matcher = Pattern.compile("([\\d,.]+)").matcher(afterPrice);
+                if (matcher.find()) {
+                    String priceStr = matcher.group(1).replace(",", "").replace(".", "").trim();
+                    if (!priceStr.isEmpty()) {
+                        return Long.parseLong(priceStr);
+                    }
+                }
+            }
+
+            Matcher numberMatcher = Pattern.compile("([\\d,.]+)").matcher(cleanLine);
+            if (numberMatcher.find()) {
+                String priceStr = numberMatcher.group(1).replace(",", "").replace(".", "").trim();
+                if (!priceStr.isEmpty() && priceStr.length() <= 30) {
+                    long parsedPrice = Long.parseLong(priceStr);
+                    if (parsedPrice >= 10) {
+                        return parsedPrice;
+                    }
+                }
+            }
+
+        } catch (NumberFormatException e) {
+            if (debugMode.get()) {
+                ChatUtil.sendChat("§cОшибка парсинга цены из: " + line + " (" + e.getMessage() + ")");
+            }
+        }
+        return -1;
+    }
+
+    private long tryPattern(Pattern pattern, String line) {
+        try {
+            Matcher matcher = pattern.matcher(line);
+            if (matcher.find()) {
+                String priceStr = matcher.group(1).replace(",", "").replace(".", "").trim();
+                if (!priceStr.isEmpty()) {
+                    return Long.parseLong(priceStr);
+                }
+            }
+        } catch (Exception e) {
+            if (debugMode.get()) {
+                ChatUtil.sendChat("§cОшибка в tryPattern: " + e.getMessage());
+            }
+        }
+        return -1;
+    }
+
+    private boolean isItemIdMatch(String itemName, ItemStack stack, String targetId) {
+        Identifier itemId = Registries.ITEM.getId(stack.getItem());
+        if (itemId != null) {
+            String fullId = itemId.toString();
+            String shortId = itemId.getPath();
+
+            if (fullId.equalsIgnoreCase(targetId) ||
+                    fullId.equalsIgnoreCase("minecraft:" + targetId) ||
+                    shortId.equalsIgnoreCase(targetId)) {
+                return true;
+            }
+        }
+
+        return itemName.toLowerCase().contains(targetId.toLowerCase());
+    }
+
+    public List<BuyItem> getBuyItems() {
+        return buyItems;
+    }
+
+    public void setBuyItems(List<BuyItem> items) {
+        buyItems.clear();
+        buyItems.addAll(items);
+        saveItemsToConfig();
+    }
+
+    public void addBuyItem(String id, long maxPricePerUnit, int quantity, boolean enabled) {
+        buyItems.add(new BuyItem(id, maxPricePerUnit, quantity, enabled));
+        saveItemsToConfig();
+    }
+
+    public void removeBuyItem(int index) {
+        if (index >= 0 && index < buyItems.size()) {
+            buyItems.remove(index);
+            saveItemsToConfig();
+        }
+    }
+
+    @Override
+    public void onEnable() {
+        super.onEnable();
+        if (autoStart.get()) {
+            enableModule();
+        } else {
+            ChatUtil.sendChat("§eAutoBuy включен. Нажмите " +
+                    GLFW.glfwGetKeyName(toggleKey.getValue(), 0) + " для старта.");
+        }
+
+        if (!ServerUtil.isConnected("reallyworld") && !ServerUtil.isConnected("playrw")) {
+            disable();
+            ChatUtil.sendError("Работает только на ReallyWorld");
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        super.onDisable();
+        disableModule();
+    }
+
+    // В классе AutoBuyUI (если есть подобный класс)
+    public static class BuyItem {
+        public String id;
+        public long maxPricePerUnit;
+        public int quantity;
+        public boolean enabled;
+
+        public BuyItem(String id, long maxPricePerUnit, int quantity, boolean enabled) {
+            this.id = id;
+            this.maxPricePerUnit = maxPricePerUnit;
+            this.quantity = quantity;
+            this.enabled = enabled;
+        }
+    }
+}

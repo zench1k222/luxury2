@@ -13,8 +13,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
 
-
-
 public class TargetESPHandler {
     private static final double EXTENDED_RANGE = 10.0;
     private static final int FADE_OUT_TICKS = 100;

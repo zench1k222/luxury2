@@ -12,6 +12,7 @@ public class FontHelper {
     public static volatile FontDraw[] icons = new FontDraw[256];
     public static volatile FontDraw[] monsterrat = new FontDraw[256];
     public static volatile FontDraw[] sfprobold = new FontDraw[256];
+    public static volatile FontDraw[] findsans = new FontDraw[256];
 
     private boolean initialized = false;
 
@@ -21,6 +22,7 @@ public class FontHelper {
         initializationFont(icons, "icons.ttf");
         initializationFont(monsterrat, "Montserrat_Medium.ttf");
         initializationFont(sfprobold,"SF-Pro-Display-Bold.ttf");
+        initializationFont(findsans, "FindSans.ttf");
 
         initialized = true;
     }

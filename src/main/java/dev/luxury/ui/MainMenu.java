@@ -34,17 +34,8 @@ public class MainMenu extends Screen {
         changeLog.clear();
 
         // Здесь добавляй свои изменения
-        changeLog.add(new ChangeLogEntry("v0.7", "19.12.2024",
-                List.of("Добавлен модуль AutoAccept", "Исправлен NameProtect", "Добавлен кастомный MainMenu")));
-
-        changeLog.add(new ChangeLogEntry("v0.6", "18.12.2024",
-                List.of("Добавлен модуль Spider", "Исправлены баги с миксинами", "Улучшена система настроек")));
-
-        changeLog.add(new ChangeLogEntry("v0.5", "17.12.2024",
-                List.of("Базовые модули", "Система событий", "Начальная настройка клиента")));
-
-        changeLog.add(new ChangeLogEntry("v0.4", "16.12.2024",
-                List.of("Создание проекта", "Базовые миксины", "Структура кода")));
+        changeLog.add(new ChangeLogEntry("v0.6", "24.12.2025",
+                List.of("Глобальная обнова!", "", "Добавлен кастомный MainMenu.", "Добавлен AutoBuy под RW.", "Обновлена SlothAC ротация.", "Улучшен немного ESP.", "Обновлен ClickPearl.", "Улучшенное ClickGUI.", "Добавлен TpLoot.", "Добавлен чекбокс (Только с KillAura) в SwingAnimations.", "Добавлен StaffKillAnyDesk.", "Добавлен ServerJoiner.", "Добавлен ProjectileHelper.", "Добавлен NoWeb.", "Добавлен AutoDuel(RW).", "Добавлен AntiBot под RW, CubeCraft.", "Добавлен HPAlert.", "Добавлены настройки Arrows.", "Добавлен ChestStealer.", "Добавлен AutoPotion.")));
 
     }
 
@@ -120,7 +111,7 @@ public class MainMenu extends Screen {
         context.drawTextWithShadow(textRenderer, title, titleX + 2, titleY + 2, 0x80000000);
         context.drawTextWithShadow(textRenderer, title, titleX, titleY, 0xFFFFFF);
 
-        String subtitle = "Premium Minecraft Utility Mod";
+        String subtitle = "Безупречный DLC | Лучший из лучших!";
         int subtitleWidth = textRenderer.getWidth(subtitle);
         context.drawTextWithShadow(textRenderer, subtitle,
                 width / 2 - subtitleWidth / 2, titleY + 15, 0xAAAAAA);

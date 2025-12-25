@@ -43,7 +43,7 @@ public class DiscordRPC extends Module {
                     DiscordRichPresence richPresence = new DiscordRichPresence.Builder()
                             .setStartTimestamp((System.currentTimeMillis() / 1000))
                             .setDetails("User: " + getUserRole())
-                            .setState("Ver: 2.0")
+                            .setState("Ver: 0.6")
                             .setLargeImage(image)
                             .setButtons(
                                     RPCButton.create("Дискорд", "https://discord.gg/ypp22E3r4t"),

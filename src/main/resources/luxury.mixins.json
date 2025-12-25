@@ -41,7 +41,6 @@
     "render.impl.render.GameRendererMixin",
     "render.impl.render.MixinInGameHud",
     "render.impl.render.PlayerInfoMixin",
-    "render.impl.client.ChatHudMixin",
     "render.impl.render.MinecraftClientMixin",
     "render.impl.client.ScreenMixin"
   ],

@@ -30,24 +30,4 @@ public abstract class EntityRendererMixin<S extends EntityRenderState> {
             ci.cancel();
         }
     }
-
-    @ModifyVariable(
-            method = "renderLabelIfPresent",
-            at = @At("HEAD"),
-            argsOnly = true,
-            ordinal = 0
-    )
-    private Text onRenderLabel(Text text) {
-        if (Luxury.getInstance() == null) return text;
-
-        String original = text.getString();
-        TextRenderUtil event = new TextRenderUtil(original);
-        EventManager.call(event);
-
-        if (!event.getText().equals(original)) {
-            return Text.of(event.getText());
-        }
-
-        return text;
-    }
 }

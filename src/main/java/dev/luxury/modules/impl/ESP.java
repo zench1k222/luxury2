@@ -13,6 +13,7 @@ import dev.luxury.modules.api.settings.SliderSetting;
 import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.managers.FriendManager;
+import dev.luxury.utils.player.PlayerIntersectionUtil;
 import dev.luxury.utils.player.ServerUtil;
 import dev.luxury.utils.render.ColorUtil;
 import dev.luxury.utils.render.RenderUtil;
@@ -104,6 +105,7 @@ public class ESP extends Module {
         put("ꕀ", "§2&lHYDRA");
         put("ꕈ", "§a&lCOBRA");
         put("ꕁ", "§6&lGOD");
+        put("ꕅ", "§c§lVAMPIRE");
         put("ꔁ", "§5&lMEDIA");
         put("ꔅ", "§cY§fT");
         put("ꕠ", "§e&lD.HELPER");
@@ -762,13 +764,11 @@ public class ESP extends Module {
 
         RenderSystem.disableDepthTest();
 
-        // Рендерим зачарования, если включено
         if (showEnchant.get()) {
             renderEnchantments(e, minX, minY, maxX, maxY, player, scale);
         }
     }
 
-    // НОВЫЙ МЕТОД: Отображение зачарований
     private void renderEnchantments(EventRender2D e,
                                     float minX, float minY,
                                     float maxX, float maxY,
@@ -781,10 +781,8 @@ public class ESP extends Module {
         FontDraw font = FontHelper.sfprobold[10];
         if (font == null) return;
 
-        // Собираем все зачарования с брони и оружия
         List<String> enchantmentsList = new ArrayList<>();
 
-        // Проверяем броню
         for (ItemStack armorStack : player.getArmorItems()) {
             if (!armorStack.isEmpty()) {
                 ItemEnchantmentsComponent enchantments = armorStack.get(DataComponentTypes.ENCHANTMENTS);
@@ -799,7 +797,6 @@ public class ESP extends Module {
             }
         }
 
-        // Проверяем оружие в руках
         ItemStack mainHand = player.getMainHandStack();
         if (!mainHand.isEmpty()) {
             ItemEnchantmentsComponent enchantments = mainHand.get(DataComponentTypes.ENCHANTMENTS);
@@ -813,7 +810,6 @@ public class ESP extends Module {
             }
         }
 
-        // Проверяем вторую руку
         ItemStack offHand = player.getOffHandStack();
         if (!offHand.isEmpty()) {
             ItemEnchantmentsComponent enchantments = offHand.get(DataComponentTypes.ENCHANTMENTS);
@@ -829,7 +825,6 @@ public class ESP extends Module {
 
         if (enchantmentsList.isEmpty()) return;
 
-        // Убираем дубликаты
         enchantmentsList = enchantmentsList.stream().distinct().collect(Collectors.toList());
 
         float maxWidth = 0;
@@ -849,13 +844,11 @@ public class ESP extends Module {
         float bgPaddingX = 4f * scale * enchantScale.getFloatValue();
         float bgPaddingY = 4f * scale * enchantScale.getFloatValue();
 
-        // Позиция справа от ESP бокса
         float bgX = maxX + (10f * scale);
         float bgY = minY;
         float bgW = maxWidth + bgPaddingX * 2f;
         float bgH = totalHeight + bgPaddingY * 2f;
 
-        // Фон для зачарований
         RenderUtil.drawRoundedRect(
                 ms,
                 bgX,
@@ -866,7 +859,6 @@ public class ESP extends Module {
                 new Color(30, 30, 40, 180).getRGB()
         );
 
-        // Рамка для акцента
         RenderUtil.drawBorder(
                 ms,
                 bgX,
@@ -883,7 +875,6 @@ public class ESP extends Module {
 
         float currentY = bgY + bgPaddingY;
 
-        // Заголовок "Enchants"
         ms.push();
         ms.translate(bgX + bgPaddingX, currentY, 0);
         ms.scale(scale * enchantScale.getFloatValue(), scale * enchantScale.getFloatValue(), 1.0f);
@@ -894,7 +885,6 @@ public class ESP extends Module {
 
         currentY += font.getHeight() * scale * enchantScale.getFloatValue() + (2f * scale);
 
-        // Разделительная линия
         RenderUtil.drawRoundedRect(
                 ms,
                 bgX + bgPaddingX,
@@ -907,13 +897,11 @@ public class ESP extends Module {
 
         currentY += (2f * scale);
 
-        // Отображаем зачарования
         for (String enchant : enchantmentsList) {
             ms.push();
             ms.translate(bgX + bgPaddingX, currentY, 0);
             ms.scale(scale * enchantScale.getFloatValue(), scale * enchantScale.getFloatValue(), 1.0f);
 
-            // Определяем цвет в зависимости от типа зачарования
             int color = getEnchantmentColor(enchant);
             font.drawFontLeft(ms, enchant, 0, 0, color);
 
@@ -923,42 +911,32 @@ public class ESP extends Module {
         }
     }
 
-    // НОВЫЙ МЕТОД: Получение отображаемого имени зачарования (исправленная версия для 1.21.4)
-    // УПРОЩЕННАЯ ВЕРСИЯ: Получение отображаемого имени зачарования
     private String getEnchantDisplayName(RegistryEntry<Enchantment> enchantmentEntry, int level) {
         if (enchantmentEntry == null) return "";
 
         try {
-            // Пытаемся получить ключ зачарования
             String enchantId = "unknown";
             String displayName = "Enchantment";
 
-            // Пробуем получить ключ из RegistryEntry
             if (enchantmentEntry.getKey().isPresent()) {
                 var key = enchantmentEntry.getKey().get();
                 enchantId = key.getValue().getPath();
             }
 
-            // Пытаемся получить переведенное имя
             try {
-                // Этот метод может не работать в 1.21.4, используем fallback
                 displayName = Text.translatable("enchantment.minecraft." + enchantId).getString();
             } catch (Exception e) {
-                // Используем ID как fallback
                 displayName = enchantId;
             }
 
-            // Переводим на русский (основные зачарования)
             displayName = translateEnchantmentName(displayName, enchantId);
 
-            // Если включено сокращение названий
             if (shortName.get()) {
                 String shortNameText = enchantShortNames.get(enchantId);
                 if (shortNameText != null) {
                     return shortNameText + level;
                 }
 
-                // Берем первую букву
                 if (!displayName.isEmpty()) {
                     return displayName.charAt(0) + String.valueOf(level);
                 }
@@ -966,16 +944,13 @@ public class ESP extends Module {
                 return "E" + level;
             }
 
-            // Полное название с уровнем
             return displayName + " " + toRoman(level);
 
         } catch (Exception e) {
-            // Fallback: просто показываем уровень
             return "Зачарование " + toRoman(level);
         }
     }
 
-    // Вспомогательный метод для перевода названий зачарований
     private String translateEnchantmentName(String name, String id) {
         Map<String, String> translations = new HashMap<String, String>() {{
             put("protection", "Защита");
@@ -1022,9 +997,7 @@ public class ESP extends Module {
         return translations.getOrDefault(id, name);
     }
 
-    // НОВЫЙ МЕТОД: Определение цвета зачарования
     private int getEnchantmentColor(String enchantName) {
-        // Защитные зачарования - синие оттенки
         if (enchantName.contains("Защита") || enchantName.contains("Прочность") ||
                 enchantName.contains("Невесомость") || enchantName.contains("Подвод") ||
                 enchantName.contains("Взрыв") || enchantName.contains("Снаряд") ||
@@ -1036,10 +1009,9 @@ public class ESP extends Module {
                 enchantName.contains("Вод") || enchantName.contains("Шип") ||
                 enchantName.contains("Глуб") || enchantName.contains("Лед") ||
                 enchantName.contains("Душ") || enchantName.contains("Прч")) {
-            return new Color(100, 180, 255).getRGB(); // Голубой
+            return new Color(100, 180, 255).getRGB();
         }
 
-        // Боевые зачарования - красные оттенки
         if (enchantName.contains("Острота") || enchantName.contains("Небесная") ||
                 enchantName.contains("Членистоногих") || enchantName.contains("Отдача") ||
                 enchantName.contains("Огненный") || enchantName.contains("Добыча") ||
@@ -1057,10 +1029,9 @@ public class ESP extends Module {
                 enchantName.contains("Взв") || enchantName.contains("Мол") ||
                 enchantName.contains("Мнж") || enchantName.contains("Бзз") ||
                 enchantName.contains("Прк")) {
-            return new Color(255, 100, 100).getRGB(); // Красный
+            return new Color(255, 100, 100).getRGB();
         }
 
-        // Инструментальные зачарования - зеленые оттенки
         if (enchantName.contains("Эффективность") || enchantName.contains("Шелковое") ||
                 enchantName.contains("Удача") || enchantName.contains("Бесконечность") ||
                 enchantName.contains("Удача моряка") || enchantName.contains("Приманка") ||
@@ -1068,18 +1039,16 @@ public class ESP extends Module {
                 enchantName.contains("Шелк") || enchantName.contains("Уд") ||
                 enchantName.contains("Бск") || enchantName.contains("УдР") ||
                 enchantName.contains("Прим") || enchantName.contains("Рем")) {
-            return new Color(100, 255, 100).getRGB(); // Зеленый
+            return new Color(100, 255, 100).getRGB();
         }
 
-        // Проклятия - фиолетовые оттенки
         if (enchantName.contains("Проклятие") || enchantName.contains("Исчезновения") ||
                 enchantName.contains("Связывания") || enchantName.contains("Прп") ||
                 enchantName.contains("Связ")) {
-            return new Color(180, 100, 255).getRGB(); // Фиолетовый
+            return new Color(180, 100, 255).getRGB();
         }
 
-        // Остальное - желтый
-        return new Color(255, 255, 100).getRGB(); // Желтый
+        return new Color(255, 255, 100).getRGB();
     }
 
 
@@ -1410,18 +1379,28 @@ public class ESP extends Module {
                 ? entity.getCustomName().getString()
                 : entity.getDisplayName().getString();
 
-        String formattedName = replaceDonateSymbols(name);
+        // Используем тот же метод, что и в старом коде
+        for (Map.Entry<String, String> entry : donateSymbols.entrySet()) {
+            if (name.contains(entry.getKey())) {
+                name = name.replace(entry.getKey(), entry.getValue());
+
+                // Удаляем §f после замены доната
+                name = name.replace("§f", "");
+                break;
+            }
+        }
 
         float health = ServerUtil.getHealth(living);
 
         String text;
         if (entity instanceof PlayerEntity) {
-            text = formattedName + " §c" + (int) health + "HP";
+            text = name + " §c" + (int) health + "HP";
         } else {
-            text = formattedName + " §c" + (int) health + "HP";
+            text = name + " §c" + (int) health + "HP";
         }
 
         String cleanText = text.replaceAll("§[0-9a-fk-or]", "");
+
         float textWidth = font.getWidth(cleanText) * scale;
         float textHeight = font.getHeight() * scale;
 
@@ -1459,44 +1438,140 @@ public class ESP extends Module {
         );
 
         float xOffset = paddingX / scale;
-
         String[] segments = text.split("(?=§)");
-
-        if (!text.startsWith("§") && segments.length > 0 && !segments[0].isEmpty()) {
-            String firstSegment = segments[0];
-            font.drawFontLeft(
-                    ms,
-                    firstSegment,
-                    xOffset,
-                    paddingY / scale - 0.5f,
-                    0xFFFFFFFF
-            );
-            xOffset += font.getWidth(firstSegment);
-        }
 
         for (String segment : segments) {
             if (segment.isEmpty()) continue;
 
-            if (segment.startsWith("§") && segment.length() >= 2) {
+            int color = 0xFFFFFFFF;
+            String displayText;
+
+            if (segment.startsWith("§")) {
                 char colorChar = segment.charAt(1);
-                int color = getColorFromFormatCode(colorChar);
+                color = getColorFromFormatCode(colorChar);
 
-                String displayText = segment.length() > 2 ? segment.substring(2) : "";
-
-                if (!displayText.isEmpty()) {
-                    font.drawFontLeft(
-                            ms,
-                            displayText,
-                            xOffset,
-                            paddingY / scale - 0.5f,
-                            color
-                    );
-                    xOffset += font.getWidth(displayText);
+                if (segment.length() > 2) {
+                    displayText = segment.substring(2);
+                } else {
+                    displayText = "";
                 }
+            } else {
+                displayText = segment;
+            }
+
+            if (!displayText.isEmpty()) {
+                font.drawFontLeft(
+                        ms,
+                        displayText,
+                        xOffset,
+                        paddingY / scale - 0.5f,
+                        color
+                );
+                xOffset += font.getWidth(displayText);
             }
         }
 
         ms.pop();
+    }
+
+    private String stripFormatting(String text) {
+        return text.replaceAll("§[0-9a-fk-or]", "").replaceAll("&[0-9a-fk-or]", "");
+    }
+
+    private void renderColoredText(MatrixStack ms, FontDraw font, String text, float x, float y) {
+        float currentX = x;
+        int currentColor = 0xFFFFFFFF;
+
+        String[] parts = text.split("(?=§[0-9a-f])|(?=§r)");
+
+        for (String part : parts) {
+            if (part.isEmpty()) continue;
+
+            if (part.startsWith("§")) {
+                if (part.length() >= 2) {
+                    char colorCode = part.charAt(1);
+                    currentColor = getColorFromFormatCode(colorCode);
+
+                    if (part.length() > 2) {
+                        String textPart = part.substring(2);
+                        if (!textPart.isEmpty()) {
+                            font.drawFontLeft(ms, textPart, currentX, y, currentColor);
+                            currentX += font.getWidth(textPart);
+                        }
+                    }
+                }
+            } else {
+                font.drawFontLeft(ms, part, currentX, y, currentColor);
+                currentX += font.getWidth(part);
+            }
+        }
+    }
+
+    private void renderFormattedText(MatrixStack ms, FontDraw font, String text, float x, float y) {
+        float currentX = x;
+
+        String[] segments = text.split("(?=§)");
+
+        for (String segment : segments) {
+            if (segment.isEmpty()) continue;
+
+            if (segment.startsWith("§")) {
+                List<Object> parsed = parseFormattingSegment(segment);
+                String displayText = (String) parsed.get(0);
+                int color = (int) parsed.get(1);
+                boolean bold = (boolean) parsed.get(2);
+
+                if (!displayText.isEmpty()) {
+
+                    font.drawFontLeft(
+                            ms,
+                            displayText,
+                            currentX,
+                            y,
+                            color
+                    );
+                    currentX += font.getWidth(displayText);
+
+                }
+            } else {
+                font.drawFontLeft(
+                        ms,
+                        segment,
+                        currentX,
+                        y,
+                        0xFFFFFFFF
+                );
+                currentX += font.getWidth(segment);
+            }
+        }
+    }
+
+    private List<Object> parseFormattingSegment(String segment) {
+        String displayText = "";
+        int color = 0xFFFFFFFF;
+        boolean bold = false;
+
+        if (segment.startsWith("§") && segment.length() >= 2) {
+            int i = 1;
+            while (i < segment.length() && segment.charAt(i) != '&' && !Character.isLetterOrDigit(segment.charAt(i))) {
+                i++;
+            }
+
+            String formatting = segment.substring(1, Math.min(i, segment.length()));
+
+            if (formatting.length() >= 1) {
+                color = getColorFromFormatCode(formatting.charAt(0));
+            }
+
+            if (segment.contains("&l")) {
+                bold = true;
+                segment = segment.replace("&l", "");
+            }
+
+            displayText = segment.substring(i);
+        }
+
+        return Arrays.asList(displayText, color, bold);
     }
 
     private String replaceDonateSymbols(String name) {
@@ -1512,26 +1587,26 @@ public class ESP extends Module {
     }
 
     private int getColorFromFormatCode(char code) {
-        return switch (code) {
-            case '0' -> 0xFF000000; // black
-            case '1' -> 0xFF0000AA; // dark_blue
-            case '2' -> 0xFF00AA00; // dark_green
-            case '3' -> 0xFF00AAAA; // dark_aqua
-            case '4' -> 0xFFAA0000; // dark_red
-            case '5' -> 0xFFAA00AA; // dark_purple
-            case '6' -> 0xFFFFAA00; // gold
-            case '7' -> 0xFFAAAAAA; // gray
-            case '8' -> 0xFF555555; // dark_gray
-            case '9' -> 0xFF5555FF; // blue
-            case 'a' -> 0xFF55FF55; // green
-            case 'b' -> 0xFF55FFFF; // aqua
-            case 'c' -> 0xFFFF5555; // red
-            case 'd' -> 0xFFFF55FF; // light_purple
-            case 'e' -> 0xFFFFFF55; // yellow
-            case 'f' -> 0xFFFFFFFF; // white
-            case 'r' -> 0xFFFFFFFF; // reset
-            default -> 0xFFFFFFFF;
-        };
+        switch (code) {
+            case '0': return 0xFF000000;
+            case '1': return 0xFF0000AA;
+            case '2': return 0xFF00AA00;
+            case '3': return 0xFF00AAAA;
+            case '4': return 0xFFAA0000;
+            case '5': return 0xFFAA00AA;
+            case '6': return 0xFFFFAA00;
+            case '7': return 0xFFAAAAAA;
+            case '8': return 0xFF555555;
+            case '9': return 0xFF5555FF;
+            case 'a': return 0xFF55FF55;
+            case 'b': return 0xFF55FFFF;
+            case 'c': return 0xFFFF5555;
+            case 'd': return 0xFFFF55FF;
+            case 'e': return 0xFFFFFF55;
+            case 'f': return 0xFFFFFFFF;
+            case 'r': return 0xFFFFFFFF;
+            default: return 0xFFFFFFFF;
+        }
     }
 
     @Override

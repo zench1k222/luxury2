@@ -68,7 +68,8 @@ public class ModuleManager {
                 new ServerJoiner(),
                 new ProjectileHelper(),
                 new HPAlert(),
-                new NameProtect()
+                new NameProtect(),
+                new AutoBuy()
 
         );
         DiscordRPC.getInstance().enable();

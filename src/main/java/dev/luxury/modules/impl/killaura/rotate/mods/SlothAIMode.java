@@ -10,11 +10,11 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 public class SlothAIMode extends RotationMode {
     private final MinecraftClient mc = MinecraftClient.getInstance();
-    private final Random random = new Random();
+    private final SecureRandom secureRandom = new SecureRandom();
     private long lastIdleTime = 0;
 
     private long disableStartTime = 0;
@@ -61,7 +61,7 @@ public class SlothAIMode extends RotationMode {
         float distanceToTarget = entity != null ? mc.player.distanceTo(entity) : Float.MAX_VALUE;
 
         boolean canAttack = entity != null && distanceToTarget <= getAttackDistance();
-        float baseSpeed = canAttack ? 0.93f : 0.56f;
+        float baseSpeed = canAttack ? 0.87f : 0.56f;
 
         if (distanceToTarget > 0 && distanceToTarget < 0.66f) {
             float closeRangeSpeed = MathHelper.clamp(distanceToTarget / 1.5f * 0.35f, 0.1f, 0.6f);
@@ -69,7 +69,7 @@ public class SlothAIMode extends RotationMode {
         }
 
         boolean shouldIdle = entity == null && (System.currentTimeMillis() - lastIdleTime > 1000);
-        if (shouldIdle) {
+        if (shouldIdle || (!isEnabled && System.currentTimeMillis() - lastIdleTime > 1000)) {
             baseSpeed = 0.35f;
         }
 
@@ -80,20 +80,21 @@ public class SlothAIMode extends RotationMode {
         float jitterYaw = 0;
         float jitterPitch = 0;
 
-        if (!shouldIdle && entity != null) {
-            jitterYaw = (float) (randomLerp(20, 26) * Math.sin(System.currentTimeMillis() / 25.0));
-            jitterPitch = (float) (randomLerp(8, 23) * Math.sin(System.currentTimeMillis() / 27.0));
+        if (!shouldIdle && entity != null && canAttack) {
+            jitterYaw = (float) (randomLerp(18, 27) * Math.sin(System.currentTimeMillis() / 50.0));
+            jitterPitch = (float) (randomLerp(15, 22) * Math.sin(System.currentTimeMillis() / 13.0));
         }
 
-        float moveYaw = rotationDifference > 0 ? MathHelper.clamp(yawDelta, -Math.abs(yawDelta / rotationDifference * 180), Math.abs(yawDelta / rotationDifference * 180)) : yawDelta;
+        float lineYaw = rotationDifference > 0 ? (Math.abs(yawDelta / rotationDifference) * 180) : 0;
+        float linePitch = rotationDifference > 0 ? (Math.abs(pitchDelta / rotationDifference) * 180) : 0;
 
-        float movePitch = rotationDifference > 0 ? MathHelper.clamp(pitchDelta, -Math.abs(pitchDelta / rotationDifference * 180), Math.abs(pitchDelta / rotationDifference * 180)) : pitchDelta;
+        float moveYaw = MathHelper.clamp(yawDelta, -lineYaw, lineYaw);
+        float movePitch = MathHelper.clamp(pitchDelta, -linePitch, linePitch);
 
         float finalYaw = MathHelper.lerp(baseSpeed, current.getYaw(), current.getYaw() + moveYaw) + jitterYaw;
         float finalPitch = MathHelper.lerp(baseSpeed, current.getPitch(), current.getPitch() + movePitch) + jitterPitch;
 
         finalPitch = MathHelper.clamp(finalPitch, -90.0f, 90.0f);
-
         finalYaw = MathHelper.wrapDegrees(finalYaw);
 
         float gcd = Rotate.gcd();
@@ -111,7 +112,9 @@ public class SlothAIMode extends RotationMode {
             Vec3d eyes = mc.player.getPos().add(0, mc.player.getDimensions(mc.player.getPose()).eyeHeight(), 0);
             Vec3d targetPos = entity.getBoundingBox().getCenter();
             float targetYaw = (float) Math.toDegrees(Math.atan2(targetPos.z - eyes.z, targetPos.x - eyes.x)) - 90.0f;
-            float targetPitch = (float) -Math.toDegrees(Math.atan2(targetPos.y - eyes.y, Math.sqrt((targetPos.x - eyes.x) * (targetPos.x - eyes.x) + (targetPos.z - eyes.z) * (targetPos.z - eyes.z))));
+            float targetPitch = (float) -Math.toDegrees(Math.atan2(targetPos.y - eyes.y,
+                    Math.sqrt((targetPos.x - eyes.x) * (targetPos.x - eyes.x) +
+                            (targetPos.z - eyes.z) * (targetPos.z - eyes.z))));
             target = new Rotate(targetYaw, targetPitch);
             lastTargetRotation = target;
         }
@@ -121,14 +124,16 @@ public class SlothAIMode extends RotationMode {
         float pitchDelta = delta.getDeltaPitch();
 
         float rotationDifference = (float) Math.hypot(Math.abs(yawDelta), Math.abs(pitchDelta));
-
         float baseSpeed = 0.56f;
 
-        float jitterYaw = (float) (randomLerp(20, 26) * Math.sin(System.currentTimeMillis() / 25.0));
-        float jitterPitch = (float) (randomLerp(8, 23) * Math.sin(System.currentTimeMillis() / 27.0));
+        float jitterYaw = (float) (randomLerp(18, 27) * Math.sin(System.currentTimeMillis() / 50.0));
+        float jitterPitch = (float) (randomLerp(15, 22) * Math.sin(System.currentTimeMillis() / 13.0));
 
-        float moveYaw = rotationDifference > 0 ? MathHelper.clamp(yawDelta, -Math.abs(yawDelta / rotationDifference * 180), Math.abs(yawDelta / rotationDifference * 180)) : yawDelta;
-        float movePitch = rotationDifference > 0 ? MathHelper.clamp(pitchDelta, -Math.abs(pitchDelta / rotationDifference * 180), Math.abs(pitchDelta / rotationDifference * 180)) : pitchDelta;
+        float lineYaw = rotationDifference > 0 ? (Math.abs(yawDelta / rotationDifference) * 180) : 0;
+        float linePitch = rotationDifference > 0 ? (Math.abs(pitchDelta / rotationDifference) * 180) : 0;
+
+        float moveYaw = MathHelper.clamp(yawDelta, -lineYaw, lineYaw);
+        float movePitch = MathHelper.clamp(pitchDelta, -linePitch, linePitch);
 
         float finalYaw = MathHelper.lerp(baseSpeed, current.getYaw(), current.getYaw() + moveYaw) + jitterYaw;
         float finalPitch = MathHelper.lerp(baseSpeed, current.getPitch(), current.getPitch() + movePitch) + jitterPitch;
@@ -151,6 +156,7 @@ public class SlothAIMode extends RotationMode {
 
         float yawDelta = delta.getDeltaYaw();
         float pitchDelta = delta.getDeltaPitch();
+
         if (Math.abs(yawDelta) < 1.0f && Math.abs(pitchDelta) < 1.0f) {
             isDisabling = false;
             lastTargetRotation = null;
@@ -158,14 +164,16 @@ public class SlothAIMode extends RotationMode {
         }
 
         float rotationDifference = (float) Math.hypot(Math.abs(yawDelta), Math.abs(pitchDelta));
-
         float returnSpeed = 0.56f;
 
-        float jitterYaw = (float) (randomLerp(20, 26) * Math.sin(System.currentTimeMillis() / 25.0));
-        float jitterPitch = (float) (randomLerp(8, 23) * Math.sin(System.currentTimeMillis() / 27.0));
+        float jitterYaw = (float) (randomLerp(10, 18) * Math.sin(System.currentTimeMillis() / 70.0));
+        float jitterPitch = (float) (randomLerp(8, 15) * Math.sin(System.currentTimeMillis() / 60.0));
 
-        float moveYaw = rotationDifference > 0 ? MathHelper.clamp(yawDelta, -Math.abs(yawDelta / rotationDifference * 180), Math.abs(yawDelta / rotationDifference * 180)) : yawDelta;
-        float movePitch = rotationDifference > 0 ? MathHelper.clamp(pitchDelta, -Math.abs(pitchDelta / rotationDifference * 180), Math.abs(pitchDelta / rotationDifference * 180)) : pitchDelta;
+        float lineYaw = rotationDifference > 0 ? (Math.abs(yawDelta / rotationDifference) * 180) : 0;
+        float linePitch = rotationDifference > 0 ? (Math.abs(pitchDelta / rotationDifference) * 180) : 0;
+
+        float moveYaw = MathHelper.clamp(yawDelta, -lineYaw, lineYaw);
+        float movePitch = MathHelper.clamp(pitchDelta, -linePitch, linePitch);
 
         float finalYaw = MathHelper.lerp(returnSpeed, current.getYaw(), current.getYaw() + moveYaw) + jitterYaw;
         float finalPitch = MathHelper.lerp(returnSpeed, current.getPitch(), current.getPitch() + movePitch) + jitterPitch;
@@ -183,7 +191,11 @@ public class SlothAIMode extends RotationMode {
     }
 
     private float randomLerp(float min, float max) {
-        return min + random.nextFloat() * (max - min);
+        return MathHelper.lerp(secureRandom.nextFloat(), min, max);
+    }
+
+    public Vec3d randomValue() {
+        return new Vec3d(0.01, 0.07, 0.02);
     }
 
     private LivingEntity getTargetEntity() {
@@ -206,7 +218,10 @@ public class SlothAIMode extends RotationMode {
 
     private KillAura getKillAura() {
         try {
-            return (KillAura) Luxury.getInstance().getModuleManager().getModules().stream().filter(m -> m instanceof KillAura).findFirst().orElse(null);
+            return (KillAura) Luxury.getInstance().getModuleManager().getModules().stream()
+                    .filter(m -> m instanceof KillAura)
+                    .findFirst()
+                    .orElse(null);
         } catch (Exception e) {
             return null;
         }

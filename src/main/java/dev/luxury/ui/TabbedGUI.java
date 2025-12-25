@@ -58,6 +58,8 @@ public class TabbedGUI extends Screen {
     private final Color accentColor = new Color(45, 125, 255);
     private final Color borderColor = new Color(60, 60, 70);
 
+    FontDraw iconFont = FontHelper.icons[18];
+
     private static class ModuleAnimState {
         float indicatorX = -1;
         float width = 11f;
@@ -141,8 +143,6 @@ public class TabbedGUI extends Screen {
                     new Vector4f(6f, 6f, 6f, 6f), accentColor.getRGB(), 1f, 1, 1, false);
         }
 
-        font.drawFontLeft(context.getMatrices(), "🔍", searchX + 10, searchY + 7,
-                searchActive ? accentColor.getRGB() : new Color(150, 150, 160).getRGB());
 
         String displayText = searchText;
         if (displayText.isEmpty() && !searchActive) {
@@ -159,7 +159,7 @@ public class TabbedGUI extends Screen {
             displayText = displayText.substring(0, displayText.length() - 1);
         }
 
-        font.drawFontLeft(context.getMatrices(), displayText, textX, textY, textColor);
+        font.drawFontLeft(context.getMatrices(), displayText, textX - 20, textY + 1.5F, textColor);
 
         if (searchActive) {
             long currentTime = System.currentTimeMillis();
@@ -170,13 +170,13 @@ public class TabbedGUI extends Screen {
 
             if (cursorVisible) {
                 float textWidth = displayText.isEmpty() ? 0 : font.getWidth(displayText);
-                font.drawFontLeft(context.getMatrices(), "|", textX + textWidth + 2, textY, accentColor.getRGB());
+                font.drawFontLeft(context.getMatrices(), "|", textX + textWidth + 2 - 20, textY + 1.5F, accentColor.getRGB());
             }
         }
     }
 
     private void drawTabs(DrawContext context, FontDraw font, int mouseX, int mouseY) {
-        float tabStartY = panelY + 60; // табы
+        float tabStartY = panelY + 60;
         float tabSpacing = 5;
 
         for (int i = 0; i < mainCategories.length; i++) {
@@ -211,7 +211,7 @@ public class TabbedGUI extends Screen {
             float textX = tabX + 40;
             float textY = tabStartY + 12;
 
-            font.drawFontLeft(context.getMatrices(), icon, iconX, iconY,
+            iconFont.drawFontLeft(context.getMatrices(), icon, iconX, iconY + 2.5F,
                     isSelected ? Color.WHITE.getRGB() : new Color(180, 180, 190).getRGB());
             font.drawFontLeft(context.getMatrices(), name, textX, textY,
                     isSelected ? Color.WHITE.getRGB() : new Color(200, 200, 210).getRGB());
@@ -296,7 +296,7 @@ public class TabbedGUI extends Screen {
 
         Color bgColor;
         if (isSelectedForSettings) {
-            bgColor = new Color(50, 70, 100); // цвет
+            bgColor = new Color(50, 70, 100);
         } else if (isHovered) {
             bgColor = moduleHoverColor;
         } else {
@@ -306,7 +306,6 @@ public class TabbedGUI extends Screen {
         RenderUtil.drawRoundedRect(context.getMatrices(), x, y, width, moduleHeight,
                 new Vector4f(5f, 5f, 5f, 5f), bgColor.getRGB());
 
-        // бордер
         if (isSelectedForSettings) {
             RenderUtil.drawBorder(context.getMatrices(), x, y, width, moduleHeight,
                     new Vector4f(5f, 5f, 5f, 5f), accentColor.getRGB(), 1f, 1, 1, false);
@@ -322,7 +321,6 @@ public class TabbedGUI extends Screen {
 
         drawModuleToggle(context, module, x + width - 70, y + 10, mouseX, mouseY);
 
-        // Настройка
         if (!module.getSettings().isEmpty()) {
             float settingsBtnX = x + width - 100;
             float settingsBtnY = y + 10;
@@ -331,11 +329,11 @@ public class TabbedGUI extends Screen {
             boolean settingsHovered = isMouseOver(mouseX, mouseY, settingsBtnX, settingsBtnY,
                     settingsBtnSize, settingsBtnSize);
 
-            String settingsIcon = "⚙";
+            String settingsIcon = "R";
             int settingsColor = isSelectedForSettings ? accentColor.getRGB() :
                     (settingsHovered ? accentColor.getRGB() : new Color(150, 150, 160).getRGB());
 
-            mediumFont.drawFontLeft(context.getMatrices(), settingsIcon, settingsBtnX, settingsBtnY, settingsColor);
+            iconFont.drawFontLeft(context.getMatrices(), settingsIcon, settingsBtnX, settingsBtnY + 2.5F, settingsColor);
 
             if (settingsHovered) {
                 smallFont.drawFontLeft(context.getMatrices(), "Settings", settingsBtnX - 50, settingsBtnY + 20,
@@ -349,14 +347,14 @@ public class TabbedGUI extends Screen {
         float toggleWidth = 50;
         float toggleHeight = 20;
 
-        boolean isHovered = isMouseOver(mouseX, mouseY, x, y, toggleWidth, toggleHeight);
+        boolean isHovered = isMouseOver(mouseX, mouseY, x, y  - 2.5F, toggleWidth, toggleHeight);
         Color toggleBg = isEnabled ? new Color(45, 125, 255, isHovered ? 200 : 255) :
                 new Color(60, 60, 70, isHovered ? 200 : 255);
 
-        RenderUtil.drawRoundedRect(context.getMatrices(), x, y, toggleWidth, toggleHeight,
+        RenderUtil.drawRoundedRect(context.getMatrices(), x, y - 2.5F, toggleWidth, toggleHeight,
                 new Vector4f(8f, 8f, 8f, 8f), toggleBg.getRGB());
 
-        RenderUtil.drawBorder(context.getMatrices(), x, y, toggleWidth, toggleHeight,
+        RenderUtil.drawBorder(context.getMatrices(), x, y - 2.5F, toggleWidth, toggleHeight,
                 new Vector4f(8f, 8f, 8f, 8f), isHovered ? new Color(100, 100, 110).getRGB() : new Color(80, 80, 90).getRGB(),
                 1f, 1, 1, false);
 
@@ -364,7 +362,7 @@ public class TabbedGUI extends Screen {
         String toggleText = isEnabled ? "ON" : "OFF";
         int textColor = isEnabled ? Color.WHITE.getRGB() : new Color(180, 180, 190).getRGB();
 
-        smallFont.drawCenteredText(context.getMatrices(), toggleText, x + toggleWidth / 2, y + 6, textColor);
+        smallFont.drawCenteredText(context.getMatrices(), toggleText, x + toggleWidth / 2, y + 6 - 2.5F, textColor);
 
         ModuleAnimState state = animStates.computeIfAbsent(module, k -> new ModuleAnimState());
         long currentTime = System.currentTimeMillis();
@@ -386,7 +384,7 @@ public class TabbedGUI extends Screen {
         float indicatorY = y + 5;
         Color indicatorColor = isEnabled ? Color.WHITE : new Color(200, 200, 210);
 
-        RenderUtil.drawRoundedRect(context.getMatrices(), state.indicatorX, indicatorY,
+        RenderUtil.drawRoundedRect(context.getMatrices(), state.indicatorX, indicatorY - 2.5F,
                 indicatorSize, indicatorSize, new Vector4f(4f, 4f, 4f, 4f), indicatorColor.getRGB());
     }
 
@@ -427,7 +425,6 @@ public class TabbedGUI extends Screen {
                 panelX + 10, panelY + 30, panelWidth - 20, 1,
                 new Vector4f(0, 0, 0, 0), new Color(60, 60, 70).getRGB());
 
-        // Включаем scissor
         float scissorX = panelX + 10;
         float scissorY = panelY + 35;
         float scissorWidth = panelWidth - 20;
@@ -440,7 +437,6 @@ public class TabbedGUI extends Screen {
         float settingsHeight = panelHeight - 45;
         float settingsContentHeight = calculateSettingsHeight(selectedModuleForSettings);
 
-        // ОГРАНИЧЕНИЕ СКРОЛЛА: не даём скроллить больше чем нужно
         float maxScroll = Math.max(0, settingsContentHeight - settingsHeight);
         settingsScrollOffset = Math.max(0, Math.min(settingsScrollOffset, maxScroll));
 
@@ -451,7 +447,6 @@ public class TabbedGUI extends Screen {
             if (renderer != null) {
                 float settingHeight = getEstimatedHeight(setting);
 
-                // Рендерим настройку
                 float newY = renderer.render(context, setting, panelX + 15, currentY,
                         panelWidth - 30, mouseX, mouseY, settingsScrollOffset);
                 currentY = newY;
@@ -460,7 +455,6 @@ public class TabbedGUI extends Screen {
 
         context.disableScissor();
 
-        // Рисуем скроллбар только если есть что скроллить
         if (maxScroll > 0) {
             float scrollBarWidth = 4;
             float scrollBarX = panelX + panelWidth - 8;
@@ -523,17 +517,14 @@ public class TabbedGUI extends Screen {
         return totalHeight;
     }
 
-
-
-    // иконки блять, твой рендер хуня бесит меня
     private String getCategoryIcon(Category category) {
         switch (category) {
-            case Combat: return "⚔";
-            case Movement: return "🏃";
-            case Player: return "👤";
-            case Render: return "👁";
-            case Misc: return "📦";
-            default: return "📁";
+            case Combat: return "G";
+            case Movement: return "O";
+            case Player: return "L";
+            case Render: return "M";
+            case Misc: return "P";
+            default: return "R";
         }
     }
 
@@ -569,7 +560,6 @@ public class TabbedGUI extends Screen {
         if (renderer instanceof dev.luxury.ui.settings.ModeSettingRenderer) {
             return ((dev.luxury.ui.settings.ModeSettingRenderer) renderer).getEstimatedHeight(setting);
         }
-        // Для остальных типов настроек используем стандартную высоту
         return SettingRenderer.SETTING_HEIGHT + SettingRenderer.SETTING_PADDING;
     }
 
@@ -649,12 +639,8 @@ public class TabbedGUI extends Screen {
                 if (renderer != null) {
                     float settingHeight = getEstimatedHeight(setting);
 
-                    // ОСНОВНОЕ ИСПРАВЛЕНИЕ: правильный расчёт actualY
-                    // actualY - это где элемент рисуется на экране (с учётом скролла)
-                    // currentY - это где элемент находится в контенте (без учёта скролла)
                     float actualY = currentY - settingsScrollOffset;
 
-                    // Проверяем видимость элемента
                     if (actualY + settingHeight < settingsVisibleAreaTop) {
                         currentY += settingHeight;
                         continue;
@@ -663,12 +649,10 @@ public class TabbedGUI extends Screen {
                         break;
                     }
 
-                    // Проверяем клик по actualY (реальная позиция на экране)
                     if (isMouseOver((int)mouseX, (int)mouseY,
                             rightPanelX + 10, actualY,
                             rightPanelWidth - 20, settingHeight)) {
 
-                        // Передаём currentY (позиция в контенте) в рендерер
                         if (renderer.mouseClicked(setting, mouseX, mouseY, button,
                                 rightPanelX + 15, currentY, rightPanelWidth - 30, settingsScrollOffset)) {
                             return true;
@@ -748,7 +732,6 @@ public class TabbedGUI extends Screen {
                 float settingsHeight = rightPanelHeight - 45;
                 float settingsContentHeight = calculateSettingsHeight(selectedModuleForSettings);
 
-                // ОГРАНИЧЕНИЕ СКРОЛЛА ПРИ ПРОКРУТКЕ
                 float maxScroll = Math.max(0, settingsContentHeight - settingsHeight);
 
                 settingsScrollOffset -= verticalAmount * 10;
@@ -781,7 +764,6 @@ public class TabbedGUI extends Screen {
                     if (renderer instanceof SliderSettingRenderer) {
                         float settingHeight = getEstimatedHeight(setting);
 
-                        // Проверяем видимость элемента
                         float actualY = currentY - settingsScrollOffset;
                         if (actualY + settingHeight < settingsVisibleAreaTop) {
                             currentY += settingHeight;
@@ -791,7 +773,6 @@ public class TabbedGUI extends Screen {
                             break;
                         }
 
-                        // Проверяем драг по слайдеру
                         if (isMouseOver((int)mouseX, (int)mouseY,
                                 rightPanelX + 10, actualY,
                                 rightPanelWidth - 20, settingHeight)) {
@@ -809,8 +790,7 @@ public class TabbedGUI extends Screen {
             }
         }
 
-        // Дополнительно: реализация драг-скролла средней кнопкой мыши
-        if (button == 2) { // Средняя кнопка мыши для драг-скролла
+        if (button == 2) {
             float rightPanelX = panelX + panelWidth - 210;
             float rightPanelY = panelY + 110;
             float rightPanelWidth = 190;
@@ -821,13 +801,11 @@ public class TabbedGUI extends Screen {
                 float settingsContentHeight = calculateSettingsHeight(selectedModuleForSettings);
                 float maxScroll = Math.max(0, settingsContentHeight - settingsHeight);
 
-                // Обновляем скролл с ограничением
                 settingsScrollOffset += deltaY * 0.5f;
                 settingsScrollOffset = Math.max(0, Math.min(settingsScrollOffset, maxScroll));
                 return true;
             }
 
-            // Также драг-скролл для списка модулей
             float listX = panelX + 20;
             float listY = panelY + 110;
             float listWidth = panelWidth - 250;
@@ -839,7 +817,6 @@ public class TabbedGUI extends Screen {
                 float totalHeight = modules.size() * (moduleHeight + moduleSpacing);
                 float maxScroll = Math.max(0, totalHeight - moduleContentHeight);
 
-                // Обновляем скролл с ограничением
                 modulesScrollOffset += deltaY * 0.5f;
                 modulesScrollOffset = Math.max(0, Math.min(modulesScrollOffset, maxScroll));
                 return true;
@@ -880,7 +857,7 @@ public class TabbedGUI extends Screen {
         }
 
         if (waitingForKeybind != null) {
-            if (keyCode == 256) { // ESC
+            if (keyCode == 256) {
                 waitingForKeybind.setKey(-1);
             } else {
                 waitingForKeybind.setKey(keyCode);
