@@ -33,7 +33,6 @@ public class MainMenu extends Screen {
     private void initializeChangeLog() {
         changeLog.clear();
 
-        // Здесь добавляй свои изменения
         changeLog.add(new ChangeLogEntry("v0.6", "24.12.2025",
                 List.of("Глобальная обнова!", "", "Добавлен кастомный MainMenu.", "Добавлен AutoBuy под RW.", "Обновлена SlothAC ротация.", "Улучшен немного ESP.", "Обновлен ClickPearl.", "Улучшенное ClickGUI.", "Добавлен TpLoot.", "Добавлен чекбокс (Только с KillAura) в SwingAnimations.", "Добавлен StaffKillAnyDesk.", "Добавлен ServerJoiner.", "Добавлен ProjectileHelper.", "Добавлен NoWeb.", "Добавлен AutoDuel(RW).", "Добавлен AntiBot под RW, CubeCraft.", "Добавлен HPAlert.", "Добавлены настройки Arrows.", "Добавлен ChestStealer.", "Добавлен AutoPotion.")));
 

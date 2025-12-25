@@ -9,6 +9,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import org.joml.Vector4f;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,10 +58,11 @@ public class Notifications extends DraggableHudElement {
         matrices.push();
         matrices.translate(x, y, 0);
 
-        RenderUtil.drawRoundedRect(matrices,
+        int colorstandart = new Color(115, 115, 120, 255).getRGB();
+        RenderUtil.drawBlur(matrices,
                 0, 0, width, height,
-                new Vector4f(6, 6, 6, 6),
-                0x80202025);
+                new Vector4f(8, 8, 8, 8),
+                18f, colorstandart);
 
         String title = "Уведомления (Предпросмотр)";
         if (fontDraw != null) {
@@ -84,15 +86,16 @@ public class Notifications extends DraggableHudElement {
         float notificationWidth = width - 10;
         float x = 5;
 
-        RenderUtil.drawRoundedRect(matrices,
+        int notificationBgColor = 0x80000000;
+        RenderUtil.drawBlur(matrices,
                 x, y, notificationWidth, height,
                 new Vector4f(4, 4, 4, 4),
-                0x80000000);
+                8f, notificationBgColor);
 
-        RenderUtil.drawRoundedRect(matrices,
+        RenderUtil.drawBlur(matrices,
                 x, y, 3, height,
                 new Vector4f(1, 0, 0, 1),
-                preview.getColorWithAlpha(0x80));
+                8f, preview.getColorWithAlpha(0xFF));
 
         String text = preview.getText();
         if (fontDraw != null) {
@@ -101,21 +104,24 @@ public class Notifications extends DraggableHudElement {
         }
 
         float progressWidth = (notificationWidth - 6) * preview.getProgress();
-        RenderUtil.drawRoundedRect(matrices,
-                x + 3, y + height - 3,
-                progressWidth, 2,
-                new Vector4f(1, 1, 1, 1),
-                0x80AAAAAA);
+        if (progressWidth > 0) {
+            RenderUtil.drawBlur(matrices,
+                    x + 3, y + height - 3,
+                    progressWidth, 2,
+                    new Vector4f(1, 1, 1, 1),
+                    4f, 0x80AAAAAA);
+        }
     }
 
     private void renderRealNotifications(MatrixStack matrices) {
         matrices.push();
         matrices.translate(x, y, 0);
 
-        RenderUtil.drawRoundedRect(matrices,
+        int colorstandart = new Color(115, 115, 120, 100).getRGB();
+        RenderUtil.drawBlur(matrices,
                 0, 0, width, height,
-                new Vector4f(6, 6, 6, 6),
-                0x10000000);
+                new Vector4f(8, 8, 8, 8),
+                18f, colorstandart);
 
         matrices.pop();
     }

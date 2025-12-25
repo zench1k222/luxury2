@@ -8,19 +8,44 @@ public class Animation {
     @Setter private long duration;
     private final Easing easing;
     private boolean forward;
-    @Setter private double value;
+    @Setter private double targetValue;
+    private double startValue;
+    private boolean initialized = false;
 
     public Animation(long duration, double value, boolean forward, Easing easing) {
         this.duration = duration;
-        this.value = value;
+        this.targetValue = value;
+        this.startValue = 0;
         this.forward = forward;
         this.easing = easing;
+        this.timer.reset();
+    }
+
+    public Animation(long duration, double value, Easing easing) {
+        this(duration, value, false, easing);
+    }
+
+    public Animation(long duration, double value) {
+        this(duration, value, Easing.LINEAR);
+    }
+
+    public Animation(long duration) {
+        this(duration, 1.0);
+    }
+
+    public void setValue(double value) {
+        this.targetValue = value;
+        if (!initialized) {
+            this.startValue = forward ? 0 : value;
+            initialized = true;
+        }
     }
 
     public void update(boolean forward) {
         if (this.forward != forward) {
+            this.startValue = getValue();
             this.forward = forward;
-            timer.setStartTime((long) (System.currentTimeMillis() - (value - Math.min(value, timer.getElapsed()))));
+            timer.reset();
         }
     }
 
@@ -33,35 +58,76 @@ public class Animation {
     }
 
     public float getValue() {
+        double elapsed = timer.getElapsed();
+
+        if (duration <= 0) {
+            return (float) (forward ? targetValue : startValue);
+        }
+
+        if (timer.passed(duration)) {
+            return (float) (forward ? targetValue : startValue);
+        }
+
+        double progress = Math.min(elapsed / (double) duration, 1.0);
+        double easedProgress = easing.apply(progress);
+
         if (forward) {
-            if (timer.passed(duration)) return (float) value;
-            return (float) (easing.apply(timer.getElapsed() / (double) duration) * value);
+            return (float) (startValue + (targetValue - startValue) * easedProgress);
         } else {
-            if (timer.passed(duration)) return 0.0f;
-            return (float) ((1 - easing.apply(timer.getElapsed() / (double) duration)) * value);
+            return (float) (targetValue - (targetValue - startValue) * easedProgress);
         }
     }
 
     public float getLinear() {
+        double elapsed = timer.getElapsed();
+
+        if (duration <= 0) {
+            return (float) (forward ? targetValue : startValue);
+        }
+
+        if (timer.passed(duration)) {
+            return (float) (forward ? targetValue : startValue);
+        }
+
+        double progress = Math.min(elapsed / (double) duration, 1.0);
+
         if (forward) {
-            if (timer.passed(duration)) return (float) value;
-            return (float) (timer.getElapsed() / (double) duration * value);
+            return (float) (startValue + (targetValue - startValue) * progress);
         } else {
-            if (timer.passed(duration)) return 0.0f;
-            return (float) ((1 - timer.getElapsed() / (double) duration) * value);
+            return (float) (targetValue - (targetValue - startValue) * progress);
         }
     }
 
     public float getReversedValue() {
-        return 1 - getValue();
+        float value = getValue();
+        return (float) (targetValue - value);
     }
 
     public void reset() {
-        timer.reset2();
+        timer.reset();
+        this.startValue = forward ? 0 : targetValue;
     }
 
-    public void update() {
-        if (finished()) update(false);
-        else if (finished(false)) update(true);
+    public void forceValue(double value) {
+        this.targetValue = value;
+        this.startValue = value;
+        timer.reset();
+    }
+
+    public boolean isAnimating() {
+        return !timer.passed(duration);
+    }
+
+    public double getTargetValue() {
+        return targetValue;
+    }
+
+    public double getStartValue() {
+        return startValue;
+    }
+
+    public float getProgress() {
+        if (duration <= 0) return 1.0f;
+        return (float) Math.min(timer.getElapsed() / (double) duration, 1.0);
     }
 }

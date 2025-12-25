@@ -261,7 +261,7 @@ public class AutoBuy extends Module {
                         InventoryUtil.clickSlot(i, 0, SlotActionType.PICKUP);
 // уведомления
                         ChatUtil.sendChat(String.format("§aКуплено: %s x%d за %d монет (за штуку: %d)",
-                                    itemName, stackCount, lotPrice, pricePerUnitInLot));
+                                itemName, stackCount, lotPrice, pricePerUnitInLot));
                         NotificationsManager.getInstance().addNotification(String.format("§aКуплено: %s x%d за %d монет (за штуку: %d)",
                                 itemName, stackCount, lotPrice, pricePerUnitInLot), 3000);
                         ClientSounds.instance.playEnableSound();
@@ -285,6 +285,25 @@ public class AutoBuy extends Module {
 
         if (!foundItem && !waitingForRefresh) {
             refreshPage(screen);
+        }
+    }
+
+    private void refreshPage(GenericContainerScreen screen) {
+        if (screen.getScreenHandler().slots.size() > refreshSlot) {
+            ItemStack refreshItem = screen.getScreenHandler().getSlot(refreshSlot).getStack();
+            if (!refreshItem.isEmpty()) {
+                InventoryUtil.clickSlot(refreshSlot, 0, SlotActionType.PICKUP);
+                waitingForRefresh = true;
+                lastActionTime = System.currentTimeMillis();
+                currentPage++;
+
+                if (debugMode.get()) {
+                    ChatUtil.sendChat("§eОбновляю страницу " + currentPage + "...");
+                }
+            } else if (debugMode.get()) {
+                ChatUtil.sendChat("§cСлот обновления пуст! Закрываю аукцион.");
+                inAuction = false;
+            }
         }
     }
 
@@ -399,25 +418,6 @@ public class AutoBuy extends Module {
                 }
             }
         });
-    }
-
-    private void refreshPage(GenericContainerScreen screen) {
-        if (screen.getScreenHandler().slots.size() > refreshSlot) {
-            ItemStack refreshItem = screen.getScreenHandler().getSlot(refreshSlot).getStack();
-            if (!refreshItem.isEmpty()) {
-                InventoryUtil.clickSlot(refreshSlot, 0, SlotActionType.PICKUP);
-                waitingForRefresh = true;
-                lastActionTime = System.currentTimeMillis();
-                currentPage++;
-
-                if (debugMode.get()) {
-                    ChatUtil.sendChat("§eОбновляю страницу " + currentPage + "...");
-                }
-            } else if (debugMode.get()) {
-                ChatUtil.sendChat("§cСлот обновления пуст! Закрываю аукцион.");
-                inAuction = false;
-            }
-        }
     }
 
     private List<Text> getItemTooltip(ItemStack stack) {
