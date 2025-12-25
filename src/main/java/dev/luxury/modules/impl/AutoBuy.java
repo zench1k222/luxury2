@@ -337,87 +337,24 @@ public class AutoBuy extends Module {
     }
 
     private void handlePurchaseConfirmation() {
-        if (debugMode.get()) {
-            ChatUtil.sendChat("§7Подтверждаю покупку...");
-        }
+        if (debugMode.get()) ChatUtil.sendChat("§7Подтверждаю...");
 
         lastActionTime = System.currentTimeMillis();
-        final long actionStartTime = lastActionTime;
 
-        mc.execute(() -> {
+        new Thread(() -> {
             try {
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(delay.getIntValue());
+                Thread.sleep(delay.getIntValue());
 
-                        mc.execute(() -> {
-                            if (mc.world == null || mc.player == null ||
-                                    lastActionTime != actionStartTime) {
-                                return;
-                            }
-
-                            if (!(mc.currentScreen instanceof GenericContainerScreen)) {
-                                if (debugMode.get()) {
-                                    ChatUtil.sendChat("§cGUI изменился, пропускаю клик");
-                                }
-                                return;
-                            }
-
-                            GenericContainerScreen screen = (GenericContainerScreen) mc.currentScreen;
-
-                            if (screen.getScreenHandler().slots.size() <= 20) {
-                                if (debugMode.get()) {
-                                    ChatUtil.sendChat("§cСлот 20 не существует");
-                                }
-                                return;
-                            }
-
-                            ItemStack slotItem = screen.getScreenHandler().getSlot(20).getStack();
-                            if (slotItem.isEmpty()) {
-                                if (debugMode.get()) {
-                                    ChatUtil.sendChat("§cСлот 20 пуст");
-                                }
-                                return;
-                            }
-
-                            InventoryUtil.clickSlot(20, 1, SlotActionType.PICKUP);
-
-                            if (debugMode.get()) {
-                                ChatUtil.sendChat("§aНажал на слот 20 через " + delay.getIntValue() + "мс");
-                            }
-
-                            new Thread(() -> {
-                                try {
-                                    Thread.sleep(200);
-                                    mc.execute(() -> {
-                                        if (mc.currentScreen instanceof GenericContainerScreen) {
-                                            GenericContainerScreen currentScreen = (GenericContainerScreen) mc.currentScreen;
-                                            String title = currentScreen.getTitle().getString().toLowerCase();
-
-                                            if (title.contains("покупка") || title.contains("purchase") ||
-                                                    title.contains("подтверждение") || title.contains("confirmation")) {
-                                                mc.player.closeHandledScreen();
-                                                if (debugMode.get()) {
-                                                    ChatUtil.sendChat("§7Закрываю GUI подтверждения покупки");
-                                                }
-                                            }
-                                        }
-                                    });
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                }
-                            }).start();
-                        });
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+                mc.execute(() -> {
+                    if (mc.currentScreen instanceof GenericContainerScreen) {
+                        InventoryUtil.clickSlot(20, 0, SlotActionType.PICKUP);
+                        if (debugMode.get()) ChatUtil.sendChat("§aКлик на 20");
                     }
-                }).start();
-            } catch (Exception e) {
-                if (debugMode.get()) {
-                    ChatUtil.sendChat("§cОшибка при планировании клика: " + e.getMessage());
-                }
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-        });
+        }).start();
     }
 
     private List<Text> getItemTooltip(ItemStack stack) {

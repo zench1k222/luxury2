@@ -37,7 +37,7 @@ public class SliderSettingRenderer extends SettingRenderer {
 
         FontDraw montserratMaloy = FontHelper.monsterrat[14];
         String displayText = sliderSetting.getName() + ": " + String.format("%.1f", value);
-        montserratMaloy.drawFontLeft(context.getMatrices(), displayText, x + 5, actualY + 10, Color.WHITE.getRGB());
+        montserratMaloy.drawFontLeft(context.getMatrices(), displayText, x + 5, actualY + 0.8F, Color.WHITE.getRGB());
 
         float sliderX = x + 5;
         float sliderY = actualY + SETTING_HEIGHT - 8;
