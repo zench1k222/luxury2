@@ -21,6 +21,7 @@ public class CommandManager {
         this.moduleManager = moduleManager;
         registerCommand(new FriendCommand());
         registerCommand(new ConfigCommand());
+        registerCommand(new AutoBuyCommand());
         registerCommand(new HelpCommand());
         registerCommand(new WayCommand());
 
@@ -99,6 +100,28 @@ public class CommandManager {
                     switch (subCommand) {
                         case "load", "delete" -> {
                             List<String> configs = ConfigManager.getInstance().getConfigs();
+                            return configs.stream().filter(c -> c.startsWith(currentArg));
+                        }
+                        case "save", "list", "dir" -> {
+                            return Stream.empty();
+                        }
+                    }
+                }
+
+                return Stream.empty();
+            }
+
+            case "autobuy" -> {
+                if (parts.length == 2) {
+                    return Stream.of("save", "load", "list", "delete", "dir")
+                            .filter(a -> a.startsWith(currentArg));
+                }
+
+                if (parts.length == 3) {
+                    String subCommand = parts[1].toLowerCase();
+                    switch (subCommand) {
+                        case "load", "delete" -> {
+                            List<String> configs = AutoBuyManager.getInstance().getConfigs();
                             return configs.stream().filter(c -> c.startsWith(currentArg));
                         }
                         case "save", "list", "dir" -> {

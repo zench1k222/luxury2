@@ -1,7 +1,7 @@
 package dev.luxury.ui;
 
 import dev.luxury.modules.impl.AutoBuy;
-import dev.luxury.utils.managers.ConfigManager;
+import dev.luxury.utils.managers.AutoBuyManager;
 import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.render.RenderUtil;
@@ -640,7 +640,7 @@ public class AutoBuyUI2 extends Screen {
             }
 
             if (identifier != null) {
-                return Registries.ITEM.get(identifier);
+                return net.minecraft.registry.Registries.ITEM.get(identifier);
             }
         } catch (Exception e) {
         }
@@ -723,9 +723,7 @@ public class AutoBuyUI2 extends Screen {
             return true;
         }
         else if (keyCode == GLFW.GLFW_KEY_O && (modifiers & GLFW.GLFW_MOD_CONTROL) != 0) {
-            if (ConfigManager.getInstance() != null) {
-                ConfigManager.getInstance().openConfigsFolder();
-            }
+            AutoBuyManager.getInstance().openConfigsFolder();
             return true;
         }
 
@@ -796,7 +794,8 @@ public class AutoBuyUI2 extends Screen {
     }
 
     private void saveToConfig() {
-        if (ConfigManager.getInstance() != null) {
+        AutoBuyManager manager = AutoBuyManager.getInstance();
+        if (manager != null) {
             List<AutoBuyUI.BuyItem> uiItems = new ArrayList<>();
             for (AutoBuy.BuyItem item : buyItems) {
                 if (item.maxPricePerUnit > Integer.MAX_VALUE) {
@@ -806,7 +805,8 @@ public class AutoBuyUI2 extends Screen {
                 }
                 uiItems.add(new AutoBuyUI.BuyItem(item.id, (int) item.maxPricePerUnit, item.quantity, item.enabled));
             }
-            ConfigManager.getInstance().saveAutoBuyItems(uiItems);
+            manager.saveAutoBuyItems(uiItems);
+            ChatUtil.sendChat("§aПредметы AutoBuy сохранены!");
         }
     }
 

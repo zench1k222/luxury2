@@ -1,6 +1,7 @@
 package dev.luxury.ui;
 
 import dev.luxury.modules.impl.AutoBuy;
+import dev.luxury.utils.managers.AutoBuyManager;
 import dev.luxury.utils.managers.ConfigManager;
 import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.font.FontHelper;
@@ -711,7 +712,8 @@ public class AutoBuyUI extends Screen {
     }
 
     private void saveToConfig() {
-        if (ConfigManager.getInstance() != null) {
+        AutoBuyManager manager = AutoBuyManager.getInstance();
+        if (manager != null) {
             List<AutoBuyUI.BuyItem> uiItems = new ArrayList<>();
             for (AutoBuy.BuyItem item : buyItems) {
                 if (item.maxPricePerUnit > Integer.MAX_VALUE) {
@@ -721,7 +723,8 @@ public class AutoBuyUI extends Screen {
                 }
                 uiItems.add(new AutoBuyUI.BuyItem(item.id, (int) item.maxPricePerUnit, item.quantity, item.enabled));
             }
-            ConfigManager.getInstance().saveAutoBuyItems(uiItems);
+            manager.saveAutoBuyItems(uiItems);
+            ChatUtil.sendChat("§aПредметы AutoBuy сохранены!");
         }
     }
 

@@ -10,6 +10,7 @@ import dev.luxury.ui.AutoBuyUI;
 import dev.luxury.ui.AutoBuyUI2;
 import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.font.FontHelper;
+import dev.luxury.utils.managers.AutoBuyManager;
 import dev.luxury.utils.managers.ConfigManager;
 import dev.luxury.utils.notifications.NotificationsManager;
 import dev.luxury.utils.player.InventoryUtil;
@@ -43,34 +44,34 @@ import java.util.regex.Pattern;
 )
 public class AutoBuy extends Module {
 
-    private final SliderSetting delay = new SliderSetting("Задержка (мс)", 100, 50, 500, 50);
-    private final BooleanSetting debugMode = new BooleanSetting("Отладка", false);
-    private final KeySetting toggleKey = new KeySetting("Вкл/Выкл", GLFW.GLFW_KEY_N);
-    private final BooleanSetting autoStart = new BooleanSetting("Авто-старт", false);
-    private final BooleanSetting buyEnabled = new BooleanSetting("Покупка включена", true);
-    private final SliderSetting refreshDelay = new SliderSetting("Задержка обновления", 500, 100, 2000, 100);
-    private final ButtonSetting openUiButton = new ButtonSetting("Открыть Интерфейс", () -> {
+    public final SliderSetting delay = new SliderSetting("Задержка (мс)", 100, 50, 500, 50);
+    public final BooleanSetting debugMode = new BooleanSetting("Отладка", false);
+    public final KeySetting toggleKey = new KeySetting("Вкл/Выкл", GLFW.GLFW_KEY_N);
+    public final BooleanSetting autoStart = new BooleanSetting("Авто-старт", false);
+    public final BooleanSetting buyEnabled = new BooleanSetting("Покупка включена", true);
+    public final SliderSetting refreshDelay = new SliderSetting("Задержка обновления", 500, 100, 2000, 100);
+    public final ButtonSetting openUiButton = new ButtonSetting("Открыть Интерфейс", () -> {
         if (mc.world != null && mc.player != null) {
             mc.setScreen(new AutoBuyUI(this));
         }
     }, 100, 20);
 
-    private final ButtonSetting openUi2Button = new ButtonSetting("Открыть 2 Интерфейс", () -> {
+    public final ButtonSetting openUi2Button = new ButtonSetting("Открыть 2 Интерфейс", () -> {
         if (mc.world != null && mc.player != null) {
             mc.setScreen(new AutoBuyUI2(this));
         }
     }, 100, 20);
 
-    private boolean active = false;
-    private boolean inAuction = false;
-    private boolean waitingForRefresh = false;
-    private boolean justOpenedAuction = false;
-    private int refreshSlot = 4;
-    private long lastActionTime = 0;
-    private int currentPage = 1;
-    private long lastOpenTime = 0;
+    public boolean active = false;
+    public boolean inAuction = false;
+    public boolean waitingForRefresh = false;
+    public boolean justOpenedAuction = false;
+    public int refreshSlot = 4;
+    public long lastActionTime = 0;
+    public int currentPage = 1;
+    public long lastOpenTime = 0;
 
-    private final List<BuyItem> buyItems = new ArrayList<>();
+    public static final List<BuyItem> buyItems = new ArrayList<>();
 
     private static final Pattern PRICE_PATTERN = Pattern.compile("Цена:\\s*([\\d,.]+)");
     private static final Pattern PRICE_PATTERN_EN = Pattern.compile("Price:\\s*([\\d,.]+)");
@@ -79,19 +80,24 @@ public class AutoBuy extends Module {
     public AutoBuy() {
         addSettings(delay, debugMode, toggleKey, autoStart, buyEnabled, refreshDelay, openUiButton, openUi2Button);
 
-        if (ConfigManager.getInstance() != null) {
-            ConfigManager.getInstance().loadAutoBuyItems();
-        }
-    }
+        AutoBuyManager.init();
 
-    private void loadItemsFromConfig() {
-        if (ConfigManager.getInstance() != null) {
-            ConfigManager.getInstance().loadAutoBuyItems();
+        AutoBuyManager manager = AutoBuyManager.getInstance();
+        if (manager != null) {
+            List<AutoBuyUI.BuyItem> uiItems = manager.loadAutoBuyItems();
+            if (uiItems != null && !uiItems.isEmpty()) {
+                List<AutoBuy.BuyItem> convertedItems = new ArrayList<>();
+                for (AutoBuyUI.BuyItem item : uiItems) {
+                    convertedItems.add(new AutoBuy.BuyItem(item.id, item.maxPricePerUnit, item.quantity, item.enabled));
+                }
+                setBuyItems(convertedItems);
+            }
         }
     }
 
     private void saveItemsToConfig() {
-        if (ConfigManager.getInstance() != null) {
+        AutoBuyManager manager = AutoBuyManager.getInstance();
+        if (manager != null) {
             List<AutoBuyUI.BuyItem> uiItems = new ArrayList<>();
             for (BuyItem item : buyItems) {
                 if (item.maxPricePerUnit > Integer.MAX_VALUE) {
@@ -100,7 +106,7 @@ public class AutoBuy extends Module {
                 }
                 uiItems.add(new AutoBuyUI.BuyItem(item.id, (int) item.maxPricePerUnit, item.quantity, item.enabled));
             }
-            ConfigManager.getInstance().saveAutoBuyItems(uiItems);
+            manager.saveAutoBuyItems(uiItems);
         }
     }
 
@@ -321,19 +327,16 @@ public class AutoBuy extends Module {
 
         mc.execute(() -> {
             try {
-                // Ждем указанную задержку в основном потоке игры
                 new Thread(() -> {
                     try {
                         Thread.sleep(delay.getIntValue());
 
                         mc.execute(() -> {
-                            // Проверяем, что мы все еще на том же экране и время не изменилось
                             if (mc.world == null || mc.player == null ||
                                     lastActionTime != actionStartTime) {
                                 return;
                             }
 
-                            // Проверяем, что мы все еще в GUI аукциона
                             if (!(mc.currentScreen instanceof GenericContainerScreen)) {
                                 if (debugMode.get()) {
                                     ChatUtil.sendChat("§cGUI изменился, пропускаю клик");
@@ -341,10 +344,8 @@ public class AutoBuy extends Module {
                                 return;
                             }
 
-                            // Получаем текущий экран
                             GenericContainerScreen screen = (GenericContainerScreen) mc.currentScreen;
 
-                            // Проверяем, что слот 20 существует
                             if (screen.getScreenHandler().slots.size() <= 20) {
                                 if (debugMode.get()) {
                                     ChatUtil.sendChat("§cСлот 20 не существует");
@@ -352,7 +353,6 @@ public class AutoBuy extends Module {
                                 return;
                             }
 
-                            // Проверяем, что в слоте есть предмет
                             ItemStack slotItem = screen.getScreenHandler().getSlot(20).getStack();
                             if (slotItem.isEmpty()) {
                                 if (debugMode.get()) {
@@ -361,24 +361,20 @@ public class AutoBuy extends Module {
                                 return;
                             }
 
-                            // Выполняем клик
                             InventoryUtil.clickSlot(20, 1, SlotActionType.PICKUP);
 
                             if (debugMode.get()) {
                                 ChatUtil.sendChat("§aНажал на слот 20 через " + delay.getIntValue() + "мс");
                             }
 
-                            // Добавляем небольшую паузу после клика
                             new Thread(() -> {
                                 try {
                                     Thread.sleep(200);
                                     mc.execute(() -> {
-                                        // Проверяем, закрылся ли GUI покупки
                                         if (mc.currentScreen instanceof GenericContainerScreen) {
                                             GenericContainerScreen currentScreen = (GenericContainerScreen) mc.currentScreen;
                                             String title = currentScreen.getTitle().getString().toLowerCase();
 
-                                            // Если это GUI подтверждения покупки, закрываем его
                                             if (title.contains("покупка") || title.contains("purchase") ||
                                                     title.contains("подтверждение") || title.contains("confirmation")) {
                                                 mc.player.closeHandledScreen();
