@@ -2,6 +2,7 @@ package dev.luxury.modules.impl.hud.impl;
 
 import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.modules.impl.KillAura;
+import dev.luxury.modules.impl.NameProtect;
 import dev.luxury.modules.impl.elytraaura.ElytraAura;
 import dev.luxury.modules.impl.hud.api.DraggableHudElement;
 import dev.luxury.utils.animations.Easing;
@@ -92,7 +93,17 @@ public class TargetHud extends DraggableHudElement {
         FontDraw sfpro2 = FontHelper.sfprobold[15];
         int colorStandard = new Color(115, 115, 120, 255).getRGB();
 
-        String name = target.getName().getString();
+        String originalName = target.getName().getString();
+        String name = originalName;
+
+        if (NameProtect.instance != null && NameProtect.instance.isEnabled()) {
+            String cleanName = originalName.replaceAll("§[0-9a-fk-or]", "");
+            String protectedName = NameProtect.instance.getProtectedName(cleanName);
+
+            if (!protectedName.equals(cleanName)) {
+                name = originalName.replace(cleanName, protectedName);
+            }
+        }
         float health = ServerUtil.getHealth(target);
         float maxHealth = target.getMaxHealth();
         DecimalFormat df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
@@ -200,21 +211,17 @@ public class TargetHud extends DraggableHudElement {
         items[5] = player.getOffHandStack();
 
         for (int i = 0; i < 6; i++) {
-            // Фон слота
             RenderUtil.drawRoundedRect(matrices, currentX, startY - 3.5f, slotSize, slotSize, new Vector4f(2, 2, 2, 2), new Color(35, 35, 40, 255).getRGB());
 
-            // Граница слота
             RenderUtil.drawBorder(matrices, currentX, startY - 3.5f, slotSize, slotSize, new Vector4f(2, 2, 2, 2), new Color(60, 60, 70, 255).getRGB(), -0.8f, 1, 1, false);
 
             if (items[i] != null && !items[i].isEmpty()) {
-                // Рендер предмета
                 matrices.push();
                 matrices.translate(currentX + 1f, startY - 2.5f, 0);
                 matrices.scale(0.5f, 0.5f, 1.0f);
                 context.drawItem(items[i], 0, 0);
                 matrices.pop();
 
-                // Полоска прочности
                 if (items[i].isDamageable()) {
                     int maxDamage = items[i].getMaxDamage();
                     int damage = items[i].getDamage();
@@ -233,7 +240,6 @@ public class TargetHud extends DraggableHudElement {
                     }
                 }
 
-                // Количество предметов
                 int count = items[i].getCount();
                 if (count > 1) {
                     String countText = String.valueOf(count);

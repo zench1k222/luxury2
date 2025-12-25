@@ -55,7 +55,7 @@ public class ModuleManager {
                 new FireFly(),
                 new JumpCircle(),
                 new HitBubles(),
-                new PacketCriticals(),
+                new Criticals(),
                 new NoWeb(),
                 new Jesus(),
                 new AutoDuel(),
@@ -69,7 +69,9 @@ public class ModuleManager {
                 new ProjectileHelper(),
                 new HPAlert(),
                 new NameProtect(),
-                new AutoBuy()
+                new AutoBuy(),
+                new AntiCheatDetector(),
+                new SkeletonEsp()
 
         );
         DiscordRPC.getInstance().enable();

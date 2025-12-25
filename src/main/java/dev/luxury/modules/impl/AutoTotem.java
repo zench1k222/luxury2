@@ -19,6 +19,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Items;
 import net.minecraft.item.PlayerHeadItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.Box;
 
 @ModuleAnnotation(
         name = "AutoTotem",
@@ -33,7 +34,7 @@ public class AutoTotem extends Module {
             new BooleanSetting("Игрок с булавой", true),
             new BooleanSetting("Рядом крипер", false),
             new BooleanSetting("Якорь", false),
-            new BooleanSetting("Падение", false)
+            new BooleanSetting("Падение", true)
     );
 
     private final SliderSetting HPElytra = new SliderSetting("Брать раньше на элитрах", 5, 2, 6, 1);
@@ -42,15 +43,17 @@ public class AutoTotem extends Module {
     private final BooleanSetting saveEnchantedtotem = new BooleanSetting("Сохранять чаренные тотемы", true);
     public final SliderSetting hp = new SliderSetting("Здоровье", 4.5f, 2.0f, 20.0f, 0.1f);
 
-    private final SliderSetting crystalDistance = new SliderSetting("Дистанция кристалла", 4, 2, 6, 1);
-    private final SliderSetting anchorDistance = new SliderSetting("Дистанция якоря", 4, 2, 6, 1);
+    private final SliderSetting crystalDistance = new SliderSetting("Дистанция кристалла", 6, 2, 12, 0.5f);
+    private final SliderSetting anchorDistance = new SliderSetting("Дистанция якорь", 4, 2, 6, 1);
+    private final SliderSetting fallDistance = new SliderSetting("Высота падения", 15, 5, 30, 1);
 
     private int item = -1;
     private int returnDelay = 0;
-       public static AutoTotem instance;
+    public static AutoTotem instance;
+
     public AutoTotem() {
         addSettings(mode, hp, HPElytra, back, noBallSwitch, saveEnchantedtotem,
-                crystalDistance, anchorDistance);
+                crystalDistance, anchorDistance, fallDistance);
         instance = this;
     }
 
@@ -59,7 +62,7 @@ public class AutoTotem extends Module {
         Entity e = event.getEntity();
 
         if (isEnabled("Кристалл") && e instanceof EndCrystalEntity) {
-            if (mc.player != null && e.distanceTo(mc.player) <= crystalDistance.getFloatValue()) {
+            if (mc.player != null && e.squaredDistanceTo(mc.player) <= crystalDistance.getFloatValue() * crystalDistance.getFloatValue()) {
                 forceTotem();
             }
         }
@@ -74,7 +77,7 @@ public class AutoTotem extends Module {
         boolean hasTotemInHand = offhand.getItem() == Items.TOTEM_OF_UNDYING;
 
         if (condition()) {
-            returnDelay = 40; // 2 секунды задержки (20 тиков = 1 секунда)
+            returnDelay = 40;
 
             if (slot == -1) return;
 
@@ -164,13 +167,31 @@ public class AutoTotem extends Module {
 
     private boolean checkFall() {
         if (!isEnabled("Падение")) return false;
+
         if (mc.player.isGliding()) return false;
-        return mc.player.fallDistance > 10.0f;
+
+        if (mc.player.isTouchingWater() || mc.player.isInLava()) return false;
+
+        if (mc.player.isClimbing()) return false;
+
+        if (mc.player.fallDistance >= fallDistance.getFloatValue()) {
+            return true;
+        }
+
+        if (mc.player.getVelocity().y < -0.5) {
+            Box box = mc.player.getBoundingBox().offset(0, -fallDistance.getFloatValue(), 0);
+            boolean hasGroundBelow = !mc.world.isSpaceEmpty(mc.player, box);
+
+            if (!hasGroundBelow && mc.player.fallDistance > fallDistance.getFloatValue() * 0.5) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean checkHPElytra() {
-        return ((ItemStack) mc.player.getInventory().armor.get(2)).getItem() == Items.ELYTRA &&
-                mc.player.getHealth() <= hp.getFloatValue() + HPElytra.getFloatValue();
+        return ((ItemStack) mc.player.getInventory().armor.get(2)).getItem() == Items.ELYTRA && mc.player.getHealth() <= hp.getFloatValue() + HPElytra.getFloatValue();
     }
 
     private boolean isBall() {
@@ -187,7 +208,7 @@ public class AutoTotem extends Module {
         if (!isEnabled("Рядом крипер")) return false;
 
         for (Entity entity : SyncManager.getEntities()) {
-            if (entity instanceof CreeperEntity creeper && mc.player.distanceTo(creeper) < 5.0f) {
+            if (entity instanceof CreeperEntity creeper && mc.player.squaredDistanceTo(creeper) < 25.0) {
                 if (creeper.getClientFuseTime(0f) > 0f) {
                     return true;
                 }
@@ -205,12 +226,12 @@ public class AutoTotem extends Module {
             boolean hasMace = player.getMainHandStack().getItem() == Items.MACE;
             double dy = player.getY() - mc.player.getY();
             double yVel = player.getVelocity().y;
-            double distance = player.distanceTo(mc.player);
+            double distanceSq = player.squaredDistanceTo(mc.player);
             boolean isAbove = dy > 1.5;
             boolean isInAir = !player.isOnGround() && !player.isTouchingWater() && !player.isClimbing();
             boolean fallingOrInAir = (yVel < -0.1 || yVel > 0.1) && isInAir;
 
-            if (hasMace && isAbove && fallingOrInAir && distance < 24) {
+            if (hasMace && isAbove && fallingOrInAir && distanceSq < 576) { // 24^2 = 576
                 return true;
             }
         }
@@ -220,9 +241,15 @@ public class AutoTotem extends Module {
     private boolean crystal() {
         if (!isEnabled("Кристалл")) return false;
 
+        double crystalDistSq = crystalDistance.getFloatValue() * crystalDistance.getFloatValue();
+
         for (Entity entity : SyncManager.getEntities()) {
-            if (entity instanceof EndCrystalEntity && mc.player.distanceTo(entity) < crystalDistance.getFloatValue()) {
-                return true;
+            if (entity instanceof EndCrystalEntity) {
+                double distSq = mc.player.squaredDistanceTo(entity);
+
+                if (distSq <= crystalDistSq) {
+                    return true;
+                }
             }
         }
         return false;

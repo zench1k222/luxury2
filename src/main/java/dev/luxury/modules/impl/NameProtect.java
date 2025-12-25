@@ -1,13 +1,12 @@
 package dev.luxury.modules.impl;
 
 import dev.luxury.events.impl.eventapi.EventTarget;
+import dev.luxury.events.impl.render.TextFactoryEvent;
 import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
 import dev.luxury.modules.api.settings.BooleanSetting;
 import dev.luxury.utils.managers.FriendManager;
-import dev.luxury.utils.math.MathUtil;
-import dev.luxury.utils.render.TextRenderUtil;
 
 @ModuleAnnotation(
         name = "NameProtect",
@@ -16,44 +15,58 @@ import dev.luxury.utils.render.TextRenderUtil;
 )
 public class NameProtect extends Module {
 
-    public static boolean state = false;
-
     BooleanSetting friendsSetting = new BooleanSetting("Друзья", true);
+
+    public static NameProtect instance;
 
     public NameProtect() {
         addSettings(friendsSetting);
+        instance = this;
+    }
+
+    public String getProtectedName(String originalName) {
+        if (!isEnabled()) {
+            return originalName;
+        }
+
+        if (mc != null && mc.getSession() != null && originalName.equals(mc.getSession().getUsername())) {
+            return "LuxuryFreeBoost";
+        }
+
+        if (friendsSetting.isValue() && FriendManager.getInstance().isFriend(originalName)) {
+            return "LuxuryFriend";
+        }
+
+        return originalName;
+    }
+
+    public boolean isNameProtected(String name) {
+        if (!isEnabled()) {
+            return false;
+        }
+
+        if (mc != null && mc.getSession() != null && name.equals(mc.getSession().getUsername())) {
+            return true;
+        }
+
+        return friendsSetting.isValue() && FriendManager.getInstance().isFriend(name);
     }
 
     @EventTarget
-    public void onTextFactory(TextRenderUtil e) {
-        String text = e.getText();
-        if (text == null || text.isEmpty()) return;
-
-        String myName = mc.getSession().getUsername();
-
-        text = text.replace(myName, "LuxuryFree");
-
-        if (friendsSetting.get() && mc.world != null && mc.player != null) {
-            for (var player : mc.world.getPlayers()) {
-                String playerName = player.getName().getString();
-                if (FriendManager.getInstance().isFriend(playerName)) {
-                    text = text.replace(playerName, "LuxuryFriend");
-                }
-            }
+    public void onTextFactory(TextFactoryEvent e) {
+        e.replaceText(mc.getSession().getUsername(), "LuxuryFreeBoost");
+        if (friendsSetting.isValue()) {
+            FriendManager.getInstance().getFriends().forEach(friend -> e.replaceText(friend, "LuxuryFriend"));
         }
-
-        e.setText(text);
     }
 
     @Override
     public void onEnable() {
         super.onEnable();
-        state = true;
     }
 
     @Override
     public void onDisable() {
         super.onDisable();
-        state = false;
     }
 }

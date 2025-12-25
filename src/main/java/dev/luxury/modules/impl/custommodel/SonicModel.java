@@ -11,137 +11,178 @@ import net.minecraft.client.util.math.MatrixStack;
 
 public class SonicModel extends CustomPlayerModel {
 
-    private final ModelPart sonicBone;
+    private final ModelPart bbMain;
     private final ModelPart sonicHead;
-    private final ModelPart sonicRleg;
-    private final ModelPart sonicLleg;
-    private final ModelPart sonicLarm;
-    private final ModelPart sonicRarm;
+    private final ModelPart rleg;
+    private final ModelPart lleg;
+    private final ModelPart larm;
+    private final ModelPart rarm;
 
     public SonicModel(ModelPart root, ModelPart head, ModelPart body, ModelPart rightArm, ModelPart leftArm, ModelPart rightLeg, ModelPart leftLeg) {
         super(root, head, body, rightArm, leftArm, rightLeg, leftLeg);
-        this.sonicBone = root.getChild("sonicBone");
-        if (sonicBone != null) {
-            this.sonicHead = sonicBone.getChild("sonicHead");
-            this.sonicRleg = sonicBone.getChild("sonicRleg");
-            this.sonicLleg = sonicBone.getChild("sonicLleg");
-            this.sonicLarm = sonicBone.getChild("sonicLarm");
-            this.sonicRarm = sonicBone.getChild("sonicRarm");
-        } else {
-            this.sonicHead = null;
-            this.sonicRleg = null;
-            this.sonicLleg = null;
-            this.sonicLarm = null;
-            this.sonicRarm = null;
-        }
+
+        this.bbMain = root.getChild("bbMain");
+        this.sonicHead = root.getChild("sonicHead");
+        this.rleg = root.getChild("rleg");
+        this.lleg = root.getChild("lleg");
+        this.larm = root.getChild("larm");
+        this.rarm = root.getChild("rarm");
+
     }
 
     public static TexturedModelData getTexturedModelData() {
         ModelData modelData = new ModelData();
-        ModelPartData root = modelData.getRoot();
+        ModelPartData modelPartData = modelData.getRoot();
 
-        root.addChild("head", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        root.addChild("body", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        root.addChild("right_arm", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        root.addChild("left_arm", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        root.addChild("right_leg", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
-        root.addChild("left_leg", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        ModelPartData head = modelPartData.addChild("head", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        ModelPartData body = modelPartData.addChild("body", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        ModelPartData right_arm = modelPartData.addChild("right_arm", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        ModelPartData left_arm = modelPartData.addChild("left_arm", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        ModelPartData right_leg = modelPartData.addChild("right_leg", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+        ModelPartData left_leg = modelPartData.addChild("left_leg", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
 
-        float off = 24.0F;
-        ModelPartData sonicBone = root.addChild("sonicBone", ModelPartBuilder.create()
-                .uv(0, 0).cuboid(-3.0F, -17.0F, -2.0F, 5, 7, 5)
-                .uv(0, 22).cuboid(-3.0F, -16.0F, -3.0F, 5, 5, 1)
-                .uv(0, 0).cuboid(-3.0F, -16.0F, 3.0F, 5, 5, 1)
-                .uv(0, 0).cuboid(0.0F, -15.0F, 3.0F, 1, 1, 3)
-                .uv(0, 0).cuboid(-3.0F, -14.0F, 4.0F, 1, 1, 2)
-                .uv(0, 0).cuboid(-1.0F, -11.0F, 3.0F, 1, 1, 2)
-                .uv(0, 0).cuboid(0.0F, -14.0F, 6.0F, 1, 1, 1)
-                .uv(0, 0).cuboid(-3.0F, -13.0F, 6.0F, 1, 1, 1)
-                .uv(0, 0).cuboid(-1.0F, -12.0F, 5.0F, 1, 1, 1)
-                .uv(0, 0).cuboid(-4.0F, -16.0F, -2.0F, 1, 5, 5)
-                .uv(0, 0).cuboid(2.0F, -16.0F, -2.0F, 1, 5, 5),
+        modelPartData.addChild("bbMain",
+                ModelPartBuilder.create()
+                        .uv(0, 0)
+                        .cuboid(-3.0F, -17.0F, -2.0F, 5.0F, 7.0F, 5.0F)
+                        .uv(0, 22)
+                        .cuboid(-3.0F, -16.0F, -3.0F, 5.0F, 5.0F, 1.0F)
+                        .uv(0, 0)
+                        .cuboid(-3.0F, -16.0F, 3.0F, 5.0F, 5.0F, 1.0F)
+                        .uv(0, 0)
+                        .cuboid(0.0F, -15.0F, 3.0F, 1.0F, 1.0F, 3.0F)
+                        .uv(0, 0)
+                        .cuboid(-3.0F, -14.0F, 4.0F, 1.0F, 1.0F, 2.0F)
+                        .uv(0, 0)
+                        .cuboid(-1.0F, -11.0F, 3.0F, 1.0F, 1.0F, 2.0F)
+                        .uv(0, 0)
+                        .cuboid(0.0F, -14.0F, 6.0F, 1.0F, 1.0F, 1.0F)
+                        .uv(0, 0)
+                        .cuboid(-3.0F, -13.0F, 6.0F, 1.0F, 1.0F, 1.0F)
+                        .uv(0, 0)
+                        .cuboid(-1.0F, -12.0F, 5.0F, 1.0F, 1.0F, 1.0F)
+                        .uv(0, 0)
+                        .cuboid(-4.0F, -16.0F, -2.0F, 1.0F, 5.0F, 5.0F)
+                        .uv(0, 0)
+                        .cuboid(2.0F, -16.0F, -2.0F, 1.0F, 5.0F, 5.0F),
                 ModelTransform.pivot(0.0F, 24.0F, 0.0F));
 
-        ModelPartData sonicRleg = sonicBone.addChild("sonicRleg", ModelPartBuilder.create()
-                .uv(53, 54).cuboid(-1.5F, 7.0F, -1.0F, 2, 1, 2)
-                .uv(0, 0).cuboid(-1.0F, -1.0F, -0.5F, 1, 8, 1)
-                .uv(52, 58).cuboid(-1.5F, 8.0F, -3.0F, 2, 2, 4)
-                .uv(52, 58).cuboid(-2.0F, 9.0F, -2.0F, 0, 1, 1),
-                ModelTransform.pivot(-3.0F, 14.0F - off, 0.5F));
+        ModelPartData sonicHeadData = modelPartData.addChild("sonicHead",
+                ModelPartBuilder.create()
+                        .uv(36, 3)
+                        .cuboid(-3.5F, -7.0F, -3.0F, 7.0F, 7.0F, 7.0F)
+                        .uv(60, 0)
+                        .cuboid(-0.5F, -3.0F, -4.0F, 1.0F, 1.0F, 1.0F),
+                ModelTransform.pivot(-0.5F, 7.0F, 0.0F));
 
-        ModelPartData sonicLleg = sonicBone.addChild("sonicLleg", ModelPartBuilder.create()
-                .uv(53, 54).cuboid(-0.5F, 7.0F, -1.0F, 2, 1, 2)
-                .uv(0, 0).cuboid(0.0F, -1.0F, -0.5F, 1, 8, 1)
-                .uv(52, 58).cuboid(-0.5F, 8.0F, -3.0F, 2, 2, 4)
-                .uv(52, 58).cuboid(1.5F, 9.0F, -2.0F, 0, 1, 1),
-                ModelTransform.pivot(2.0F, 14.0F - off, 0.5F));
+        sonicHeadData.addChild("spike1",
+                ModelPartBuilder.create()
+                        .uv(0, 0)
+                        .cuboid(-3.5F, -4.0F, 6.0F, 3.0F, 3.0F, 3.0F)
+                        .uv(0, 0)
+                        .cuboid(-3.5F, -5.0F, 4.0F, 3.0F, 3.0F, 2.0F),
+                ModelTransform.pivot(0.0F, 0.0F, 0.0F));
 
-        ModelPartData sonicLarm = sonicBone.addChild("sonicLarm", ModelPartBuilder.create()
-                .uv(0, 60).cuboid(-0.5F, 8.0F, -1.0F, 2, 2, 2)
-                .uv(60, 17).cuboid(0.0F, 0.0F, -0.5F, 1, 8, 1),
-                ModelTransform.of(3.0F, 9.0F - off, 0.5F, 0.0F, 0.0F, -0.0873F));
+        sonicHeadData.addChild("spike2",
+                ModelPartBuilder.create()
+                        .uv(0, 0)
+                        .cuboid(0.5F, -6.0F, 6.0F, 3.0F, 3.0F, 3.0F)
+                        .uv(0, 0)
+                        .cuboid(0.5F, -7.0F, 4.0F, 3.0F, 3.0F, 2.0F),
+                ModelTransform.pivot(0.0F, 0.0F, 0.0F));
 
-        ModelPartData sonicRarm = sonicBone.addChild("sonicRarm", ModelPartBuilder.create()
-                .uv(60, 17).cuboid(-1.0F, 0.0F, -0.5F, 1, 8, 1)
-                .uv(0, 60).cuboid(-1.5F, 8.0F, -1.0F, 2, 2, 2),
-                ModelTransform.of(-4.0F, 9.0F - off, 0.5F, 0.0F, 0.0F, 0.0873F));
+        sonicHeadData.addChild("spike3",
+                ModelPartBuilder.create()
+                        .uv(0, 0)
+                        .cuboid(-2.5F, -9.0F, 3.0F, 3.0F, 3.0F, 2.0F)
+                        .uv(0, 0)
+                        .cuboid(-2.5F, -10.0F, 5.0F, 3.0F, 3.0F, 3.0F),
+                ModelTransform.pivot(0.0F, 0.0F, 0.0F));
 
-        ModelPartData sonicHead = sonicBone.addChild("sonicHead", ModelPartBuilder.create()
-                .uv(36, 3).cuboid(-3.5F, -7.0F, -3.0F, 7, 7, 7)
-                .uv(60, 0).cuboid(-0.5F, -3.0F, -4.0F, 1, 1, 1)
-                .uv(0, 0).cuboid(-3.5F, -4.0F, 6.0F, 3, 3, 3)
-                .uv(0, 0).cuboid(-3.5F, -5.0F, 4.0F, 3, 3, 2)
-                .uv(0, 0).cuboid(0.5F, -6.0F, 6.0F, 3, 3, 3)
-                .uv(0, 0).cuboid(0.5F, -7.0F, 4.0F, 3, 3, 2)
-                .uv(0, 0).cuboid(-2.5F, -9.0F, 3.0F, 3, 3, 2)
-                .uv(0, 0).cuboid(-2.5F, -10.0F, 5.0F, 3, 3, 3),
-                ModelTransform.pivot(-0.5F, 7.0F - off, 0.0F));
+        modelPartData.addChild("rleg",
+                ModelPartBuilder.create()
+                        .uv(53, 54)
+                        .cuboid(-1.5F, 7.0F, -1.0F, 2.0F, 1.0F, 2.0F)
+                        .uv(0, 0)
+                        .cuboid(-1.0F, -1.0F, -0.5F, 1.0F, 8.0F, 1.0F)
+                        .uv(52, 58)
+                        .cuboid(-1.5F, 8.0F, -3.0F, 2.0F, 2.0F, 4.0F)
+                        .uv(52, 58)
+                        .cuboid(-2.0F, 9.0F, -2.0F, 0.0F, 1.0F, 1.0F),
+                ModelTransform.pivot(-3.0F, 14.0F, 0.5F));
 
-        return TexturedModelData.of(modelData, 128, 64);
+        modelPartData.addChild("lleg",
+                ModelPartBuilder.create()
+                        .uv(53, 54)
+                        .cuboid(-0.5F, 7.0F, -1.0F, 2.0F, 1.0F, 2.0F)
+                        .uv(0, 0)
+                        .cuboid(0.0F, -1.0F, -0.5F, 1.0F, 8.0F, 1.0F)
+                        .uv(52, 58)
+                        .cuboid(-0.5F, 8.0F, -3.0F, 2.0F, 2.0F, 4.0F)
+                        .uv(52, 58)
+                        .cuboid(1.5F, 9.0F, -2.0F, 0.0F, 1.0F, 1.0F),
+                ModelTransform.pivot(2.0F, 14.0F, 0.5F));
+
+        modelPartData.addChild("larm",
+                ModelPartBuilder.create()
+                        .uv(0, 60)
+                        .cuboid(-0.5F, 8.0F, -1.0F, 2.0F, 2.0F, 2.0F)
+                        .uv(60, 17)
+                        .cuboid(0.0F, 0.0F, -0.5F, 1.0F, 8.0F, 1.0F),
+                ModelTransform.of(3.0F, 9.0F, 0.5F, 0.0F, 0.0F, -0.0873F));
+
+        modelPartData.addChild("rarm",
+                ModelPartBuilder.create()
+                        .uv(60, 17)
+                        .cuboid(-1.0F, 0.0F, -0.5F, 1.0F, 8.0F, 1.0F)
+                        .uv(0, 60)
+                        .cuboid(-1.5F, 8.0F, -1.0F, 2.0F, 2.0F, 2.0F),
+                ModelTransform.of(-4.0F, 9.0F, 0.5F, 0.0F, 0.0F, 0.0873F));
+
+
+        return TexturedModelData.of(modelData, 64, 64);
     }
 
     @Override
     public void copyRotations(ModelPart sourceHead, ModelPart sourceBody, ModelPart sourceRightArm, ModelPart sourceLeftArm, ModelPart sourceRightLeg, ModelPart sourceLeftLeg) {
-        if (sonicHead != null && sourceHead != null) {
-            sonicHead.pitch = sourceHead.pitch;
-            sonicHead.yaw = sourceHead.yaw;
-            sonicHead.roll = sourceHead.roll;
+        if (sourceHead == null || sourceRightArm == null || sourceLeftArm == null ||
+                sourceRightLeg == null || sourceLeftLeg == null) {
+            return;
         }
 
-        if (sonicLarm != null && sourceLeftArm != null) {
-            sonicLarm.pitch = sourceLeftArm.pitch;
-            sonicLarm.yaw = sourceLeftArm.yaw;
-            sonicLarm.roll = sourceLeftArm.roll - 0.0873F;
-        }
+        this.sonicHead.pitch = sourceHead.pitch;
+        this.sonicHead.yaw = sourceHead.yaw;
+        this.sonicHead.roll = sourceHead.roll;
 
-        if (sonicRarm != null && sourceRightArm != null) {
-            sonicRarm.pitch = sourceRightArm.pitch;
-            sonicRarm.yaw = sourceRightArm.yaw;
-            sonicRarm.roll = sourceRightArm.roll + 0.0873F;
-        }
+        this.larm.pitch = sourceLeftArm.pitch;
+        this.larm.yaw = sourceLeftArm.yaw;
+        this.larm.roll = sourceLeftArm.roll - 0.0873F;
 
-        if (sonicRleg != null && sourceRightLeg != null) {
-            sonicRleg.pitch = sourceRightLeg.pitch;
-            sonicRleg.yaw = sourceRightLeg.yaw;
-            sonicRleg.roll = sourceRightLeg.roll;
-        }
+        this.rarm.pitch = sourceRightArm.pitch;
+        this.rarm.yaw = sourceRightArm.yaw;
+        this.rarm.roll = sourceRightArm.roll + 0.0873F;
 
-        if (sonicLleg != null && sourceLeftLeg != null) {
-            sonicLleg.pitch = sourceLeftLeg.pitch;
-            sonicLleg.yaw = sourceLeftLeg.yaw;
-            sonicLleg.roll = sourceLeftLeg.roll;
-        }
+        this.rleg.pitch = sourceRightLeg.pitch;
+        this.rleg.yaw = sourceRightLeg.yaw;
+        this.rleg.roll = sourceRightLeg.roll;
+
+        this.lleg.pitch = sourceLeftLeg.pitch;
+        this.lleg.yaw = sourceLeftLeg.yaw;
+        this.lleg.roll = sourceLeftLeg.roll;
     }
 
     @Override
     public void render(MatrixStack matrices, VertexConsumer vertices, int light, int overlay) {
         matrices.push();
-        matrices.scale(1.3F, 1.3F, 1.3F);
-        matrices.translate(0.0F, -0.35F, 0.0F);
+        matrices.scale(1.25F, 1.25F, 1.25F);
+        matrices.translate(0.0F, -0.3F, 0.0F);
 
-        if (sonicBone != null) {
-            sonicBone.render(matrices, vertices, light, overlay);
-        }
+        if (bbMain != null) bbMain.render(matrices, vertices, light, overlay);
+        if (sonicHead != null) sonicHead.render(matrices, vertices, light, overlay);
+        if (rleg != null) rleg.render(matrices, vertices, light, overlay);
+        if (lleg != null) lleg.render(matrices, vertices, light, overlay);
+        if (larm != null) larm.render(matrices, vertices, light, overlay);
+        if (rarm != null) rarm.render(matrices, vertices, light, overlay);
 
         matrices.pop();
     }

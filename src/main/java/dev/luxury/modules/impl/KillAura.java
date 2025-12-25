@@ -15,6 +15,7 @@ import dev.luxury.modules.impl.killaura.*;
 import dev.luxury.modules.impl.killaura.rotate.*;
 import dev.luxury.utils.managers.FriendManager;
 import dev.luxury.utils.player.InventoryUtil;
+import dev.luxury.modules.impl.killaura.Criticals;
 import lombok.Getter;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.entity.LivingEntity;

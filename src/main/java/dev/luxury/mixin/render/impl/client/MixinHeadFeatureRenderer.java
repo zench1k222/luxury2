@@ -5,8 +5,8 @@ import dev.luxury.modules.impl.CustomModels;
 import dev.luxury.utils.managers.FriendManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.feature.ArmorFeatureRenderer;
-import net.minecraft.client.render.entity.state.BipedEntityRenderState;
+import net.minecraft.client.render.entity.feature.HeadFeatureRenderer;
+import net.minecraft.client.render.entity.state.LivingEntityRenderState;
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.client.util.math.MatrixStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,21 +14,20 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ArmorFeatureRenderer.class)
-public class MixinArmorFeatureRenderer_Skip {
+@Mixin(HeadFeatureRenderer.class)
+public class MixinHeadFeatureRenderer {
 
-    @Inject(method = "render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;ILnet/minecraft/client/render/entity/state/BipedEntityRenderState;FF)V",
+    @Inject(method = "render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;ILnet/minecraft/client/render/entity/state/LivingEntityRenderState;FF)V",
             at = @At("HEAD"), cancellable = true, require = 0)
-    private void skipArmor(MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, BipedEntityRenderState state, float limbAngle, float limbDistance, CallbackInfo ci) {
+    private void skipHeadItem(MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, LivingEntityRenderState state, float limbAngle, float limbDistance, CallbackInfo ci) {
         CustomModels cm = ModuleManager.getModule(CustomModels.class);
 
-        if (cm != null && cm.isEnabled() && shouldHideArmor(state)) {
+        if (cm != null && cm.isEnabled() && shouldHideHead(state)) {
             ci.cancel();
         }
     }
 
-
-    private boolean shouldHideArmor(BipedEntityRenderState state) {
+    private boolean shouldHideHead(LivingEntityRenderState state) {
         if (!(state instanceof PlayerEntityRenderState playerState)) {
             return false;
         }
@@ -39,7 +38,7 @@ public class MixinArmorFeatureRenderer_Skip {
         String playerName = getPlayerNameFromState(playerState);
 
         if (playerName == null) {
-            return isLocalPlayer(playerState);
+            return false;
         }
 
         String localPlayerName = mc.player.getName().getString();
@@ -55,9 +54,5 @@ public class MixinArmorFeatureRenderer_Skip {
         } catch (Exception e) {
         }
         return null;
-    }
-
-    private boolean isLocalPlayer(PlayerEntityRenderState state) {
-        return false;
     }
 }

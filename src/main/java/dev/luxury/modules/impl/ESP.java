@@ -1363,10 +1363,7 @@ public class ESP extends Module {
         return false;
     }
 
-    private void renderNameTag(EventRender2D e,
-                               float minX, float minY,
-                               float maxX, float maxY,
-                               Entity entity) {
+    private void renderNameTag(EventRender2D e, float minX, float minY, float maxX, float maxY, Entity entity) {
 
         if (!(entity instanceof LivingEntity living)) return;
 
@@ -1375,16 +1372,25 @@ public class ESP extends Module {
 
         float scale = getPlayerScale(entity);
 
-        String name = entity.getCustomName() != null
-                ? entity.getCustomName().getString()
-                : entity.getDisplayName().getString();
+        String originalName = entity.getCustomName() != null ? entity.getCustomName().getString() : entity.getDisplayName().getString();
 
-        // Используем тот же метод, что и в старом коде
+        String name = originalName;
+
+        if (NameProtect.instance != null && NameProtect.instance.isEnabled()) {
+            String cleanName = originalName.replaceAll("§[0-9a-fk-or]", "");
+
+            for (String word : cleanName.split(" ")) {
+                String protectedName = NameProtect.instance.getProtectedName(word);
+                if (!protectedName.equals(word)) {
+                    name = name.replace(word, protectedName);
+                    break;
+                }
+            }
+        }
+
         for (Map.Entry<String, String> entry : donateSymbols.entrySet()) {
             if (name.contains(entry.getKey())) {
                 name = name.replace(entry.getKey(), entry.getValue());
-
-                // Удаляем §f после замены доната
                 name = name.replace("§f", "");
                 break;
             }
