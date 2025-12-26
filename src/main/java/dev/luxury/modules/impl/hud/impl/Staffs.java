@@ -24,7 +24,6 @@ public class Staffs extends DraggableHudElement {
     private static final int PADDING = 5;
     private static final int ITEM_HEIGHT = 12;
 
-    // Маппинг символов на читаемые названия
     private static final Map<String, String> SYMBOL_TO_TITLE = Map.of(
             "ꕠ", "D.HELPER",
             "ꔉ", "HELPER",
@@ -68,6 +67,14 @@ public class Staffs extends DraggableHudElement {
 
         updateStaffList();
 
+        List<StaffInfo> staffList = new ArrayList<>(staffCache.values());
+
+        if (staffList.isEmpty() && !(mc.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen)) {
+            this.width = 0;
+            this.height = 0;
+            return;
+        }
+
         FontDraw sfpro = FontHelper.sfprobold[18];
         FontDraw sfpro1 = FontHelper.sfprobold[16];
         FontDraw sfpro2 = FontHelper.sfprobold[13];
@@ -78,40 +85,24 @@ public class Staffs extends DraggableHudElement {
         int colorfonts1 = Color.WHITE.getRGB();
         int colorfonts2 = new Color(150, 150, 160).getRGB();
 
-        List<StaffInfo> staffList = new ArrayList<>(staffCache.values());
+        float width = staffList.isEmpty() ? 120f : 180f;
+        int titleHeight = 14;
+        int itemCount = Math.max(staffList.size(), 1);
+        int totalHeight = (PADDING * 2 + titleHeight + itemCount * ITEM_HEIGHT - 3);
 
         if (staffList.isEmpty()) {
-            this.width = 0;
-            this.height = 0;
-            return;
+            totalHeight = 70;
         }
-
-        float maxWidth = 97.5f;
-        for (StaffInfo staff : staffList) {
-            float nameWidth = sfpro1.getWidth(staff.getName());
-            float prefixWidth = prefixFont.getWidth(staff.getPrefix());
-            // Используем статус вместо времени онлайн
-            float statusWidth = sfpro2.getWidth(staff.getStatus().toString());
-            float headSize = 8f;
-
-            float totalWidth = PADDING + headSize + 3 + nameWidth + 2 + prefixWidth + 5 + statusWidth + PADDING;
-            if (totalWidth > maxWidth) {
-                maxWidth = totalWidth;
-            }
-        }
-
-        float width = maxWidth;
-        float startX = this.x;
-        float startY = this.y;
-        int titleHeight = 14;
-
-        int totalHeight = (PADDING * 2 + titleHeight + staffList.size() * ITEM_HEIGHT - 3);
 
         this.width = width;
         this.height = totalHeight;
 
+        float startX = this.x;
+        float startY = this.y;
+
         RenderUtil.drawBlur(matrices, startX, startY, width, totalHeight,
                 new Vector4f(8, 8, 8, 8), 18f, colorstandart);
+
         sfpro.drawGradientText(matrices, "Staffs", startX + PADDING + 13,
                 startY + PADDING - 3, colorfonts1, colorfonts2);
         iconsFont.drawFontLeft(matrices, icons[8], startX + 5, startY + 3,
@@ -144,7 +135,7 @@ public class Staffs extends DraggableHudElement {
         PlayerListEntry playerEntry = getPlayerEntry(staff.getName());
         if (playerEntry != null && playerEntry.getSkinTextures() != null) {
             Identifier skinTexture = playerEntry.getSkinTextures().texture();
-            int headAlpha = isVanished ? 150 : 255; // Тусклее для ванишедших
+            int headAlpha = isVanished ? 150 : 255;
             RenderUtil.drawRoundedImage(matrices, skinTexture, headX, headY,
                     headSize, headSize, 0.125f, 0.126f, 0.25f, 0.26f,
                     new Vector4f(3f, 3f, 3f, 3f),

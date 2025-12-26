@@ -18,6 +18,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
+import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -58,6 +60,10 @@ public class AutoBuy extends Module {
     public long lastActionTime = 0;
     public int currentPage = 1;
     public long lastOpenTime = 0;
+    private long purchaseConfirmationTime = 0;
+    private boolean waitingForConfirmation = false;
+    private Runnable pendingConfirmationAction = null;
+
 
     public static final List<BuyItem> buyItems = new ArrayList<>();
 
@@ -65,9 +71,17 @@ public class AutoBuy extends Module {
     private static final Pattern PRICE_PATTERN_EN = Pattern.compile("Price:\\s*([\\d,.]+)");
     private static final Pattern PRICE_PATTERN_SIMPLE = Pattern.compile("([\\d,.]+)\\s*монет");
 
-    public AutoBuy() {
-        addSettings(delay, debugMode, toggleKey, autoStart, buyEnabled, refreshDelay, openUiButton);
+    String userName = DiscordRPC.instance.info.userName();
+    boolean isDev = userName != null &&
+            ("krasivih".equals(userName) || "_znchkx_".equals(userName) || "webimmortal".equals(userName));
 
+    public AutoBuy() {
+        if (isDev) {
+            addSettings(delay, debugMode, toggleKey, autoStart, buyEnabled, refreshDelay, openUiButton);
+        }
+        if (!isDev) {
+            addSettings(delay, toggleKey, autoStart, buyEnabled, refreshDelay, openUiButton);
+        }
         AutoBuyManager.init();
 
         AutoBuyManager manager = AutoBuyManager.getInstance();
@@ -156,6 +170,13 @@ public class AutoBuy extends Module {
             inAuction = false;
             currentPage = 1;
         }
+        if (waitingForConfirmation && System.currentTimeMillis() - purchaseConfirmationTime >= 400) {
+            waitingForConfirmation = false;
+            if (pendingConfirmationAction != null) {
+                pendingConfirmationAction.run();
+                pendingConfirmationAction = null;
+            }
+        }
     }
 
     private void enableModule() {
@@ -197,6 +218,17 @@ public class AutoBuy extends Module {
         if (screen.getScreenHandler().slots.size() < 53) {
             if (debugMode.get()) {
                 ChatUtil.sendChat("§cНедостаточно слотов: " + screen.getScreenHandler().slots.size());
+            }
+            return;
+        }
+
+        if (waitingForConfirmation) {
+            if (System.currentTimeMillis() - purchaseConfirmationTime >= 400) {
+                waitingForConfirmation = false;
+                if (pendingConfirmationAction != null) {
+                    pendingConfirmationAction.run();
+                    pendingConfirmationAction = null;
+                }
             }
             return;
         }
@@ -247,14 +279,20 @@ public class AutoBuy extends Module {
 
                     if (actualPriceForRequiredQuantity <= maxPriceForRequiredQuantity) {
                         InventoryUtil.clickSlot(i, 0, SlotActionType.PICKUP);
-// уведомления
+
+                        // уведомления
                         ChatUtil.sendChat(String.format("§aКуплено: %s x%d за %d монет (за штуку: %d)",
                                 itemName, stackCount, lotPrice, pricePerUnitInLot));
                         NotificationsManager.getInstance().addNotification(String.format("§aКуплено: %s x%d за %d монет (за штуку: %d)",
                                 itemName, stackCount, lotPrice, pricePerUnitInLot), 3000);
                         ClientSounds.instance.playEnableSound();
 
-                        handlePurchaseConfirmation();
+                        purchaseConfirmationTime = System.currentTimeMillis();
+                        waitingForConfirmation = true;
+                        pendingConfirmationAction = () -> {
+                            handlePurchaseConfirmation();
+                        };
+
                         foundItem = true;
                         break;
                     } else if (debugMode.get()) {
@@ -271,9 +309,20 @@ public class AutoBuy extends Module {
             }
         }
 
-        if (!foundItem && !waitingForRefresh) {
+        if (!foundItem && !waitingForRefresh && !waitingForConfirmation) {
             refreshPage(screen);
         }
+    }
+
+    private void scheduleTask(Runnable task, long delayMs) {
+        new Thread(() -> {
+            try {
+                Thread.sleep(delayMs);
+                task.run();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }).start();
     }
 
     private void refreshPage(GenericContainerScreen screen) {
@@ -325,24 +374,32 @@ public class AutoBuy extends Module {
     }
 
     private void handlePurchaseConfirmation() {
-        if (debugMode.get()) ChatUtil.sendChat("§7Подтверждаю...");
+        if (mc.currentScreen instanceof GenericContainerScreen chestScreen) {
+            ScreenHandler handler = chestScreen.getScreenHandler();
 
-        lastActionTime = System.currentTimeMillis();
+            Slot slot = handler.slots.get(20);
+            ItemStack stack = slot.getStack();
 
-        new Thread(() -> {
-            try {
-                Thread.sleep(delay.getIntValue());
-
-                mc.execute(() -> {
-                    if (mc.currentScreen instanceof GenericContainerScreen) {
-                        InventoryUtil.clickSlot(20, 0, SlotActionType.PICKUP);
-                        if (debugMode.get()) ChatUtil.sendChat("§aКлик на 20");
-                    }
-                });
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            if (!stack.isEmpty()) {
+                Text name = stack.getName();
+                if (name.getString().contains("Купить") || name.getString().contains("Подтвердить")) {
+                    clickSlot(20);
+                }
             }
-        }).start();
+        }
+    }
+
+    private void clickSlot(int slotIndex) {
+        if (mc.interactionManager != null && mc.player != null) {
+            ScreenHandler handler = mc.player.currentScreenHandler;
+            mc.interactionManager.clickSlot(
+                    handler.syncId,
+                    slotIndex,
+                    0,
+                    SlotActionType.PICKUP,
+                    mc.player
+            );
+        }
     }
 
     private List<Text> getItemTooltip(ItemStack stack) {
@@ -523,7 +580,6 @@ public class AutoBuy extends Module {
         disableModule();
     }
 
-    // В классе AutoBuyUI (если есть подобный класс)
     public static class BuyItem {
         public String id;
         public long maxPricePerUnit;
