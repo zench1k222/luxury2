@@ -6,9 +6,11 @@ import dev.luxury.modules.impl.ClientSounds;
 import dev.luxury.modules.impl.killaura.rotate.Aim;
 import dev.luxury.modules.impl.killaura.rotate.Rotates;
 import dev.luxury.render.feature.CustomModelFeature;
+import dev.luxury.render.feature.SantaHatFeatureRenderer;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.managers.CommandManager;
 import dev.luxury.utils.managers.FriendManager;
+import dev.luxury.utils.managers.MacrosManager;
 import dev.luxury.utils.network.ServerHandler;
 import lombok.Getter;
 
@@ -32,6 +34,7 @@ public class Luxury implements ModInitializer {
     @Getter
     private static dev.luxury.utils.managers.SyncManager Sync;
     FriendManager friendManager = new FriendManager();
+    MacrosManager macrosManager ;
 
     @Override
     public void onInitialize() {
@@ -39,7 +42,7 @@ public class Luxury implements ModInitializer {
         EventManager.register(this);
         fontHelper.initialize();
         moduleManager.init();
-
+        EventManager.register(MacrosManager.getInstance());
         Sync = dev.luxury.utils.managers.SyncManager.getInstance();
         rotationManager = new Rotates();
         serverHandler = new ServerHandler();
@@ -49,6 +52,7 @@ public class Luxury implements ModInitializer {
         LivingEntityFeatureRendererRegistrationCallback.EVENT.register((entityType, renderer, registrationHelper, context) -> {
             if (renderer instanceof PlayerEntityRenderer playerRenderer && entityType == EntityType.PLAYER) {
                 registrationHelper.register(new CustomModelFeature(playerRenderer));
+                registrationHelper.register(new SantaHatFeatureRenderer(playerRenderer));
             }
         });
         HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {

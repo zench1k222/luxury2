@@ -2,23 +2,18 @@ package dev.luxury.utils.managers;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import dev.luxury.common.way.Way;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.modules.api.settings.*;
-import dev.luxury.modules.impl.AutoBuy;
 import dev.luxury.modules.impl.hud.api.DraggableHudElement;
 import dev.luxury.modules.impl.hud.api.HUD;
-import dev.luxury.ui.AutoBuyUI;
-import dev.luxury.utils.client.ChatUtil;
 import net.minecraft.client.MinecraftClient;
 
 import java.awt.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -69,6 +64,8 @@ public class ConfigManager {
             config.setFriends(new ArrayList<>(FriendManager.getInstance().getFriends()));
 
             config.setWays(new ArrayList<>(dev.luxury.common.way.WayRepository.getInstance().wayList));
+
+            config.setMacros(new ArrayList<>(MacrosManager.getInstance().getMacros()));
 
             Map<String, Map<String, Object>> moduleSettings = new HashMap<>();
             for (Module module : ModuleManager.getModules()) {
@@ -153,6 +150,10 @@ public class ConfigManager {
             if (config.getWays() != null) {
                 dev.luxury.common.way.WayRepository.getInstance().wayList.clear();
                 dev.luxury.common.way.WayRepository.getInstance().wayList.addAll(config.getWays());
+            }
+
+            if (config.getMacros() != null) {
+                MacrosManager.getInstance().setMacros(config.getMacros());
             }
 
             Map<String, Map<String, Object>> moduleSettings = config.getModuleSettings();
@@ -331,22 +332,12 @@ public class ConfigManager {
         return configsDir;
     }
 
-
-    private AutoBuy getAutoBuyModule() {
-        if (moduleManager != null) {
-            Module module = moduleManager.getModuleByName("AutoBuy");
-            if (module instanceof AutoBuy) {
-                return (AutoBuy) module;
-            }
-        }
-        return null;
-    }
-
     private static class ConfigData {
         private Map<String, Boolean> modules;
         private Map<String, Integer> keybinds;
         private List<String> friends;
         private List<Way> ways;
+        private List<Macro> macros;
         private Map<String, Map<String, Object>> moduleSettings;
         private Map<String, HudElementData> hudPositions;
 
@@ -380,6 +371,14 @@ public class ConfigManager {
 
         public void setWays(List<Way> ways) {
             this.ways = ways;
+        }
+
+        public List<Macro> getMacros() {
+            return macros;
+        }
+
+        public void setMacros(List<Macro> macros) {
+            this.macros = macros;
         }
 
         public Map<String, Map<String, Object>> getModuleSettings() {

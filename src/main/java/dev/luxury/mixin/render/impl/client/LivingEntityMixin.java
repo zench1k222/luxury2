@@ -1,10 +1,12 @@
 package dev.luxury.mixin.render.impl.client;
 
 import dev.luxury.Luxury;
+import dev.luxury.events.impl.client.EntityDeathEvent;
 import dev.luxury.events.impl.client.SwingDurationEvent;
 import dev.luxury.events.impl.eventapi.EventManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffectUtil;
@@ -17,6 +19,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
@@ -30,18 +33,18 @@ public abstract class LivingEntityMixin {
 
     @Unique
     private final MinecraftClient client = MinecraftClient.getInstance();
+
     @Redirect(method = "jump", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;getYaw()F"))
     public float replaceMovePacketPitch(LivingEntity instance) {
         if ((Object) this != client.player) {
             return instance.getYaw();
-        }else{
+        } else {
             return Luxury.getInstance().getRotationManager().getCurrentRotate().getYaw();
         }
 
 
-
-
     }
+
     @Inject(method = "getHandSwingDuration", at = @At("HEAD"), cancellable = true)
     private void swingProgressHook(CallbackInfoReturnable<Integer> cir) {
         if ((Object) this != client.player) {
@@ -59,6 +62,21 @@ public abstract class LivingEntityMixin {
                 animation *= (hasStatusEffect(StatusEffects.MINING_FATIGUE) ? 6 + (1 + getStatusEffect(StatusEffects.MINING_FATIGUE).getAmplifier()) * 2 : 6);
             cir.setReturnValue((int) animation);
         }
+    }
 
+        @Inject(method = "onDeath", at = @At("HEAD"))
+        private void onDeath (DamageSource source, CallbackInfo ci){
+            LivingEntity entity = (LivingEntity) (Object) this;
+            EntityDeathEvent event = new EntityDeathEvent(entity, source);
+            EventManager.call(event);
+        }
+
+        @Inject(method = "handleStatus", at = @At("HEAD"))
+        private void handleStatus ( byte status, CallbackInfo ci){
+            if (status == 3) {
+                LivingEntity entity = (LivingEntity) (Object) this;
+                EntityDeathEvent event = new EntityDeathEvent(entity, null);
+                EventManager.call(event);
+        }
     }
 }

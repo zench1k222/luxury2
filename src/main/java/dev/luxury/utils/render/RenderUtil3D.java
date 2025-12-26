@@ -5,10 +5,15 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import dev.luxury.events.impl.client.EventRender3D;
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.utils.math.MathUtil;
+import dev.luxury.utils.math.ProjectionUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.render.*;
+import net.minecraft.client.render.entity.EntityRenderer;
+import net.minecraft.client.render.entity.state.EntityRenderState;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
@@ -27,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
 public class RenderUtil3D {
     private static Tessellator tessellatorFaces = null;
     private static Tessellator tessellatorOutlines = null;
@@ -34,7 +40,8 @@ public class RenderUtil3D {
     public static final List<Texture> TEXTURE = new ArrayList<>();
     public static final int ALL_FACES = 0xFFFFFF;
     public static final int ALL_LINES = 0xFFFFFF;
-
+    public static final List<Line> LINE_DEPTH = new ArrayList<>();
+    public static final List<Line> LINE = new ArrayList<>();
     public static List<DebugLineAction> debugLineQueue = new ArrayList<>();
     public static List<LineAction> lineQueue = new ArrayList<>();
 
@@ -103,8 +110,43 @@ public class RenderUtil3D {
             RenderSystem.disableBlend();
             TEXTURE_DEPTH.clear();
         }
+        if (!LINE_DEPTH.isEmpty()) {
+            GL11.glEnable(GL11.GL_POLYGON_SMOOTH);
+            Set<Float> widths = LINE_DEPTH.stream().map(line -> line.width).collect(Collectors.toCollection(LinkedHashSet::new));
+            RenderSystem.enableBlend();
+            RenderSystem.disableCull();
+            RenderSystem.enableDepthTest();
+            RenderSystem.depthMask(false);
+            RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
+            RenderSystem.setShader(ShaderProgramKeys.RENDERTYPE_LINES);
+            widths.forEach(width -> {
+                RenderSystem.lineWidth(width);
+                BufferBuilder buffer = Tessellator.getInstance().begin(VertexFormat.DrawMode.LINES, VertexFormats.LINES);
+                LINE_DEPTH.stream().filter(line -> line.width == width).forEach(line -> vertexLine(line.entry, buffer, line.start.toVector3f(), line.end.toVector3f(), line.colorStart, line.colorEnd));
+                BufferRenderer.drawWithGlobalProgram(buffer.end());
+            });
+            RenderSystem.depthMask(true);
+            RenderSystem.enableCull();
+            RenderSystem.disableBlend();
+            LINE_DEPTH.clear();
+            GL11.glDisable(GL11.GL_POLYGON_SMOOTH);
+        }
+    }
+    public void vertexLine(MatrixStack matrices, VertexConsumer buffer, Vec3d start, Vec3d end, int startColor, int endColor) {
+        vertexLine(matrices.peek(), buffer, start.toVector3f(), end.toVector3f(), startColor, endColor);
     }
 
+    public static void vertexLine(MatrixStack.Entry entry, VertexConsumer buffer, Vector3f start, Vector3f end, int startColor, int endColor) {
+        if (entry == null) entry = ProjectionUtil.lastWorldSpaceMatrix;
+        Vector3f vec = getNormal(start, end);
+        buffer.vertex(entry, start).color(startColor).normal(entry, vec);
+        buffer.vertex(entry, end).color(endColor).normal(entry, vec);
+    }
+    public static Vector3f getNormal(Vector3f start, Vector3f end) {
+        Vector3f normal = new Vector3f(start).sub(end);
+        float sqrt = MathHelper.sqrt(normal.lengthSquared());
+        return normal.div(sqrt);
+    }
     private static void quadTexture(MatrixStack.Entry entry, BufferBuilder buffer, float x, float y, float width, float height, Vector4i color) {
         Matrix4f matrix = entry.getPositionMatrix();
 
@@ -266,7 +308,31 @@ public class RenderUtil3D {
         drawBoxOutlines(box, matrices, posX, posY, posZ, outlineColor, linesToDraw);
         endRender();
     }
-
+    public static void drawEntity(Entity entity, Vec3d pos, float yaw, int alpha, MatrixStack matrices, float tickDelta) {
+        if (!(entity instanceof LivingEntity)) return;
+        LivingEntity livingEntity = (LivingEntity) entity;
+        matrices.push();
+        matrices.translate(pos.x, pos.y, pos.z);
+        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(yaw));
+        matrices.scale(1.0f, 1.0f, 1.0f);
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
+        RenderSystem.enableDepthTest();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha / 255.0F);
+        EntityRenderer renderer = mc.getEntityRenderDispatcher().getRenderer(entity);
+        if (renderer != null) {
+            int light = renderer.getLight(livingEntity, tickDelta);
+            VertexConsumerProvider vertexConsumers = mc.getBufferBuilders().getEntityVertexConsumers();
+            EntityRenderState renderState = renderer.getAndUpdateRenderState(livingEntity, tickDelta);
+            if (renderState != null) {
+                renderer.render(renderState, matrices, vertexConsumers, light);
+            }
+            ((VertexConsumerProvider.Immediate)vertexConsumers).draw();
+        }
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.disableBlend();
+        matrices.pop();
+    }
     private static void drawBoxOutlines(Box box, MatrixStack matrices, double posX, double posY, double posZ, Color color, int linesToDraw) {
         matrices.push();
         matrices.translate(posX, posY, posZ);
@@ -437,7 +503,19 @@ public class RenderUtil3D {
         buffer.vertex(model, x1, y1, z1).color(lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), lineColor.getAlpha()).normal(entry, normalVec.x(), normalVec.y(), normalVec.z());
         buffer.vertex(model, x2, y2, z2).color(lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), lineColor.getAlpha()).normal(entry, normalVec.x(), normalVec.y(), normalVec.z());
     }
+    public void drawLine(MatrixStack.Entry entry, double minX, double minY, double minZ, double maxX, double maxY, double maxZ, int color, float width, boolean depth) {
+        drawLine(entry, new Vec3d(minX, minY, minZ), new Vec3d(maxX, maxY, maxZ), color, color, width, depth);
+    }
 
+    public static void drawLine(Vec3d start, Vec3d end, int color, float width, boolean depth) {
+        drawLine(null, start, end, color, color, width, depth);
+    }
+
+    public static void drawLine(MatrixStack.Entry entry, Vec3d start, Vec3d end, int colorStart, int colorEnd, float width, boolean depth) {
+        Line line = new Line(entry, start, end, colorStart, colorEnd, width);
+        if (depth) LINE_DEPTH.add(line);
+        else LINE.add(line);
+    }
     public static @NotNull Vector3f getNormal(float x1, float y1, float z1, float x2, float y2, float z2) {
         float xNormal = x2 - x1;
         float yNormal = y2 - y1;
@@ -456,6 +534,6 @@ public class RenderUtil3D {
         Texture texture = new Texture(entry, id, x, y, width, height, color);
         if (depth) TEXTURE_DEPTH.add(texture); else TEXTURE.add(texture);
     }
-
+    public record Line(MatrixStack.Entry entry, Vec3d start, Vec3d end, int colorStart, int colorEnd, float width) {}
     public record Texture(MatrixStack.Entry entry, Identifier id, float x, float y, float width, float height, Vector4i color) {}
 }
