@@ -24,6 +24,7 @@ public class CommandManager {
         registerCommand(new AutoBuyCommand());
         registerCommand(new HelpCommand());
         registerCommand(new WayCommand());
+        registerCommand(new MacrosCommand());
 
         ConfigManager.init(moduleManager);
     }
@@ -163,6 +164,35 @@ public class CommandManager {
                 return Stream.empty();
             }
 
+            case "macros" -> {
+                if (parts.length == 2) {
+                    return Stream.of("add", "delete", "del", "remove", "list", "clear")
+                            .filter(a -> a.startsWith(currentArg));
+                }
+
+                if (parts.length == 3) {
+                    String subCommand = parts[1].toLowerCase();
+                    switch (subCommand) {
+                        case "delete", "del", "remove" -> {
+                            List<String> macroNames = MacrosManager.getInstance().getMacros().stream().map(Macro::getName).toList();
+                            return macroNames.stream().filter(m -> m.startsWith(currentArg));
+                        }
+                        case "add" -> {
+                            return Stream.of("<название>");
+                        }
+                    }
+                }
+
+                if (parts.length == 4 && "add".equals(parts[1].toLowerCase())) {
+                    return Stream.of("<сообщение>");
+                }
+
+                if (parts.length >= 5 && "add".equals(parts[1].toLowerCase())) {
+                    return Stream.of("H", "G", "F1", "F2", "F3", "LSHIFT", "LCTRL").filter(k -> k.startsWith(currentArg.toUpperCase()));
+                }
+
+                return Stream.empty();
+            }
             case "way" -> {
                 if (parts.length == 2) {
                     return Stream.of("add", "remove", "delete", "del", "list", "clear")

@@ -56,7 +56,6 @@ public class HighJump extends Module {
     @Override
     public void onEnable() {
         super.onEnable();
-        System.out.println("dwa");
     }
 
     @Override

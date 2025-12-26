@@ -72,7 +72,10 @@ public class ModuleManager {
                 new AutoBuy(),
                 new AntiCheatDetector(),
                 new SkeletonEsp(),
-                new AntiAFK()
+                new ItemScroller(),
+                new AntiAFK(),
+                new KillEffect(),
+                new SantaHat()
 
         );
         DiscordRPC.getInstance().enable();
