@@ -402,6 +402,7 @@ public class AutoBuy extends Module {
         }
     }
 
+
     private List<Text> getItemTooltip(ItemStack stack) {
         try {
             Item.TooltipContext context = Item.TooltipContext.create(mc.world.getRegistryManager());
