@@ -17,6 +17,7 @@ repositories {
     maven { url "https://maven.meteordev.org" }
     maven { url "https://djl.ai/maven" }
     maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    maven { url "https://repo.viaversion.com" }
 }
 
 dependencies {
@@ -32,6 +33,7 @@ dependencies {
 
     modImplementation files("libs/baritone-standalone-fabric-783d120.jar")
     modImplementation files("libs/nether-pathfinder-1.6.jar")
+    modImplementation "com.viaversion:viaversion-api:5.5.1"
 }
 
 loom {
@@ -168,25 +170,63 @@ task obfuscateJar {
 
 # ========== ТВОИ КЛАССЫ ==========
 
-# Сохраняем все классы в твоем пакете
--keep class dev.luxury.** { *; }
 
-# Сохраняем методы и поля
--keepclassmembers class dev.luxury.** {
-    *;
+# УДАЛИ ЭТУ СТРОКУ! Она сохраняет все классы:
+# -keep class dev.luxury.** { *; }
+
+# Вместо нее используй более конкретные правила:
+
+# Для шифрования имен классов используй:
+ -repackageclasses 'a.b.c'  # Перепаковывает классы в указанный пакет
+ -allowaccessmodification   # Позволяет изменять модификаторы доступа
+
+# Шифруем имена (опционально)
+# -obfuscationdictionary 'dictionary.txt'  # Свой словарь для имен
+# -classobfuscationdictionary 'classdict.txt'
+
+# ========== ДЛЯ ШИФРОВАНИЯ/ОБФУСЦИКАЦИИ ==========
+
+# Включаем обфускацию
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable
+
+# Для шифрования имен классов (необязательно, но рекомендуется)
+# -repackageclasses ''
+# -allowaccessmodification
+
+# Правила для Reflection API
+-keepclassmembers class * {
+    @java.lang.Override *;
 }
 
-# ========== ДРУГИЕ ВАЖНЫЕ НАСТРОЙКИ ==========
+# Правила для сериализации
+-keepclassmembers class * implements java.io.Serializable {
+    static final long serialVersionUID;
+    static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}
 
-# Сохраняем ресурсы
--keepresources **.json
--keepresources **.png
--keepresources **.lang
--keepresources **.mcmeta
--keepresources **.accesswidener
+# ========== НЕОБХОДИМЫЕ КЛАССЫ ДЛЯ МОДА ==========
 
-# Сохраняем имена классов
--keepnames class **
+# Сохраняем названия GUI классов
+-keep class dev.luxury.ui.** {
+    public *;
+}
+
+# Сохраняем утилиты для рендеринга
+-keep class dev.luxury.utils.render.** {
+    public *;
+}
+
+# Сохраняем шрифты
+-keep class dev.luxury.utils.font.** {
+    public *;
+}
+
+# ========== ОБЩИЕ ПРАВИЛА ==========
 
 # Сохраняем enum
 -keepclassmembers enum * {
@@ -194,8 +234,18 @@ task obfuscateJar {
     public static ** valueOf(java.lang.String);
 }
 
+# Сохраняем сигнатуры для дженериков
+-keepattributes Signature
+
 # Java 21
 -target 21
+
+# ========== АГРЕССИВНАЯ ОБФУСЦИКАЦИЯ (добавь если хочешь) ==========
+# -overloadaggressively
+# -useuniqueclassmembernames
+# -flattenpackagehierarchy ''
+# -repackageclasses ''
+# -allowaccessmodification
 
 # ========== ПУТИ ФАЙЛОВ ==========
 -injars '${inputJar.absolutePath}'
@@ -206,7 +256,6 @@ task obfuscateJar {
 -libraryjars '${System.getProperty("java.home")}/jmods/java.desktop.jmod'
 
 # Зависимости
-${classpathFiles.collect { "-libraryjars '${it}'" }.join('\n')}
 """
 
         println "Running ProGuard with temporary config..."
