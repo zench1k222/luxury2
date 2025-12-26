@@ -33,9 +33,19 @@ public class MainMenu extends Screen {
     private void initializeChangeLog() {
         changeLog.clear();
 
-        changeLog.add(new ChangeLogEntry("v0.6", "24.12.2025",
-                List.of("Глобальная обнова!", "", "Добавлен кастомный MainMenu.", "Добавлен AutoBuy под RW.", "Обновлена SlothAC ротация.", "Улучшен немного ESP.", "Обновлен ClickPearl.", "Улучшенное ClickGUI.", "Добавлен TpLoot.", "Добавлен чекбокс (Только с KillAura) в SwingAnimations.", "Добавлен StaffKillAnyDesk.", "Добавлен ServerJoiner.", "Добавлен ProjectileHelper.", "Добавлен NoWeb.", "Добавлен AutoDuel(RW).", "Добавлен AntiBot под RW, CubeCraft.", "Добавлен HPAlert.", "Добавлены настройки Arrows.", "Добавлен ChestStealer.", "Добавлен AutoPotion.")));
+        changeLog.add(new ChangeLogEntry("v0.7", "26.12.2025",
+                List.of("Новая обнова!", "", "Добавлен AntiAFK.", "Улучшен AutoBuy.",
+                        "Исправлены баги с GUI.", "Оптимизирован код.", "Добавлены новые функции.")));
 
+        changeLog.add(new ChangeLogEntry("v0.6", "24.12.2025",
+                List.of("Глобальная обнова!", "", "Добавлен кастомный MainMenu.", "Добавлен AutoBuy под RW.",
+                        "Обновлена SlothAC ротация.", "Улучшен немного ESP.", "Обновлен ClickPearl.",
+                        "Улучшенное ClickGUI.", "Добавлен TpLoot.",
+                        "Добавлен чекбокс (Только с KillAura) в SwingAnimations.",
+                        "Добавлен StaffKillAnyDesk.", "Добавлен ServerJoiner.",
+                        "Добавлен ProjectileHelper.", "Добавлен NoWeb.", "Добавлен AutoDuel(RW).",
+                        "Добавлен AntiBot под RW, CubeCraft.", "Добавлен HPAlert.",
+                        "Добавлены настройки Arrows.", "Добавлен ChestStealer.", "Добавлен AutoPotion.")));
     }
 
     @Override
@@ -123,13 +133,6 @@ public class MainMenu extends Screen {
         int changelogX = 10;
         int changelogY = 10;
 
-        if (changelogX + changelogWidth > width) {
-            changelogWidth = width - changelogX - 10;
-        }
-        if (changelogY + changelogHeight > height) {
-            changelogHeight = height - changelogY - 10;
-        }
-
         context.fill(RenderLayer.getGui(), changelogX, changelogY,
                 changelogX + changelogWidth, changelogY + changelogHeight, 0xAA000000);
 
@@ -140,50 +143,59 @@ public class MainMenu extends Screen {
         context.drawTextWithShadow(textRenderer, changelogTitle,
                 changelogX + (changelogWidth - titleWidth) / 2, changelogY + 5, 0xFFFFFF);
 
-        int contentHeight = changeLog.size() * 80;
-        int visibleHeight = changelogHeight - 40;
+        int contentX = changelogX + 5;
         int contentY = changelogY + 25;
+        int contentWidth = changelogWidth - 10;
+        int contentHeight = changelogHeight - 40;
 
-        if (draggingScroll) {
-            double deltaY = mouseY - lastMouseY;
-            scrollOffset += deltaY * (contentHeight / (double) visibleHeight);
-            lastMouseY = mouseY;
-        }
+        context.enableScissor(contentX, contentY,
+                contentX + contentWidth, contentY + contentHeight);
 
-        scrollOffset = Math.max(0, Math.min(scrollOffset, Math.max(0, contentHeight - visibleHeight)));
+        int currentY = contentY - (int)scrollOffset;
 
-        boolean isMouseInChangelog = mouseX >= changelogX && mouseX <= changelogX + changelogWidth &&
-                mouseY >= changelogY && mouseY <= changelogY + changelogHeight;
-
-        MatrixStack matrices = context.getMatrices();
-        matrices.push();
-        matrices.translate(changelogX + 5, contentY - scrollOffset, 0);
-
-        int yOffset = 0;
         for (ChangeLogEntry entry : changeLog) {
-            if (yOffset + 75 > 0 && yOffset < visibleHeight) {
-                renderChangeLogEntry(context, entry, 0, yOffset, changelogWidth - 10);
+            int entryHeight = calculateEntryHeight(entry, contentWidth);
+
+            if (currentY + entryHeight < contentY) {
+                currentY += entryHeight + 5;
+                continue;
             }
-            yOffset += 80;
+
+            if (currentY > contentY + contentHeight) {
+                break;
+            }
+
+            renderChangeLogEntry(context, entry, contentX, currentY, contentWidth);
+            currentY += entryHeight + 5;
         }
 
-        matrices.pop();
+        context.disableScissor();
 
-        if (contentHeight > visibleHeight && visibleHeight > 0) {
+        int totalContentHeight = calculateTotalContentHeight(contentWidth);
+        int visibleContentHeight = contentHeight;
+
+        if (totalContentHeight > visibleContentHeight) {
             int scrollbarWidth = 4;
             int scrollbarX = changelogX + changelogWidth - scrollbarWidth - 2;
 
-            int scrollbarHeight = Math.max(20, (int) (visibleHeight * (visibleHeight / (float) contentHeight)));
-            int scrollbarY = contentY + (int) (scrollOffset * (visibleHeight / (float) contentHeight));
+            float visibleRatio = (float) visibleContentHeight / totalContentHeight;
+            int scrollbarHeight = Math.max(20, (int)(visibleContentHeight * visibleRatio));
+
+            float scrollPercent = totalContentHeight > visibleContentHeight ?
+                    (float)scrollOffset / (totalContentHeight - visibleContentHeight) : 0;
+            int scrollbarY = contentY + (int)(scrollPercent * (visibleContentHeight - scrollbarHeight));
 
             context.fill(RenderLayer.getGui(), scrollbarX, contentY,
-                    scrollbarX + scrollbarWidth, contentY + visibleHeight, 0x44FFFFFF);
+                    scrollbarX + scrollbarWidth, contentY + visibleContentHeight, 0x44FFFFFF);
 
             context.fill(RenderLayer.getGui(), scrollbarX, scrollbarY,
                     scrollbarX + scrollbarWidth, scrollbarY + scrollbarHeight, 0xFF6B238E);
         }
 
-        if (isMouseInChangelog && contentHeight > visibleHeight) {
+        boolean isMouseInChangelog = mouseX >= changelogX && mouseX <= changelogX + changelogWidth &&
+                mouseY >= changelogY && mouseY <= changelogY + changelogHeight;
+
+        if (isMouseInChangelog && totalContentHeight > contentHeight) {
             String hint = "§7Используйте колесико мыши для прокрутки";
             int hintWidth = textRenderer.getWidth(hint);
             context.drawTextWithShadow(textRenderer, hint,
@@ -192,31 +204,20 @@ public class MainMenu extends Screen {
         }
     }
 
-    private void renderChangeLogEntry(DrawContext context, ChangeLogEntry entry, int x, int y, int width) {
-        context.fill(RenderLayer.getGui(), x, y, x + width, y + 70, 0x80222222);
-
-        drawBorder(context, x, y, width, 70, 0x80444444);
-
-        context.drawTextWithShadow(textRenderer, "§l§a" + entry.version, x + 5, y + 5, 0xFFFFFF);
-
-        String dateText = "§7" + entry.date;
-        int dateWidth = textRenderer.getWidth(dateText);
-        context.drawTextWithShadow(textRenderer, dateText, x + width - dateWidth - 5, y + 5, 0xAAAAAA);
-
-        int changeY = y + 25;
-        int maxWidth = width - 20;
+    private int calculateEntryHeight(ChangeLogEntry entry, int width) {
+        int height = 20;
 
         for (String change : entry.changes) {
             String displayText = "§7• §f" + change;
-            if (textRenderer.getWidth(displayText) > maxWidth) {
-                displayText = textRenderer.trimToWidth(displayText, maxWidth - 20) + "...";
+
+            if (textRenderer.getWidth(displayText) > width - 20) {
+                displayText = textRenderer.trimToWidth(displayText, width - 20) + "...";
             }
 
-            context.drawTextWithShadow(textRenderer, displayText, x + 10, changeY, 0xFFFFFF);
-            changeY += 12;
-
-            if (changeY > y + 65) break;
+            height += 12;
         }
+
+        return Math.max(70, height + 10);
     }
 
     private void drawBorder(DrawContext context, int x, int y, int width, int height, int color) {
@@ -248,32 +249,72 @@ public class MainMenu extends Screen {
         context.drawTextWithShadow(textRenderer, debug, 5, height - 10, 0xAAAAAA);
     }
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int changelogX = 10;
-        int changelogY = 10;
-        int changelogWidth = Math.min(300, width / 3);
-        int changelogHeight = Math.min(400, height / 2);
+    private int calculateTotalContentHeight(int contentWidth) {
+        int totalHeight = 0;
+        for (ChangeLogEntry entry : changeLog) {
+            totalHeight += calculateEntryHeight(entry, contentWidth) + 5;
+        }
+        return totalHeight;
+    }
 
-        if (mouseX >= changelogX && mouseX <= changelogX + changelogWidth &&
-                mouseY >= changelogY && mouseY <= changelogY + changelogHeight) {
+    private void renderChangeLogEntry(DrawContext context, ChangeLogEntry entry, int x, int y, int width) {
+        int entryHeight = calculateEntryHeight(entry, width);
 
-            if (button == 0) {
-                draggingScroll = true;
-                lastMouseY = mouseY;
-                return true;
+        context.fill(RenderLayer.getGui(), x, y, x + width, y + entryHeight, 0x80222222);
+
+        drawBorder(context, x, y, width, entryHeight, 0x80444444);
+
+        context.drawTextWithShadow(textRenderer, "§l§a" + entry.version, x + 5, y + 5, 0xFFFFFF);
+
+        String dateText = "§7" + entry.date;
+        int dateWidth = textRenderer.getWidth(dateText);
+        context.drawTextWithShadow(textRenderer, dateText, x + width - dateWidth - 5, y + 5, 0xAAAAAA);
+
+        int changeY = y + 25;
+        int maxWidth = width - 20;
+
+        for (String change : entry.changes) {
+            String displayText = "§7• §f" + change;
+
+            if (textRenderer.getWidth(displayText) > maxWidth) {
+                displayText = textRenderer.trimToWidth(displayText, maxWidth - 20) + "...";
+            }
+
+            context.drawTextWithShadow(textRenderer, displayText, x + 10, changeY, 0xFFFFFF);
+            changeY += 12;
+
+            if (changeY > y + entryHeight - 10) {
+                break;
             }
         }
-
-        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0) {
-            draggingScroll = false;
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (draggingScroll && button == 0) {
+            int changelogX = 10;
+            int changelogY = 10;
+            int changelogWidth = Math.min(300, width / 3);
+            int changelogHeight = Math.min(400, height / 2);
+
+            if (mouseX >= changelogX && mouseX <= changelogX + changelogWidth &&
+                    mouseY >= changelogY && mouseY <= changelogY + changelogHeight) {
+
+                double delta = mouseY - lastMouseY;
+                int contentHeight = calculateTotalContentHeight(changelogWidth - 10);
+                double visibleHeight = changelogHeight - 40;
+                double maxScroll = Math.max(0, contentHeight - visibleHeight);
+
+                if (maxScroll > 0) {
+                    scrollOffset += delta * (contentHeight / visibleHeight);
+                    scrollOffset = (float) Math.max(0, Math.min(scrollOffset, maxScroll));
+                    lastMouseY = mouseY;
+                    return true;
+                }
+            }
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     }
 
     @Override
@@ -286,7 +327,12 @@ public class MainMenu extends Screen {
         if (mouseX >= changelogX && mouseX <= changelogX + changelogWidth &&
                 mouseY >= changelogY && mouseY <= changelogY + changelogHeight) {
 
-            scrollOffset -= verticalAmount * 20;
+            int contentHeight = calculateTotalContentHeight(changelogWidth - 10);
+            double visibleHeight = changelogHeight - 40;
+            double maxScroll = Math.max(0, contentHeight - visibleHeight);
+
+            scrollOffset -= verticalAmount * 40;
+            scrollOffset = (float) Math.max(0, Math.min(scrollOffset, maxScroll));
             return true;
         }
 

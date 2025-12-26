@@ -44,14 +44,12 @@ public class SliderSettingRenderer extends SettingRenderer {
         float sliderWidth = width - 10;
         float sliderHeight = 4f;
 
-        // Фон слайдера
         RenderUtil.drawRoundedRect(context.getMatrices(), sliderX, sliderY, sliderWidth, sliderHeight,
                 new Vector4f(2f, 2f, 2f, 2f), new Color(60, 60, 70).getRGB());
 
         float fillPercent = (float) ((value - min) / (max - min));
         float fillWidth = sliderWidth * fillPercent;
 
-        // Заполненная часть слайдера (акцентный цвет из TabbedGUI)
         RenderUtil.drawRoundedRect(context.getMatrices(), sliderX, sliderY, fillWidth, sliderHeight,
                 new Vector4f(2f, 2f, 2f, 2f), new Color(45, 125, 255).getRGB());
 

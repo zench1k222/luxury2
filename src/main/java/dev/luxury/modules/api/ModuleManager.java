@@ -71,7 +71,8 @@ public class ModuleManager {
                 new NameProtect(),
                 new AutoBuy(),
                 new AntiCheatDetector(),
-                new SkeletonEsp()
+                new SkeletonEsp(),
+                new AntiAFK()
 
         );
         DiscordRPC.getInstance().enable();
