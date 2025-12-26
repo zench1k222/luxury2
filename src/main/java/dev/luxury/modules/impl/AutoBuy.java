@@ -7,18 +7,12 @@ import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
 import dev.luxury.modules.api.settings.*;
 import dev.luxury.ui.AutoBuyUI;
-import dev.luxury.ui.AutoBuyUI2;
+import dev.luxury.ui.AutoBuyUI3;
 import dev.luxury.utils.client.ChatUtil;
-import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.managers.AutoBuyManager;
-import dev.luxury.utils.managers.ConfigManager;
 import dev.luxury.utils.notifications.NotificationsManager;
 import dev.luxury.utils.player.InventoryUtil;
 import dev.luxury.utils.player.ServerUtil;
-import dev.luxury.utils.render.RenderUtil;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -52,13 +46,7 @@ public class AutoBuy extends Module {
     public final SliderSetting refreshDelay = new SliderSetting("Задержка обновления", 500, 100, 2000, 100);
     public final ButtonSetting openUiButton = new ButtonSetting("Открыть Интерфейс", () -> {
         if (mc.world != null && mc.player != null) {
-            mc.setScreen(new AutoBuyUI(this));
-        }
-    }, 100, 20);
-
-    public final ButtonSetting openUi2Button = new ButtonSetting("Открыть 2 Интерфейс", () -> {
-        if (mc.world != null && mc.player != null) {
-            mc.setScreen(new AutoBuyUI2(this));
+            mc.setScreen(new AutoBuyUI3(this));
         }
     }, 100, 20);
 
@@ -78,7 +66,7 @@ public class AutoBuy extends Module {
     private static final Pattern PRICE_PATTERN_SIMPLE = Pattern.compile("([\\d,.]+)\\s*монет");
 
     public AutoBuy() {
-        addSettings(delay, debugMode, toggleKey, autoStart, buyEnabled, refreshDelay, openUiButton, openUi2Button);
+        addSettings(delay, debugMode, toggleKey, autoStart, buyEnabled, refreshDelay, openUiButton);
 
         AutoBuyManager.init();
 

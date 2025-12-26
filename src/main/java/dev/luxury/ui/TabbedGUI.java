@@ -245,8 +245,17 @@ public class TabbedGUI extends Screen {
         float visibleAreaTop = listY + 60;
         float visibleAreaBottom = listY + listHeight - 10;
 
+        float scrollableAreaX = listX + 10;
+        float scrollableAreaY = listY + 60;
+        float scrollableAreaWidth = listWidth - 20;
+        float scrollableAreaHeight = listHeight - 70;
+
+        RenderUtil.enableScissor((int)scrollableAreaX, (int)scrollableAreaY,
+                (int)scrollableAreaWidth, (int)scrollableAreaHeight);
+
         List<Module> modules = getCategoryModules();
         if (modules.isEmpty()) {
+            RenderUtil.disableScissor();
             String message = !searchText.isEmpty() ? "No modules found" : "No modules in this category";
             mediumFont.drawCenteredText(context.getMatrices(), message,
                     listX + listWidth / 2, listY + listHeight / 2, new Color(150, 150, 160).getRGB());
@@ -286,6 +295,8 @@ public class TabbedGUI extends Screen {
             RenderUtil.drawBorder(context.getMatrices(), scrollBarX, scrollBarY,
                     scrollBarWidth, scrollBarHeight, new Vector4f(2, 2, 2, 2), new Color(100, 100, 110).getRGB(), 0.5f, 1, 1, false);
         }
+
+        RenderUtil.disableScissor();
     }
 
     private void drawModuleEntry(DrawContext context, FontDraw mediumFont, FontDraw smallFont,
@@ -334,11 +345,6 @@ public class TabbedGUI extends Screen {
                     (settingsHovered ? accentColor.getRGB() : new Color(150, 150, 160).getRGB());
 
             iconFont.drawFontLeft(context.getMatrices(), settingsIcon, settingsBtnX, settingsBtnY + 2.5F, settingsColor);
-
-            if (settingsHovered) {
-                smallFont.drawFontLeft(context.getMatrices(), "Settings", settingsBtnX - 50, settingsBtnY + 20,
-                        new Color(200, 200, 210).getRGB());
-            }
         }
     }
 
