@@ -25,6 +25,7 @@ public class CommandManager {
         registerCommand(new HelpCommand());
         registerCommand(new WayCommand());
         registerCommand(new MacrosCommand());
+        registerCommand(new AutoSellCommand());
 
         ConfigManager.init(moduleManager);
     }

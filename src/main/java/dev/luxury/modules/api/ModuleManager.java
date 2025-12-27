@@ -76,7 +76,7 @@ public class ModuleManager {
                 new AntiAFK(),
                 new KillEffect(),
                 new SantaHat(),
-                new MaceAura()
+                new AutoSell()
 
         );
         DiscordRPC.getInstance().enable();
