@@ -20,7 +20,7 @@ public class FontHelper {
         if (initialized) return;
 
         initializationFont(icons, "icons.ttf");
-        initializationFont(monsterrat, "Montserrat_Medium.ttf");
+        initializationFont(monsterrat, "montserrat.ttf");
         initializationFont(sfprobold,"SF-Pro-Display-Bold.ttf");
         initializationFont(findsans, "FindSans.ttf");
 

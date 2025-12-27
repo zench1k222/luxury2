@@ -75,7 +75,8 @@ public class ModuleManager {
                 new ItemScroller(),
                 new AntiAFK(),
                 new KillEffect(),
-                new SantaHat()
+                new SantaHat(),
+                new MaceAura()
 
         );
         DiscordRPC.getInstance().enable();
