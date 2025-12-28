@@ -2,6 +2,7 @@ package dev.luxury.utils.commands;
 
 import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.managers.AutoSellManager;
+import ru.nexusguard.protection.annotations.Native;
 
 import java.util.List;
 
@@ -11,6 +12,7 @@ public class AutoSellCommand extends Command {
         super("autosell", "Управление конфигами AutoSell", ".autosell <save/load/list/delete/dir/items> [имя]");
     }
 
+    @Native
     @Override
     public void execute(String[] args) {
         if (args.length == 0) {

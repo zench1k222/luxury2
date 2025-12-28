@@ -22,7 +22,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ModuleManager {
     private static final List<Module> modules = new CopyOnWriteArrayList<>();
 
-
     public void init() {
         EventManager.register(this);
         registerAll(

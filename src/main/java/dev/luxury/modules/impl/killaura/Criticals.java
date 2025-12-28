@@ -12,6 +12,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.util.Hand;
+import ru.nexusguard.protection.annotations.Native;
 
 import java.util.Random;
 
@@ -29,7 +30,7 @@ public class Criticals {
 
 
 
-
+    @Native
     public void attackEntity(Entity entity) {
         long currentTime = System.currentTimeMillis();
 
@@ -47,6 +48,7 @@ public class Criticals {
         count++;
     }
 
+    @Native
     private boolean isSlothAIMode() {
         try {
             KillAura killAura = (KillAura) Luxury.getInstance().getModuleManager()
@@ -68,6 +70,7 @@ public class Criticals {
 
 
 
+    @Native
     public boolean hasMovementRestrictions() {
         return mc.player.hasStatusEffect(StatusEffects.BLINDNESS)
                 || mc.player.hasStatusEffect(StatusEffects.LEVITATION)
@@ -79,6 +82,7 @@ public class Criticals {
                 || mc.player.getAbilities().flying;
     }
 
+    @Native
     public boolean hasPreMovementRestrictions(Simulation simulatedPlayer) {
         return simulatedPlayer.hasStatusEffect(StatusEffects.BLINDNESS)
                 || simulatedPlayer.hasStatusEffect(StatusEffects.LEVITATION)
@@ -90,6 +94,7 @@ public class Criticals {
                 || mc.player.getAbilities().flying;
     }
 
+    @Native
     public boolean isPlayerInCriticalState() {
         if (KillAura.attackMethod.is("New")) {
             boolean crit = mc.player.fallDistance > 0 && (mc.player.fallDistance < 0.08 || !Simulation.simulateLocalPlayer(1).onGround);
@@ -102,9 +107,9 @@ public class Criticals {
         return false;
     }
 
+    @Native
     public boolean isPrePlayerInCriticalState(  Simulation simulatedPlayer) {
         boolean crit = simulatedPlayer.fallDistance > 0 && (simulatedPlayer.fallDistance < 0.08 || !Simulation.simulateLocalPlayer(2).onGround);
         return !simulatedPlayer.onGround && (crit );
     }
-
 }

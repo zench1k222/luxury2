@@ -1,6 +1,7 @@
 package dev.luxury.utils.commands;
 
 import net.minecraft.client.MinecraftClient;
+import ru.nexusguard.protection.annotations.Native;
 
 public abstract class Command {
     protected final MinecraftClient mc = MinecraftClient.getInstance();
@@ -14,6 +15,7 @@ public abstract class Command {
         this.usage = usage;
     }
 
+    @Native
     public abstract void execute(String[] args);
 
     public String getName() {

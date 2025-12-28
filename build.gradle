@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.11-SNAPSHOT'
+    id 'fabric-loom' version '1.14-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -35,6 +35,9 @@ dependencies {
     modImplementation files("libs/baritone-standalone-fabric-783d120.jar")
     modImplementation files("libs/nether-pathfinder-1.6.jar")
     modImplementation "com.viaversion:viaversion-api:5.5.1"
+
+    compileOnly files("libs/obfuscator.jar")
+    annotationProcessor files("libs/obfuscator.jar")
 }
 
 loom {
@@ -289,7 +292,6 @@ task obfuscateJar {
     }
 }
 
-// Простая задача для тестирования
 task testObfuscation {
     dependsOn remapJar
     group = 'build'
@@ -300,15 +302,11 @@ task testObfuscation {
 
         println "Testing JAR structure..."
 
-        // Просто проверяем содержимое JAR
         exec {
             commandLine 'jar', 'tf', inputJar.path
         }
     }
 }
-
-// Не добавляем обфускацию к стандартной сборке
-// tasks.build.dependsOn tasks.obfuscateJar
 
 // configure the maven publication
 publishing {

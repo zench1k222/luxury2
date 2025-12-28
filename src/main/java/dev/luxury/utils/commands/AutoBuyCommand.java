@@ -1,4 +1,3 @@
-// Файл: dev/luxury/utils/commands/AutoBuyCommand.java
 package dev.luxury.utils.commands;
 
 import dev.luxury.utils.client.ChatUtil;
