@@ -131,7 +131,7 @@ public class Arrows extends Module {
         int newAlpha = (int) (color.getAlpha() * distanceAlpha);
         color = new ColorRGBA(color.getRed(), color.getGreen(), color.getBlue(), newAlpha);
 
-        RenderUtil.drawImageAlpha(matrices, TRIANGLE_TEXTURE, -8, -9, 18, 18, color, color, color, color);
+        RenderUtil.drawImageAlpha(matrices, TRIANGLE_TEXTURE, -8, -8, 12, 12, color, color, color, color);
     }
 
     private void drawPlayerInfo(EventRender2D e, PlayerEntity player, float x, float y, float angle,

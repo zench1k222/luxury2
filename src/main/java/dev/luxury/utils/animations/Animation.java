@@ -11,6 +11,7 @@ public class Animation {
     @Setter private double targetValue;
     private double startValue;
     private boolean initialized = false;
+    private boolean wasAnimating = false;
 
     public Animation(long duration, double value, boolean forward, Easing easing) {
         this.duration = duration;
@@ -42,10 +43,11 @@ public class Animation {
     }
 
     public void update(boolean forward) {
-        if (this.forward != forward) {
+        if (this.forward != forward || !wasAnimating) {
             this.startValue = getValue();
             this.forward = forward;
             timer.reset();
+            wasAnimating = true;
         }
     }
 
@@ -106,6 +108,7 @@ public class Animation {
     public void reset() {
         timer.reset();
         this.startValue = forward ? 0 : targetValue;
+        wasAnimating = false;
     }
 
     public void forceValue(double value) {
@@ -115,7 +118,7 @@ public class Animation {
     }
 
     public boolean isAnimating() {
-        return !timer.passed(duration);
+        return wasAnimating && !timer.passed(duration);
     }
 
     public double getTargetValue() {

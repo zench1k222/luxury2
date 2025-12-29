@@ -25,8 +25,6 @@ public class Staffs extends DraggableHudElement {
     private static final int ITEM_HEIGHT = 12;
 
     private static final Map<String, String> SYMBOL_TO_TITLE = Map.of(
-            "ꕠ", "D.HELPER",
-            "ꔉ", "HELPER",
             "ꔓ", "ML.MODER",
             "ꔗ", "MODER",
             "ꔡ", "MODER+",
@@ -38,7 +36,6 @@ public class Staffs extends DraggableHudElement {
 
     private static final Set<String> STAFF_SYMBOLS = SYMBOL_TO_TITLE.keySet();
 
-    // Для поиска по ключевым словам (как было)
     private static final Set<String> STAFF_KEYWORDS = Set.of(
             "helper", "ᴀдмин", "moder", "staff", "admin", "curator",
             "стажёр", "сотрудник", "помощник", "админ", "модер"

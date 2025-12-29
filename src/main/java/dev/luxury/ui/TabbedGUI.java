@@ -58,6 +58,12 @@ public class TabbedGUI extends Screen {
     private final Color accentColor = new Color(45, 125, 255);
     private final Color borderColor = new Color(60, 60, 70);
 
+    private float animationProgress = 0f;
+    private boolean opening = true;
+    private boolean closing = false;
+    private long animationStartTime = 0;
+    private static final long ANIMATION_DURATION = 250;
+
     FontDraw iconFont = FontHelper.icons[18];
 
     private static class ModuleAnimState {
@@ -67,7 +73,7 @@ public class TabbedGUI extends Screen {
     }
 
     public TabbedGUI(ModuleManager moduleManager) {
-        super(Text.literal("Luxury Client"));
+        super(Text.literal("LuxuryFree"));
         this.moduleManager = moduleManager;
     }
 
@@ -76,8 +82,36 @@ public class TabbedGUI extends Screen {
         return false;
     }
 
+    private void updateAnimation() {
+        long currentTime = System.currentTimeMillis();
+
+        if (animationStartTime == 0) {
+            animationStartTime = currentTime;
+        }
+
+        long elapsed = currentTime - animationStartTime;
+
+        if (opening) {
+            animationProgress = Math.min(1f, (float) elapsed / ANIMATION_DURATION);
+            if (animationProgress >= 1f) {
+                opening = false;
+            }
+        } else if (closing) {
+            animationProgress = Math.max(0f, 1f - (float) elapsed / ANIMATION_DURATION);
+        }
+    }
+
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        // Обновляем анимацию
+        updateAnimation();
+
+        // Пропускаем рендеринг если GUI закрыт
+        if (closing && animationProgress <= 0f) {
+            this.close();
+            return;
+        }
+
         this.renderBackground(context, mouseX, mouseY, delta);
 
         FontDraw titleFont = FontHelper.monsterrat[22];
@@ -86,24 +120,46 @@ public class TabbedGUI extends Screen {
 
         float screenWidth = context.getScaledWindowWidth();
         float screenHeight = context.getScaledWindowHeight();
-        panelX = (screenWidth - panelWidth) / 2;
-        panelY = (screenHeight - panelHeight) / 2;
 
-        RenderUtil.drawRoundedRect(context.getMatrices(), panelX, panelY, panelWidth, panelHeight,
-                new Vector4f(12f, 12f, 12f, 12f), backgroundColor.getRGB());
+        float animatedPanelWidth = panelWidth * animationProgress;
+        float animatedPanelHeight = panelHeight * animationProgress;
 
-        RenderUtil.drawBorder(context.getMatrices(), panelX, panelY, panelWidth, panelHeight,
-                new Vector4f(12f, 12f, 12f, 12f), borderColor.getRGB(), 1.5f, 1, 1, false);
+        panelX = (screenWidth - animatedPanelWidth) / 2;
+        panelY = (screenHeight - animatedPanelHeight) / 2;
+
+        int bgAlpha = (int)(255 * animationProgress);
+        int borderAlpha = (int)(255 * animationProgress);
+
+        RenderUtil.drawRoundedRect(context.getMatrices(), panelX, panelY,
+                animatedPanelWidth, animatedPanelHeight,
+                new Vector4f(12f, 12f, 12f, 12f),
+                new Color(backgroundColor.getRed(), backgroundColor.getGreen(),
+                        backgroundColor.getBlue(), bgAlpha).getRGB());
+
+        RenderUtil.drawBorder(context.getMatrices(), panelX, panelY,
+                animatedPanelWidth, animatedPanelHeight,
+                new Vector4f(12f, 12f, 12f, 12f),
+                new Color(borderColor.getRed(), borderColor.getGreen(),
+                        borderColor.getBlue(), borderAlpha).getRGB(),
+                1.5f, 1, 1, false);
+
+        if (animationProgress < 0.2f) {
+            super.render(context, mouseX, mouseY, delta);
+            return;
+        }
+
+        float contentAlpha = Math.min(1f, (animationProgress - 0.2f) * 1.25f);
+
+        context.getMatrices().push();
+        context.getMatrices().translate(0, 0, 0);
 
         drawTitleBar(context, titleFont);
-
         drawSearchBar(context, mediumFont, mouseX, mouseY);
-
         drawTabs(context, mediumFont, mouseX, mouseY);
-
         drawModulesList(context, mediumFont, smallFont, mouseX, mouseY);
-
         drawRightPanel(context, mediumFont, smallFont, mouseX, mouseY);
+
+        context.getMatrices().pop();
 
         super.render(context, mouseX, mouseY, delta);
     }

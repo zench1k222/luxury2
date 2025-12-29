@@ -15,73 +15,111 @@ public class RCTManager {
 
     @Native
     public void run() throws Exception {
-        for (ScoreboardObjective team : mc.world.getScoreboard().getObjectives().toArray(new ScoreboardObjective[0])) {
-            if (ServerUtil.isConnected("funtime")) {
-                String an = team.getDisplayName().getString();
-                if (an.contains("Анархия-")) {
-                    anarchy = an.split("Анархия-")[1];
-                    mc.player.networkHandler.sendChatCommand("hub");
-                    break;
-                }
-            }
-            mc.player.networkHandler.sendChatCommand("an" + anarchy);
-            String finalAnarchy = anarchy;
-            new Thread(() -> {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                mc.player.networkHandler.sendChatCommand("an" + finalAnarchy);
-            }).start();
+        if (ServerUtil.isConnected("funtime")) {
+            runFuntimeLogic();
+        } else if (ServerUtil.isConnected("reallyworld") && ServerUtil.isConnected("playrw")) {
+            runReallyWorldLogic();
+        } else {
+            System.err.println("Неизвестный сервер или не подключен к целевому серверу");
         }
+    }
 
-        if (ServerUtil.isConnected("reallyworld") && ServerUtil.isConnected("playrw")) {
-            for (ScoreboardObjective team : mc.world.getScoreboard().getObjectives().toArray(new ScoreboardObjective[0])) {
-                String grief = team.getDisplayName().getString();
-                if (grief.contains("ГРИФ #")) {
-                    grief2 = grief.split("ГРИФ #")[1];
-                    mc.player.networkHandler.sendChatCommand("hub");
+    @Native
+    private void runFuntimeLogic() {
+        for (ScoreboardObjective team : mc.world.getScoreboard().getObjectives().toArray(new ScoreboardObjective[0])) {
+            String an = team.getDisplayName().getString();
+            if (an.contains("Анархия-")) {
+                anarchy = an.split("Анархия-")[1];
+                mc.player.networkHandler.sendChatCommand("hub");
 
-                    new Thread(() -> {
-                        try {
-                            Thread.sleep(1000);
+                mc.player.networkHandler.sendChatCommand("an" + anarchy);
 
-                            mc.execute(() -> mc.player.networkHandler.sendChatCommand("menu"));
-
-                            Thread.sleep(500);
-
-                            mc.execute(() -> clickContainerSlot(21));
-
-                            Thread.sleep(500);
-
-                            try {
-                                int slotNumber = Integer.parseInt(grief2.trim());
-                                int slotIndex = slotNumber - 1;
-                                mc.execute(() -> clickContainerSlot(slotIndex));
-                            } catch (NumberFormatException e) {
-                                System.err.println("Ошибка парсинга номера: " + grief2);
-                            }
-
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
-                    }).start();
-                    break;
-                }
+                String finalAnarchy = anarchy;
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(1000);
+                        mc.player.networkHandler.sendChatCommand("an" + finalAnarchy);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }).start();
+                break;
             }
         }
     }
 
     @Native
+    private void runReallyWorldLogic() {
+        for (ScoreboardObjective team : mc.world.getScoreboard().getObjectives().toArray(new ScoreboardObjective[0])) {
+            String grief = team.getDisplayName().getString();
+            if (grief.contains("ГРИФ #")) {
+                grief2 = grief.split("ГРИФ #")[1].trim();
+
+                startGriefJoinSequence(grief2);
+                break;
+            }
+        }
+    }
+
+    @Native
+    private void startGriefJoinSequence(String griefNumber) {
+        mc.player.networkHandler.sendChatCommand("hub");
+        System.out.println("Отправлена команда /hub");
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(1500);
+
+                mc.execute(() -> {
+                    mc.player.networkHandler.sendChatCommand("menu");
+                });
+
+                Thread.sleep(1000);
+
+                int maxWaits = 20;
+                boolean menuOpened = false;
+                for (int i = 0; i < maxWaits; i++) {
+                    if (mc.currentScreen instanceof GenericContainerScreen) {
+                        menuOpened = true;
+                        break;
+                    }
+                    Thread.sleep(50);
+                }
+
+                if (!menuOpened) {
+                    return;
+                }
+
+                mc.execute(() -> {
+                    clickContainerSlot(21);
+                });
+
+                Thread.sleep(800);
+
+                try {
+                    int slotNumber = Integer.parseInt(griefNumber);
+                    int slotIndex = slotNumber - 1;
+
+                    mc.execute(() -> {
+                        clickContainerSlot(slotIndex);
+                    });
+
+                } catch (NumberFormatException e) {
+                }
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }).start();
+    }
+
+    @Native
     private void clickContainerSlot(int slotIndex) {
         if (mc.currentScreen instanceof GenericContainerScreen) {
-            assert mc.player != null;
-            int syncId = mc.player.currentScreenHandler.syncId;
-
-            mc.interactionManager.clickSlot(syncId, slotIndex, 0, SlotActionType.PICKUP, mc.player);
-        } else {
-            System.err.println("Контейнер не открыт!");
+            if (mc.player != null && mc.interactionManager != null) {
+                int syncId = mc.player.currentScreenHandler.syncId;
+                mc.interactionManager.clickSlot(syncId, slotIndex, 0, SlotActionType.PICKUP, mc.player);
+            }
         }
     }
 }
