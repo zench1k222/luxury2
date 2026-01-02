@@ -3,7 +3,7 @@ package dev.luxury.utils.managers;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import dev.luxury.modules.impl.AutoSell;
+import dev.luxury.modules.impl.misc.AutoSell;
 import dev.luxury.ui.AutoSellUI;
 
 import java.io.File;

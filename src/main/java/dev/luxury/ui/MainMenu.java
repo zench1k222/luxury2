@@ -1,16 +1,12 @@
 package dev.luxury.ui;
 
-import dev.luxury.Luxury;
-import dev.luxury.modules.impl.DiscordRPC;
+import dev.luxury.modules.impl.misc.DiscordRPC;
 import dev.luxury.utils.font.FontHelper;
-import dev.luxury.utils.render.RenderUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import ru.nexusguard.protection.annotations.Native;

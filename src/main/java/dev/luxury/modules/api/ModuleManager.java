@@ -4,11 +4,16 @@ import dev.luxury.events.impl.client.EventKeyInput;
 import dev.luxury.events.impl.client.EventMouseInput;
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.events.impl.eventapi.EventTarget;
-import dev.luxury.modules.ElytraHelper;
-import dev.luxury.modules.impl.NoDelay;
-import dev.luxury.modules.impl.*;
-import dev.luxury.modules.impl.hud.api.HUD;
-import dev.luxury.modules.impl.taksa.DogPet;
+import dev.luxury.modules.impl.other.ElytraHelper;
+import dev.luxury.modules.impl.player.*;
+import dev.luxury.modules.impl.combat.AntiBot;
+import dev.luxury.modules.impl.combat.Criticals;
+import dev.luxury.modules.impl.combat.KillAura;
+import dev.luxury.modules.impl.misc.*;
+import dev.luxury.modules.impl.movement.*;
+import dev.luxury.modules.impl.other.hud.api.HUD;
+import dev.luxury.modules.impl.other.taksa.DogPet;
+import dev.luxury.modules.impl.render.*;
 import dev.luxury.ui.Clickgui;
 import lombok.Getter;
 import net.minecraft.client.MinecraftClient;
@@ -28,7 +33,7 @@ public class ModuleManager {
                 new HUD(),
                 new DiscordRPC(),
                 new Blink(),
-                new dev.luxury.modules.impl.elytraaura.ElytraAura(),
+                new dev.luxury.modules.impl.other.elytraaura.ElytraAura(),
                 new KillAura(),
                 new TargetEsp(),
                 new Speed(),
@@ -75,7 +80,9 @@ public class ModuleManager {
                 new AntiAFK(),
                 new KillEffect(),
                 new SantaHat(),
-                new AutoSell()
+                new AutoSell(),
+                new BlockFly(),
+                new InfoAlert()
 
         );
         DiscordRPC.getInstance().enable();

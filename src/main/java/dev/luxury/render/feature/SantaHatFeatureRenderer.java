@@ -2,8 +2,8 @@ package dev.luxury.render.feature;
 
 
 import dev.luxury.Luxury;
-import dev.luxury.modules.impl.SantaHat;
-import dev.luxury.modules.impl.santahat.SantaHatModel;
+import dev.luxury.modules.impl.render.SantaHat;
+import dev.luxury.modules.impl.other.santahat.SantaHatModel;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.VertexConsumerProvider;

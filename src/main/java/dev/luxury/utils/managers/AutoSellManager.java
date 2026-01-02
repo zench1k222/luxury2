@@ -2,7 +2,7 @@ package dev.luxury.utils.managers;
 
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.AutoSell;
+import dev.luxury.modules.impl.misc.AutoSell;
 import dev.luxury.ui.AutoSellUI;
 import dev.luxury.utils.client.ChatUtil;
 

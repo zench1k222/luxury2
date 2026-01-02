@@ -2,7 +2,7 @@ package dev.luxury.modules.api;
 
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.modules.api.settings.Setting;
-import dev.luxury.modules.impl.ClientSounds;
+import dev.luxury.modules.impl.render.ClientSounds;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

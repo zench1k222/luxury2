@@ -1,10 +1,7 @@
 // Файл: dev/luxury/mixin/render/impl/EntityRendererMixin.java
 package dev.luxury.mixin.render.impl;
 
-import dev.luxury.Luxury;
-import dev.luxury.events.impl.eventapi.EventManager;
-import dev.luxury.modules.impl.ESP;
-import dev.luxury.utils.render.TextRenderUtil;
+import dev.luxury.modules.impl.render.ESP;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.render.entity.state.EntityRenderState;
@@ -13,7 +10,6 @@ import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(EntityRenderer.class)

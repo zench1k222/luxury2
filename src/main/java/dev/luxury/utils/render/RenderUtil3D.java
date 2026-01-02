@@ -50,7 +50,6 @@ public class RenderUtil3D {
         renderLines(stack);
     }
     public static void renderTextures() {
-        // Рендеринг текстур без depth test
         if (!TEXTURE.isEmpty()) {
             Set<Identifier> identifiers = TEXTURE.stream()
                     .map(texture -> texture.id)
@@ -80,7 +79,6 @@ public class RenderUtil3D {
             TEXTURE.clear();
         }
 
-        // Рендеринг текстур с depth test
         if (!TEXTURE_DEPTH.isEmpty()) {
             Set<Identifier> identifiers = TEXTURE_DEPTH.stream()
                     .map(texture -> texture.id)
@@ -333,7 +331,7 @@ public class RenderUtil3D {
         RenderSystem.disableBlend();
         matrices.pop();
     }
-    private static void drawBoxOutlines(Box box, MatrixStack matrices, double posX, double posY, double posZ, Color color, int linesToDraw) {
+    public static void drawBoxOutlines(Box box, MatrixStack matrices, double posX, double posY, double posZ, Color color, int linesToDraw) {
         matrices.push();
         matrices.translate(posX, posY, posZ);
 

@@ -1,13 +1,10 @@
 package dev.luxury.mixin.render.impl.client;
 
 
-import dev.luxury.events.impl.client.EventCamera;
 import dev.luxury.events.impl.client.EventCameraPosition;
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.NoPush;
-import dev.luxury.modules.impl.killaura.rotate.Rotate;
-import net.minecraft.block.enums.CameraSubmersionType;
+import dev.luxury.modules.impl.movement.NoPush;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
@@ -20,7 +17,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Camera.class)
 public abstract class CameraMixin {

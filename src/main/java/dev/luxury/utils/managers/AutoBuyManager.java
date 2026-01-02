@@ -3,7 +3,7 @@ package dev.luxury.utils.managers;
 
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.AutoBuy;
+import dev.luxury.modules.impl.misc.AutoBuy;
 import dev.luxury.ui.AutoBuyUI;
 import dev.luxury.utils.client.ChatUtil;
 

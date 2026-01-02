@@ -1,6 +1,6 @@
 package dev.luxury.ui;
 
-import dev.luxury.modules.impl.AutoBuy;
+import dev.luxury.modules.impl.misc.AutoBuy;
 import dev.luxury.utils.managers.AutoBuyManager;
 import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.font.FontHelper;
@@ -10,7 +10,6 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.joml.Vector4f;
@@ -20,7 +19,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static dev.luxury.modules.impl.targetesp.mode.Circle.mc;
+import static dev.luxury.modules.impl.other.targetesp.mode.Circle.mc;
 
 public class AutoBuyUI2 extends Screen {
 

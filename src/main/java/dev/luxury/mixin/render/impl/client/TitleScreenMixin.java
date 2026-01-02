@@ -1,7 +1,7 @@
 package dev.luxury.mixin.render.impl.client;
 
 
-import dev.luxury.modules.impl.ClientSounds;
+import dev.luxury.modules.impl.render.ClientSounds;
 import net.minecraft.client.gui.screen.TitleScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

@@ -1,6 +1,6 @@
 package dev.luxury.ui;
 
-import dev.luxury.modules.impl.AutoBuy;
+import dev.luxury.modules.impl.misc.AutoBuy;
 import dev.luxury.utils.managers.AutoBuyManager;
 import dev.luxury.utils.managers.ConfigManager;
 import dev.luxury.utils.client.ChatUtil;
@@ -21,7 +21,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static dev.luxury.modules.impl.targetesp.mode.Circle.mc;
+import static dev.luxury.modules.impl.other.targetesp.mode.Circle.mc;
 
 public class AutoBuyUI extends Screen {
 

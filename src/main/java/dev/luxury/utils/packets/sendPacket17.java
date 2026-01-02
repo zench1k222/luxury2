@@ -7,7 +7,7 @@ import com.viaversion.viaversion.api.type.Types;
 import com.viaversion.viaversion.api.protocol.Protocol;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 
-import static dev.luxury.modules.impl.targetesp.mode.Circle.mc;
+import static dev.luxury.modules.impl.other.targetesp.mode.Circle.mc;
 
 public class sendPacket17 {
 

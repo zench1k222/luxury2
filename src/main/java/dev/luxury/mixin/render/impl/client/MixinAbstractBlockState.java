@@ -1,7 +1,7 @@
 package dev.luxury.mixin.render.impl.client;
 
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.NoClip;
+import dev.luxury.modules.impl.movement.NoClip;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.util.math.BlockPos;

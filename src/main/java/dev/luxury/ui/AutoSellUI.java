@@ -1,6 +1,6 @@
 package dev.luxury.ui;
 
-import dev.luxury.modules.impl.AutoSell;
+import dev.luxury.modules.impl.misc.AutoSell;
 import dev.luxury.utils.managers.AutoSellManager;
 import dev.luxury.utils.client.ChatUtil;
 import dev.luxury.utils.font.FontHelper;
@@ -20,7 +20,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static dev.luxury.modules.impl.targetesp.mode.Circle.mc;
+import static dev.luxury.modules.impl.other.targetesp.mode.Circle.mc;
 
 public class AutoSellUI extends Screen {
 

@@ -1,7 +1,7 @@
 package dev.luxury.mixin.render.impl.client;
 
 import dev.luxury.Luxury;
-import dev.luxury.modules.impl.killaura.rotate.Rotate;
+import dev.luxury.modules.impl.other.killaura.rotate.Rotate;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;

@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.List;
 
-import static dev.luxury.modules.impl.targetesp.mode.Circle.mc;
+import static dev.luxury.modules.impl.other.targetesp.mode.Circle.mc;
 
 public class WayManager {
     private static WayManager instance;

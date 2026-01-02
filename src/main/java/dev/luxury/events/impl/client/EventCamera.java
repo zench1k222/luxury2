@@ -2,7 +2,7 @@ package dev.luxury.events.impl.client;
 
 
 import dev.luxury.events.impl.eventapi.events.callables.EventCancellable;
-import dev.luxury.modules.impl.killaura.rotate.Rotate;
+import dev.luxury.modules.impl.other.killaura.rotate.Rotate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

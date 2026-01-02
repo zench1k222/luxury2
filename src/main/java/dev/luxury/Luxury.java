@@ -2,9 +2,8 @@ package dev.luxury;
 
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.ClientSounds;
-import dev.luxury.modules.impl.killaura.rotate.Aim;
-import dev.luxury.modules.impl.killaura.rotate.Rotates;
+import dev.luxury.modules.impl.other.killaura.rotate.Aim;
+import dev.luxury.modules.impl.other.killaura.rotate.Rotates;
 import dev.luxury.render.feature.CustomModelFeature;
 import dev.luxury.render.feature.SantaHatFeatureRenderer;
 import dev.luxury.utils.font.FontHelper;

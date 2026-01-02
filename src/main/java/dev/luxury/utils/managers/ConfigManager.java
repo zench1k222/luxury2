@@ -6,8 +6,8 @@ import dev.luxury.common.way.Way;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.modules.api.settings.*;
-import dev.luxury.modules.impl.hud.api.DraggableHudElement;
-import dev.luxury.modules.impl.hud.api.HUD;
+import dev.luxury.modules.impl.other.hud.api.DraggableHudElement;
+import dev.luxury.modules.impl.other.hud.api.HUD;
 import net.minecraft.client.MinecraftClient;
 
 import java.awt.*;

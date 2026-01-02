@@ -3,18 +3,12 @@ package dev.luxury.mixin.render.impl.client;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dev.luxury.Luxury;
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.NoPush;
-import dev.luxury.modules.impl.NoWeb;
-import net.minecraft.block.Blocks;
+import dev.luxury.modules.impl.movement.NoPush;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.*;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(Entity.class)

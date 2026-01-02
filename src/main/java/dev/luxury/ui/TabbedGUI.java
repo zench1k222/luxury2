@@ -11,9 +11,12 @@ import dev.luxury.ui.settings.SliderSettingRenderer;
 import dev.luxury.utils.font.FontDraw;
 import dev.luxury.utils.font.FontHelper;
 import dev.luxury.utils.render.RenderUtil;
+import dev.luxury.utils.render.RenderUtil3D;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.Box;
 import org.joml.Vector4f;
 
 import java.awt.*;
@@ -21,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static java.awt.Color.white;
 
 public class TabbedGUI extends Screen {
     private Category selectedCategory = Category.Combat;
@@ -456,7 +461,7 @@ public class TabbedGUI extends Screen {
         float panelWidth = 190;
         float panelHeight = this.panelHeight - 120;
 
-        RenderUtil.drawRoundedRect(context.getMatrices(), panelX, panelY, panelWidth, panelHeight,
+                RenderUtil.drawRoundedRect(context.getMatrices(), panelX, panelY, panelWidth, panelHeight,
                 new Vector4f(8f, 8f, 8f, 8f), new Color(25, 25, 30).getRGB());
 
         RenderUtil.drawBorder(context.getMatrices(), panelX, panelY, panelWidth, panelHeight,

@@ -4,7 +4,7 @@ import dev.luxury.events.impl.client.EventTick;
 import dev.luxury.events.impl.client.PacketEvent;
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.events.impl.eventapi.EventTarget;
-import dev.luxury.modules.impl.killaura.PlayerHelper;
+import dev.luxury.modules.impl.other.killaura.PlayerHelper;
 import dev.luxury.utils.math.TimerUtils;
 import lombok.Getter;
 import net.minecraft.client.MinecraftClient;

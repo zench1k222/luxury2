@@ -2,7 +2,7 @@ package dev.luxury.mixin.render.impl.client;
 
 
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.NoPush;
+import dev.luxury.modules.impl.movement.NoPush;
 import net.minecraft.client.gui.hud.InGameOverlayRenderer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.texture.Sprite;

@@ -1,7 +1,7 @@
 package dev.luxury.mixin.render.impl.client;
 
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.NoPush;
+import dev.luxury.modules.impl.movement.NoPush;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.entity.Entity;

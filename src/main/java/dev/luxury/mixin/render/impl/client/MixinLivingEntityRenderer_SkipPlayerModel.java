@@ -1,7 +1,7 @@
 package dev.luxury.mixin.render.impl.client;
 
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.CustomModels;
+import dev.luxury.modules.impl.render.CustomModels;
 import dev.luxury.utils.managers.FriendManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;

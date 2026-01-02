@@ -1,8 +1,7 @@
 package dev.luxury.mixin.render.impl.client;
 
-import dev.luxury.Luxury;
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.NoPush;
+import dev.luxury.modules.impl.movement.NoPush;
 import net.minecraft.fluid.FlowableFluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;

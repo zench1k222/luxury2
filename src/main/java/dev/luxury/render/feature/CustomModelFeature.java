@@ -1,13 +1,13 @@
 package dev.luxury.render.feature;
 
 import dev.luxury.modules.api.ModuleManager;
-import dev.luxury.modules.impl.CustomModels;
-import dev.luxury.modules.impl.custommodel.ChinchillaModel;
-import dev.luxury.modules.impl.custommodel.CrazyRabbitModel;
-import dev.luxury.modules.impl.custommodel.CustomPlayerModel;
-import dev.luxury.modules.impl.custommodel.DemonModel;
-import dev.luxury.modules.impl.custommodel.FreddyBearModel;
-import dev.luxury.modules.impl.custommodel.SonicModel;
+import dev.luxury.modules.impl.render.CustomModels;
+import dev.luxury.modules.impl.other.custommodel.ChinchillaModel;
+import dev.luxury.modules.impl.other.custommodel.CrazyRabbitModel;
+import dev.luxury.modules.impl.other.custommodel.CustomPlayerModel;
+import dev.luxury.modules.impl.other.custommodel.DemonModel;
+import dev.luxury.modules.impl.other.custommodel.FreddyBearModel;
+import dev.luxury.modules.impl.other.custommodel.SonicModel;
 import dev.luxury.utils.managers.FriendManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.model.ModelPart;
