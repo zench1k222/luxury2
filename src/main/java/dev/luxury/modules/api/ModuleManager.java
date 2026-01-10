@@ -4,6 +4,7 @@ import dev.luxury.events.impl.client.EventKeyInput;
 import dev.luxury.events.impl.client.EventMouseInput;
 import dev.luxury.events.impl.eventapi.EventManager;
 import dev.luxury.events.impl.eventapi.EventTarget;
+import dev.luxury.modules.impl.combat.AimBot;
 import dev.luxury.modules.impl.other.ElytraHelper;
 import dev.luxury.modules.impl.player.*;
 import dev.luxury.modules.impl.combat.AntiBot;
@@ -82,7 +83,11 @@ public class ModuleManager {
                 new SantaHat(),
                 new AutoSell(),
                 new BlockFly(),
-                new InfoAlert()
+                new InfoAlert(),
+                new AirBlock(),
+                new AutoSwap(),
+                new AimBot(),
+                new ServerHelper()
 
         );
         DiscordRPC.getInstance().enable();

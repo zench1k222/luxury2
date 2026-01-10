@@ -15,7 +15,7 @@ public abstract class Command {
         this.usage = usage;
     }
 
-    @Native
+     
     public abstract void execute(String[] args);
 
     public String getName() {

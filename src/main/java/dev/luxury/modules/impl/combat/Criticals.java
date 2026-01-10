@@ -5,6 +5,7 @@ import dev.luxury.events.impl.eventapi.EventTarget;
 import dev.luxury.modules.api.Category;
 import dev.luxury.modules.api.Module;
 import dev.luxury.modules.api.ModuleAnnotation;
+import dev.luxury.modules.api.settings.ModeSetting;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.network.SequencedPacketCreator;
 import net.minecraft.entity.effect.StatusEffects;

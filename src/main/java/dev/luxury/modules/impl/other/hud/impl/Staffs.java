@@ -42,9 +42,10 @@ public class Staffs extends DraggableHudElement {
     );
 
     private static final Pattern PREFIX_PATTERN = Pattern.compile(
-            ".*(mod|der|adm|help|wne|хелп|адм|поддержка|влад|tik|тик|таф|кура|own|taf|curat|dev|supp|yt|сотруд|ꔓ|ꔗ|ꔡ|ꔥ|ꔩ|ꔳ|ꔷ).*",
+            ".*\\b(mod|admin|helper|staff|админ|модер|хелп|сотрудник|куратор|dev|developer|тикет|ticket|support)\\b.*",
             Pattern.CASE_INSENSITIVE
     );
+
     private static final Pattern NAME_PATTERN = Pattern.compile("^\\w{3,16}$");
 
     private static final Map<String, StaffInfo> staffCache = new LinkedHashMap<>();
@@ -165,6 +166,11 @@ public class Staffs extends DraggableHudElement {
             ScissorUtil.setFromComponentCoordinates(nameX, currentY - 1.5f, actualNameWidth, nameFont.getHeight());
         }
 
+        if (staff.getPrefix() == null || staff.getPrefix().isEmpty() ||
+                staff.getPrefix().contains("§") || staff.getPrefix().length() > 20) {
+            return;
+        }
+
         nameFont.drawGradientText(matrices, staff.getName(), nameX, currentY - 1.5f, color1, color2);
 
         if (needsClipping) {
@@ -207,12 +213,15 @@ public class Staffs extends DraggableHudElement {
         lastUpdate = currentTime;
 
         Set<String> currentKeys = new HashSet<>();
-
+        Set<String> processedPlayers = new HashSet<>();
 
         for (Team team : mc.world.getScoreboard().getTeams()) {
             String rawPrefix = team.getPrefix().getString();
             String cleanPrefix = cleanPrefix(rawPrefix);
 
+            if (cleanPrefix.length() > 20 || cleanPrefix.matches(".*[§&].*")) {
+                continue;
+            }
 
             boolean isStaff = isStaffBySymbol(cleanPrefix);
 
@@ -220,16 +229,27 @@ public class Staffs extends DraggableHudElement {
                 isStaff = isStaffByKeyword(cleanPrefix);
             }
 
+            if (!isStaff && cleanPrefix.length() == 1) {
+                continue;
+            }
 
             if (!isStaff) {
                 continue;
             }
 
-
             for (String playerName : team.getPlayerList()) {
+                if (!isValidPlayerName(playerName)) {
+                    continue;
+                }
+
                 if (playerName.equals(mc.player.getName().getString())) {
                     continue;
                 }
+
+                if (processedPlayers.contains(playerName)) {
+                    continue;
+                }
+                processedPlayers.add(playerName);
 
                 PlayerListEntry playerEntry = getPlayerEntry(playerName);
                 StaffStatus status;
@@ -246,6 +266,10 @@ public class Staffs extends DraggableHudElement {
                 String displayPrefix = SYMBOL_TO_TITLE.getOrDefault(staffSymbol,
                         extractStaffTitle(cleanPrefix));
 
+                if (displayPrefix.equals("UNKNOWN") || displayPrefix.equals("STAFF")) {
+                    continue;
+                }
+
                 staffCache.put(playerName,
                         new StaffInfo(
                                 Text.of(rawPrefix + playerName),
@@ -256,17 +280,39 @@ public class Staffs extends DraggableHudElement {
                         )
                 );
                 currentKeys.add(playerName);
+            }
+        }
 
+        if (staffCache.size() > 20) {
+            Iterator<String> iterator = staffCache.keySet().iterator();
+            while (staffCache.size() > 20 && iterator.hasNext()) {
+                iterator.next();
+                iterator.remove();
             }
         }
 
         staffCache.entrySet().removeIf(entry -> !currentKeys.contains(entry.getKey()));
+    }
 
+    private boolean isValidPlayerName(String name) {
+        if (name == null || name.isEmpty() || name.length() > 16) {
+            return false;
+        }
+
+        if (!name.matches("^[a-zA-Z0-9_]{3,16}$")) {
+            return false;
+        }
+
+        if (name.contains("§")) {
+            return false;
+        }
+
+        return true;
     }
 
     private String cleanPrefix(String prefix) {
         if (prefix == null) return "";
-        return prefix.replaceAll("§[0-9a-fk-or]", "").trim();
+        return prefix.replaceAll("§[0-9a-fk-orx]", "").trim();
     }
 
     private boolean isStaffBySymbol(String prefix) {

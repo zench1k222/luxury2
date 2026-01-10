@@ -1,13 +1,11 @@
 package dev.luxury.modules.impl.other.killaura.rotate;
 
-
 import dev.luxury.Luxury;
 import dev.luxury.modules.impl.other.killaura.rotate.mods.*;
 import dev.luxury.modules.impl.other.killaura.rotate.mods.config.*;
 import dev.luxury.modules.impl.other.killaura.rotate.mods.config.api.RotationConfig;
 import dev.luxury.modules.impl.other.killaura.rotate.mods.config.api.RotationModeType;
 import lombok.Getter;
-
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.MathHelper;
 
@@ -33,6 +31,16 @@ public class Aim {
     private final FuntimeMode funtimeMod = new FuntimeMode();
     private final FuntimeConfig funtimeSetup = new FuntimeConfig();
 
+    private final HolyWorldMode holyWorldMod = new HolyWorldMode();
+    private final HolyWorldConfig holyWorldSetup = new HolyWorldConfig();
+
+    public HolyWorldConfig getHolyWorldSetup() {
+        return holyWorldSetup;
+    }
+
+    public HolyWorldMode getHolyWorldMod() {
+        return holyWorldMod;
+    }
 
     public FuntimeConfig getFuntimeSetup() {
         return funtimeSetup;
@@ -41,6 +49,7 @@ public class Aim {
     public FuntimeMode getFuntimeMod() {
         return funtimeMod;
     }
+
     public SpookytimeConfig getSpookytimeSetup() {
         return spookytimeSetup;
     }
@@ -48,10 +57,17 @@ public class Aim {
     public SpookytimeMode getSpookytimeMod() {
         return spookytimeMod;
     }
+
     public Rotate rotate(RotationConfig config, Rotate targetRotate) {
-        if (config.getType() != RotationModeType.INSTANT && config.getType() != RotationModeType.SLOTH_AI && config.getType() != RotationModeType.REALLY_WORLD   && config.getType() != RotationModeType.SPOOKYTIME  && config.getType() != RotationModeType.FUNTIME) {
+        if (config.getType() != RotationModeType.INSTANT &&
+                config.getType() != RotationModeType.SLOTH_AI &&
+                config.getType() != RotationModeType.REALLY_WORLD &&
+                config.getType() != RotationModeType.SPOOKYTIME &&
+                config.getType() != RotationModeType.FUNTIME &&
+                config.getType() != RotationModeType.HOLY_WORLD) {
+
             DeltaRotate deltaToTarget = Luxury.getInstance().getRotationManager().getCurrentRotate().rotationDeltaTo(targetRotate);
-            float maxInitialDiff = 270f; // 180 + 90
+            float maxInitialDiff = 270f;
             float progress = MathHelper.clamp(1f - (Math.abs(deltaToTarget.getDeltaYaw()) + Math.abs(deltaToTarget.getDeltaPitch())) / maxInitialDiff, 0, 1);
 
             DeltaRotate offsets = getOffset(deltaToTarget, progress);
@@ -67,6 +83,7 @@ public class Aim {
             case SLOTH_AI -> newRotate = slothAIMod.process(targetRotate);
             case SPOOKYTIME -> newRotate = spookytimeMod.process(targetRotate);
             case FUNTIME -> newRotate = funtimeMod.process(targetRotate);
+            case HOLY_WORLD -> newRotate = holyWorldMod.process(targetRotate);
             default -> newRotate = Luxury.getInstance().getRotationManager().getCurrentRotate();
         }
 

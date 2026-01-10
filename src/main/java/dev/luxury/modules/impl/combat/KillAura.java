@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
         category = Category.Combat
 )
 public class KillAura extends Module {
-    private final ModeSetting rotationMode = new ModeSetting("Ротация", "HvH", new String[]{"HvH", "SlothAI", "TriggerBot","SpookyTime","FunTime"});
+    private final ModeSetting rotationMode = new ModeSetting("Ротация", "HvH", new String[]{"HvH", "SlothAI", "TriggerBot","SpookyTime","FunTime", "HolyWorld"});
     private final ModeSetting sprintMode = new ModeSetting("Бег", "Ordinary", new String[]{"HvH", "Ordinary", "Legit", "Без сброса"});
     private final ModeSetting correction = new ModeSetting("Коррекция Движения", "Свободная", new String[]{"Сфокусированная", "Свободная", "Без корекции"});
 
@@ -79,7 +79,7 @@ public class KillAura extends Module {
     private boolean isCanAttack = false;
     private int shieldBreakCooldown = 0;
 
-    @Native
+     
     @EventTarget
     public void eventRotate(EventRotate e) {
         if (legitBackStop) {
@@ -160,6 +160,10 @@ public class KillAura extends Module {
             Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getFuntimeSetup(), angle), aim.getFuntimeSetup()), 3, this);
         }
 
+        if (rotationMode.is("HolyWorld")) {
+            Luxury.getInstance().getRotationManager().setRotation(new TargetRotate(angle, () -> aim.rotate(aim.getHolyWorldSetup(), angle), aim.getHolyWorldSetup()), 3, this);
+        }
+
         if (preAttack || isCanAttack) {
             updateSprint();
         }
@@ -170,7 +174,7 @@ public class KillAura extends Module {
         }
     }
 
-    @Native
+     
     private void breakShield() {
         if (target == null) return;
 
@@ -224,7 +228,7 @@ public class KillAura extends Module {
         String targetName = target.getName().getString();
     }
 
-    @Native
+     
     private void checkTargetKilled() {
 
         if (lastTarget == null) {
@@ -251,7 +255,7 @@ public class KillAura extends Module {
         }
     }
 
-    @Native
+     
     private boolean updatePreAttack() {
         Simulation simulatedPlayer = Simulation.simulateLocalPlayer(1);
         BooleanSetting eatUseAttack = settings.getValueByName("Бить и есть");
@@ -265,7 +269,7 @@ public class KillAura extends Module {
         return true;
     }
 
-    @Native
+     
     private boolean isAttack() {
         BooleanSetting eatUseAttack = settings.getValueByName("Бить и есть");
         if (mc.player.isUsingItem() && (eatUseAttack == null || !eatUseAttack.get())) return false;
@@ -276,7 +280,7 @@ public class KillAura extends Module {
         return true;
     }
 
-    @Native
+     
     public void updateSprint() {
         if (!hasStopSprint()) return;
 
@@ -300,12 +304,12 @@ public class KillAura extends Module {
         mc.options.forwardKey.setPressed(forward);
     }
 
-    @Native
+     
     public boolean hasStopSprint() {
         return !sprintMode.is("Без сброса") && !Criticals.hasMovementRestrictions();
     }
 
-    @Native
+     
     private LivingEntity updateTarget() {
         List<String> selectedNames = targetTypeSetting.getSettings().stream().filter(BooleanSetting::get).map(BooleanSetting::getName).collect(Collectors.toList());
         ValidTarget.EntityFilter filter = new ValidTarget.EntityFilter(selectedNames);
@@ -320,12 +324,12 @@ public class KillAura extends Module {
         return targetSelector.getCurrentTarget();
     }
 
-    @Native
+     
     public ModeSetting getRotationMode() {
         return rotationMode;
     }
 
-    @Native
+     
     @EventTarget
     private void setCorrection(EventMoveInput eventMoveInput) {
         if (correction.is("Без корекции")) return;
@@ -342,22 +346,22 @@ public class KillAura extends Module {
         }
     }
 
-    @Native
+     
     public LivingEntity getTarget() {
         return this.isEnabled() ? target : null;
     }
 
-    @Native
+     
     public boolean hasTarget() {
         return this.isEnabled() && target != null;
     }
 
-    @Native
+     
     public boolean shouldRemoveInterpolation() {
         return removeInterpolation.get();
     }
 
-    @Native
+     
     @Override
     public void onEnable() {
         super.onEnable();
@@ -365,7 +369,7 @@ public class KillAura extends Module {
         shieldBreakCooldown = 0;
     }
 
-    @Native
+     
     @Override
     public void onDisable() {
         super.onDisable();

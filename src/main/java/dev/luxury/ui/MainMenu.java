@@ -30,9 +30,13 @@ public class MainMenu extends Screen {
         initializeChangeLog();
     }
 
-    @Native
+     
     private void initializeChangeLog() {
         changeLog.clear();
+
+        changeLog.add(new ChangeLogEntry("v0.9", "02.01.2026",
+                List.of("Апдейт!", "", "Добавлен InfoAlert.",
+                        "Рекодинг базы.", "BlockFly(хуевый).")));
 
         changeLog.add(new ChangeLogEntry("v0.8", "29.12.2025",
                 List.of("Апдейт!", "", "Финально улучшен AutoBuy(RW).",
@@ -53,7 +57,7 @@ public class MainMenu extends Screen {
                         "Добавлены настройки Arrows.", "Добавлен ChestStealer.", "Добавлен AutoPotion.")));
     }
 
-    @Native
+     
     @Override
     protected void init() {
         super.init();
@@ -86,7 +90,7 @@ public class MainMenu extends Screen {
         }).dimensions(centerX - 100, centerY + 35, 200, 20).build());
     }
 
-    @Native
+     
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         renderBackground(context);
@@ -100,7 +104,7 @@ public class MainMenu extends Screen {
         renderVersionInfo(context);
     }
 
-    @Native
+     
     private void renderBackground(DrawContext context) {
         context.fill(0, 0, width, height, 0xFF000000);
 
@@ -119,7 +123,7 @@ public class MainMenu extends Screen {
                 (int)(backgroundAlpha * 255) << 24 | 0x101010);
     }
 
-    @Native
+     
     private void renderLogo(DrawContext context) {
         String title = "LuxuryFree";
         int titleWidth = textRenderer.getWidth(title);
@@ -140,7 +144,7 @@ public class MainMenu extends Screen {
 //                width / 2 - subtitleWidth / 2, titleY + 15, 0xAAAAAA);
     }
 
-    @Native
+     
     private void renderChangeLog(DrawContext context, int mouseX, int mouseY) {
         int changelogWidth = Math.min(300, width / 3);
         int changelogHeight = Math.min(400, height / 2);
@@ -219,7 +223,7 @@ public class MainMenu extends Screen {
         }
     }
 
-    @Native
+     
     private int calculateEntryHeight(ChangeLogEntry entry, int width) {
         int height = 20;
 
@@ -236,7 +240,7 @@ public class MainMenu extends Screen {
         return Math.max(70, height + 10);
     }
 
-    @Native
+     
     private void drawBorder(DrawContext context, int x, int y, int width, int height, int color) {
         context.fill(RenderLayer.getGui(), x, y, x + width, y + 1, color);
         context.fill(RenderLayer.getGui(), x, y + height - 1, x + width, y + height, color);
@@ -244,17 +248,17 @@ public class MainMenu extends Screen {
         context.fill(RenderLayer.getGui(), x + width - 1, y, x + width, y + height, color);
     }
 
-    @Native
+     
     private void renderVersionInfo(DrawContext context) {
         String version = "LuxuryFree";
         context.drawTextWithShadow(textRenderer, version, 5, height, 0xAAAAAA);
 
-        String ver = "v0.6";
+        String ver = "v0.9";
         String fps = "FPS: " + MinecraftClient.getInstance().getCurrentFps();
 
         String userName = DiscordRPC.instance.info.userName();
         boolean isDev = userName != null &&
-                ("krasivih".equals(userName) || "_znchkx_".equals(userName) || "webimmortal".equals(userName));
+                ("krasivih".equals(userName) || "_znchkx_".equals(userName));
 
         String debug = isDev ? "§7DEBUG: §aON" : "§7DEBUG: §cOFF";
 
@@ -267,7 +271,7 @@ public class MainMenu extends Screen {
         context.drawTextWithShadow(textRenderer, debug, 5, height - 10, 0xAAAAAA);
     }
 
-    @Native
+     
     private int calculateTotalContentHeight(int contentWidth) {
         int totalHeight = 0;
         for (ChangeLogEntry entry : changeLog) {
@@ -276,7 +280,7 @@ public class MainMenu extends Screen {
         return totalHeight;
     }
 
-    @Native
+     
     private void renderChangeLogEntry(DrawContext context, ChangeLogEntry entry, int x, int y, int width) {
         int entryHeight = calculateEntryHeight(entry, width);
 
@@ -309,7 +313,7 @@ public class MainMenu extends Screen {
         }
     }
 
-    @Native
+     
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (draggingScroll && button == 0) {
@@ -338,7 +342,7 @@ public class MainMenu extends Screen {
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     }
 
-    @Native
+     
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         int changelogX = 10;
@@ -361,7 +365,7 @@ public class MainMenu extends Screen {
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
-    @Native
+     
     @Override
     public void resize(MinecraftClient client, int width, int height) {
         super.resize(client, width, height);
@@ -380,22 +384,22 @@ public class MainMenu extends Screen {
         }
     }
 
-    @Native
+     
     public void addChangeLogEntry(String version, String date, List<String> changes) {
         changeLog.add(0, new ChangeLogEntry(version, date, changes));
     }
 
-    @Native
+     
     public void clearChangeLog() {
         changeLog.clear();
     }
 
-    @Native
+     
     public void setBackgroundAlpha(float alpha) {
         this.backgroundAlpha = Math.max(0, Math.min(1, alpha));
     }
 
-    @Native
+     
     public float getBackgroundAlpha() {
         return backgroundAlpha;
     }

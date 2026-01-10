@@ -26,7 +26,7 @@ public class RCTManager {
         }
     }
 
-    @Native
+     
     public void run() throws Exception {
         ensureTickHandler();
 
@@ -39,7 +39,7 @@ public class RCTManager {
         }
     }
 
-    @Native
+     
     private void runFuntimeLogic() {
         if (mc.player == null || mc.world == null) {
             System.err.println("Игрок или мир null в runFuntimeLogic");
@@ -96,7 +96,7 @@ public class RCTManager {
         }
     }
 
-    @Native
+     
     private void runReallyWorldLogic() {
         for (ScoreboardObjective team : mc.world.getScoreboard().getObjectives().toArray(new ScoreboardObjective[0])) {
             String grief = team.getDisplayName().getString();
@@ -113,7 +113,7 @@ public class RCTManager {
         }
     }
 
-    @Native
+     
     private void startGriefJoinSequence(String griefNumber) {
         if (mc.player == null || mc.player.networkHandler == null) {
             System.err.println("Игрок или networkHandler null в startGriefJoinSequence");
@@ -174,7 +174,7 @@ public class RCTManager {
         }).start();
     }
 
-    @Native
+     
     private void startMegaGriefJoinSequence() {
         if (mc.player == null || mc.player.networkHandler == null) {
             return;
@@ -222,7 +222,7 @@ public class RCTManager {
         }).start();
     }
 
-    @Native
+     
     private void clickContainerSlot(int slotIndex) {
         if (mc.currentScreen instanceof GenericContainerScreen) {
             if (mc.player != null && mc.interactionManager != null) {

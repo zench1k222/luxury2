@@ -1,13 +1,11 @@
 package dev.luxury.modules.impl.other.targetesp;
 
-import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.events.impl.client.EventRender3D;
+import dev.luxury.modules.api.ModuleManager;
 import dev.luxury.modules.impl.combat.KillAura;
+import dev.luxury.modules.impl.combat.AimBot;
 import dev.luxury.modules.impl.other.elytraaura.ElytraAura;
-import dev.luxury.modules.impl.other.targetesp.mode.Crystals;
-import dev.luxury.modules.impl.other.targetesp.mode.Ghosts;
-import dev.luxury.modules.impl.other.targetesp.mode.Circle;
-import dev.luxury.modules.impl.other.targetesp.mode.Marker;
+import dev.luxury.modules.impl.other.targetesp.mode.*;
 import dev.luxury.utils.math.StopWatch;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.math.MatrixStack;
@@ -24,6 +22,7 @@ public class TargetESPHandler {
     public static LivingEntity updateTargetInfo() {
         KillAura aura = ModuleManager.getModule(KillAura.class);
         ElytraAura elytraAura = ModuleManager.getModule(ElytraAura.class);
+        AimBot aimBot = ModuleManager.getModule(AimBot.class);
 
         LivingEntity currentTarget = null;
 
@@ -31,6 +30,8 @@ public class TargetESPHandler {
             currentTarget = aura.getTarget();
         } else if (elytraAura != null && elytraAura.isEnabled() && elytraAura.getTarget() != null) {
             currentTarget = elytraAura.getTarget();
+        } else if (aimBot != null && aimBot.isEnabled() && aimBot.getTarget() != null) {
+            currentTarget = aimBot.getTarget();
         }
 
         if (currentTarget != null && currentTarget != lastTarget) {
@@ -41,7 +42,6 @@ public class TargetESPHandler {
 
         return lastTarget;
     }
-
 
     public static boolean shouldRenderESP(LivingEntity target) {
         return target != null && target != mc.player && target.isAlive() && target.getHealth() > 0 && mc.world != null;
@@ -56,6 +56,7 @@ public class TargetESPHandler {
                 case "Призраки" -> Ghosts.render(target);
                 case "Круг" -> Circle.render(target, matrixStack);
                 case "Кристаллы" -> Crystals.render(target, matrixStack);
+                case "Сфера" -> ChaosSphere.render(target, matrixStack);
             }
         }
     }
@@ -69,13 +70,13 @@ public class TargetESPHandler {
                 case "Призраки" -> Ghosts.render(target);
                 case "Круг" -> Circle.render(target, event.getMatrices());
                 case "Кристаллы" -> Crystals.render(target, event.getMatrices());
+                case "Сфера" -> ChaosSphere.render(target, event.getMatrices());
             }
         }
     }
 
     private static double getDistanceTo(LivingEntity entity) {
         if (mc.player == null) return Double.MAX_VALUE;
-        assert mc.player != null;
         return mc.player.getEyePos().distanceTo(entity.getEyePos());
     }
-} 
+}

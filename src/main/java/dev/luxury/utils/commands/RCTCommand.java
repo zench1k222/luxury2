@@ -9,7 +9,7 @@ public class RCTCommand extends Command {
         super("rct", "Перезаход на сервер.", ".rct");
     }
 
-    @Native
+     
     @Override
     public void execute(String[] args) {
         if (args.length == 0) {

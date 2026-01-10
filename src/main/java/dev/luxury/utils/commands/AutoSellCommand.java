@@ -12,7 +12,7 @@ public class AutoSellCommand extends Command {
         super("autosell", "Управление конфигами AutoSell", ".autosell <save/load/list/delete/dir/items> [имя]");
     }
 
-    @Native
+     
     @Override
     public void execute(String[] args) {
         if (args.length == 0) {

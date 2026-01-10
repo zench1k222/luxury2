@@ -62,3 +62,4 @@ accessible field net/minecraft/entity/Entity velocity Lnet/minecraft/util/math/V
 mutable field net/minecraft/entity/Entity velocity Lnet/minecraft/util/math/Vec3d;
 accessible method net/minecraft/client/world/ClientWorld getPendingUpdateManager ()Lnet/minecraft/client/network/PendingUpdateManager;
 accessible field net/minecraft/network/packet/BundlePacket packets Ljava/lang/Iterable;
+accessible field net/minecraft/network/packet/c2s/play/PlayerInteractEntityC2SPacket entityId I
